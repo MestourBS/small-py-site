@@ -1,0 +1,160 @@
+# French translations for PROJECT.
+# Copyright (C) 2021 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2021.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2021-10-11 11:37+0200\n"
+"PO-Revision-Date: 2021-10-05 14:54+0200\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: fr\n"
+"Language-Team: fr <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n > 1)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.9.1\n"
+
+#: Controllers/ControllerAuth.py:19 Controllers/ControllerAuth.py:41
+msgid "auth_error_no_username"
+msgstr "Erreur: Pas de nom d'utilisateur"
+
+#: Controllers/ControllerAuth.py:21 Controllers/ControllerAuth.py:43
+#: Controllers/ControllerAuth.py:78
+msgid "auth_error_no_password"
+msgstr "Erreur: Pas de mot de passe"
+
+#: Controllers/ControllerAuth.py:23
+msgid "auth_error_invalid_login"
+msgstr "Erreur: Le nom d'utilisateur ou le mot de passe est incorrect"
+
+#: Controllers/ControllerAuth.py:45 Controllers/ControllerAuth.py:82
+msgid "auth_error_password_short"
+msgstr "Erreur: Le mot de passe doit faire au moins %(chars)s caractères de long"
+
+#: Controllers/ControllerAuth.py:47 Controllers/ControllerAuth.py:84
+msgid "auth_error_passwords_not_match"
+msgstr "Erreur: Les 2 mots de passes doivent être pareils"
+
+#: Controllers/ControllerAuth.py:59 Controllers/ControllerAuth.py:91
+msgid "auth_error_unknown"
+msgstr "Erreur inconnue"
+
+#: Controllers/ControllerAuth.py:80
+msgid "auth_error_no_password_new"
+msgstr "Erreur: Pas de nouveau mot de passe"
+
+#: Controllers/ControllerAuth.py:86
+msgid "auth_error_wrong_password"
+msgstr "Erreur: Le mot de passe précédent ne correspond pas"
+
+#: Controllers/ControllerChat.py:37
+msgid "group_error_no_name"
+msgstr "Erreur: Pas de nom dde groupe"
+
+#: Controllers/ControllerChat.py:105
+msgid "chat_unknown_user"
+msgstr "Utilisateur inconnu"
+
+#: templates/auth/change_password.html:2 templates/auth/login.html:14
+#: templates/auth/register.html:2 templates/auth/register.html:22
+#: templates/header.html:19
+msgid "register"
+msgstr "S'enregistrer"
+
+#: templates/auth/login.html:2 templates/auth/login.html:15
+#: templates/header.html:19
+msgid "login"
+msgstr "Se connecter"
+
+#: templates/header.html:21
+msgid "logged_in_as"
+msgstr "Connecté en tant que %(username)s"
+
+#: templates/header.html:21
+msgid "logout"
+msgstr "Se déconnecter"
+
+#: templates/home.html:3
+msgid "games_tetris"
+msgstr "Tetris"
+
+#: templates/home.html:5
+msgid "home_view_chat"
+msgstr "Aller aux discussions"
+
+#: templates/auth/change_password.html:13 templates/auth/login.html:10
+#: templates/auth/register.html:13
+msgid "password"
+msgstr "Mot de passe"
+
+#: templates/auth/change_password.html:17
+msgid "password_new"
+msgstr "Nouveau mot de passe"
+
+#: templates/auth/change_password.html:21 templates/auth/register.html:17
+msgid "confirm_password"
+msgstr "Confirmer le mot de passe"
+
+#: templates/auth/change_password.html:25 templates/chat/group_create.html:17
+#: templates/chat/group_invite.html:3
+msgid "cancel"
+msgstr "Annuler"
+
+#: templates/auth/change_password.html:26 templates/auth/register.html:21
+msgid "change_password"
+msgstr "Changer le mot de passe"
+
+#: templates/auth/login.html:6
+msgid "username"
+msgstr "Nom d'utilisateur"
+
+#: templates/chat/group_create.html:2 templates/chat/group_create.html:18
+#: templates/chat/group_list.html:2 templates/chat/group_list.html:4
+msgid "group_create"
+msgstr "Créer un groupe"
+
+#: templates/chat/group_create.html:13
+msgid "group_name"
+msgstr "Nom du groupe"
+
+#: templates/chat/group_invite.html:2 templates/chat/group_invite.html:12
+#: templates/chat/group_view.html:5
+msgid "group_invite"
+msgstr "Inviter au groupe"
+
+#: templates/chat/group_view.html:3
+msgid "group_list"
+msgstr "Liste des groupes"
+
+#: templates/chat/group_view.html:4
+msgid "group_leave"
+msgstr "Quitter le groupe"
+
+#: templates/chat/group_view.html:15
+msgid "chat_send_message"
+msgstr "Envoyer le message"
+
+#: templates/chat/group_view.html:83
+msgid "chat_confirm_delete_message"
+msgstr "Êtes-vous sûr de vouloir supprimer le message?"
+
+#: templates/errors/404.html:2
+msgid "error_404"
+msgstr "Erreur 404"
+
+#: templates/games/tetris.js:47
+msgid "game_tetris_theme_name_dark"
+msgstr "Mode sombre"
+
+#: templates/games/tetris.js:68
+msgid "game_tetris_theme_name_light"
+msgstr "Mode lumineux"
+
+#: templates/games/tetris.js:205
+msgid "game_tetris_reset_confirm"
+msgstr "Remettre le tetris à zéro?"
+

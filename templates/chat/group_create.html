@@ -1,0 +1,22 @@
+{% include 'header.html' %}
+	<h2>{{ gettext('group_create') }}</h2>
+	<form method="POST">
+		<table>
+			<tr>
+				<td colspan="2" class="error">
+					{% for error in errors %}
+					<div>{{ error }}</div>
+					{% endfor %}
+				</td>
+			</tr>
+			<tr>
+				<td><label for="group_name">{{ gettext('group_name') }}:</label></td>
+				<td><input type="text" name="group_name" id="group_name" /></td>
+			</tr>
+			<tr>
+				<td><a href="{{ url_for('chat.group_list') }}">{{ gettext('cancel') }}</a></td>
+				<td><input type="submit" value="{{ gettext('group_create') }}" /></td>
+			</tr>
+		</table>
+	</form>
+{% include 'footer.html' %}

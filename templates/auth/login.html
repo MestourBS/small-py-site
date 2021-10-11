@@ -1,0 +1,19 @@
+{% include 'header.html' %}
+	<h2>{{ gettext('login') }}</h2>
+	<form method="POST">
+		<table>
+			<tr>
+				<td><label for="username">{{ gettext('username') }}:</label></td>
+				<td><input type="text" name="username" id="username" value="{{ username }}" /></td>
+			</tr>
+			<tr>
+				<td><label for="password">{{ gettext('password') }}:</label></td>
+				<td><input type="password" name="password" id="password" /></td>
+			</tr>
+			<tr>
+				<td><a href="{{ url_for('auth.register') }}">{{ gettext('register') }}</a></td>
+				<td><input type="submit" value="{{ gettext('login') }}" /></td>
+			</tr>
+		</table>
+	</form>
+{% include 'footer.html' %}

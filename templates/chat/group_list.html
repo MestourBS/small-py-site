@@ -1,0 +1,10 @@
+{% include 'header.html' %}
+	<h2>{{ gettext('group_create') }}</h2>
+    <ul class="list-no-decoration">
+        <li><a href="{{ url_for('chat.group_create') }}">{{ gettext('group_create') }}</a></li>
+        <li>​</li><!-- Zero width space -->
+        {% for group in groups %}
+        <li><a href="{{ url_for('chat.group_view', group_id=group['id']) }}">{{ group['name'] }}</a></li>
+        {% endfor %}
+    </ul>
+{% include 'footer.html' %}

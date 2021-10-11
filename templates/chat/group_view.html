@@ -1,0 +1,147 @@
+{% include 'header.html' %}
+	<h2>{{ group['name'] }}</h2>
+    <div><a href="{{ url_for('chat.group_list') }}">{{ gettext('group_list') }}</a></div>
+    <div><a href="{{ url_for('chat.group_leave', group_id=group['id']) }}">{{ gettext('group_leave') }}</a></div>
+    <div><a href="{{ url_for('chat.group_invite', group_id=group['id']) }}">{{ gettext('group_invite') }}</a></div>
+    <div id="users" class="bound-right text-align-right" style="top: -75px;">
+        {% for user in users %}
+        {{ user['username'] }}<br />
+        {% endfor %}
+    </div>
+    <form method="POST" id="form_message" class="text-align-center"
+        enctype="multipart/form-data" action="{{ url_for('chat.message_create', group_id=group['id']) }}">
+        <textarea name="text"></textarea><br />
+        <input type="file" name="files" multiple><br />
+        <input type="submit" value="{{ gettext('chat_send_message') }}" />
+    </form>
+    <div id="messages"></div>
+    <script>
+    let last_id = 0;
+    let user_id = +'{{ user_id }}';
+
+    function init() {
+        let refresh_interval = 0;
+        let refresh_delay = 500;
+        if (!window.refresh_delay) {
+            Object.defineProperty(window, 'refresh_delay', {
+                get() {
+                    return refresh_delay;
+                },
+                set(value) {
+                    refresh_delay = Math.max(value, 100);
+                    clearInterval(refresh_interval);
+                    refresh_interval = setInterval(() => fetchMessages(), refresh_delay);
+                }
+            });
+        }
+        clearInterval(refresh_interval);
+        refresh_interval = setInterval(() => fetchMessages(), refresh_delay);
+    }
+    function fetchMessages() {
+        let url = Flask.url_for('chat.messages_view', {group_id:"{{ group['id'] }}", last_message:last_id});
+        let regex = /\?.*$/;
+        // It's not automatically encoded, ffs
+        url = url.replace(regex, encodeURIComponent);
+        fetch(url)
+            .then(b => b.json())
+            .then(json => {
+                Object.values(json).forEach(parseMessage);
+            });
+    }
+    /**
+     * @param { {
+     *  id: number,
+     *  username: string,
+     *  user_id: number,
+     *  contents: {
+     *      id: number,
+     *      type: 'text'|'image'|'video'|'sound'|'file',
+     *      content: string,
+     *      mime?: string
+     *  }[]
+     * } } message
+     */
+    function parseMessage(message) {
+        let container = document.createElement('div');
+        let top_div = document.createElement('div');
+        let username = document.createElement('b');
+        let content_div = document.createElement('div');
+
+        username.innerText = message.username;
+
+        top_div.appendChild(username);
+        for (let content of message.contents) {
+            content_div.appendChild(parseContent(content));
+        }
+        container.appendChild(top_div);
+        container.appendChild(content_div);
+        if (message.user_id == user_id) {
+            let del = document.createElement('button');
+            del.innerText = '✖';
+            del.style.marginLeft = '20px';
+            del.addEventListener('click', e => {
+                if (confirm("{{ gettext('chat_confirm_delete_message') }}")) {
+                    let url = Flask.url_for('chat.message_delete', {message_id: message.id});
+                    let regex = /\?.*$/;
+                    // It's not automatically encoded, ffs
+                    url = url.replace(regex, encodeURIComponent);
+                    fetch(url).then(e => {
+                        if (e.ok) {
+                            container.parentElement.removeChild(container);
+                        }
+                    });
+                }
+            });
+            top_div.appendChild(del);
+        }
+        document.getElementById('messages').appendChild(container);
+
+        last_id = Math.max(last_id, message.id);
+    }
+    /**
+     * @param { {
+     *  id: number,
+     *  type: 'text'|'image'|'video'|'sound'|'file',
+     *  content: string,
+     *  mime?: string
+     * } } content
+     */
+    function parseContent(content) {
+        switch(content.type) {
+            case 'text':
+            default:
+                let text = document.createElement('div');
+                text.innerHTML = content.content;
+                return text;
+            case 'image':
+                let image = document.createElement('img');
+                image.src = Flask.url_for('static', {filename: 'uploads/' + content.content});
+                return image;
+            case 'video':
+                let video = document.createElement('video');
+                let vsource = document.createElement('source');
+                vsource.src = Flask.url_for('static', {filename: 'uploads/' + content.content});
+                vsource.type = content.mime;
+                video.appendChild(vsource);
+                return video;
+            case 'sound':
+                let audio = document.createElement('audio');
+                let asource = document.createElement('source');
+                asource.src = Flask.url_for('static', {filename: 'uploads/' + content.content});
+                asource.type = content.mime;
+                audio.appendChild(asource);
+                return audio;
+            case 'file':
+                let link_div = document.createElement('div');
+                let link = document.createElement('a');
+                link.href = Flask.url_for('static', {filename: 'uploads/' + content.content});
+                link.innerText = content.content;
+                link_div.appendChild(link);
+                return link_div;
+        }
+    }
+
+    // lets go
+    init();
+    </script>
+{% include 'footer.html' %}

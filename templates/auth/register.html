@@ -1,0 +1,26 @@
+{% include 'header.html' %}
+	<h2>{{ gettext('register') }}</h2>
+	<form method="POST">
+		<table>
+			<tr>
+				<td colspan="2" class="error">
+					{% for error in errors %}
+					<div>{{ error }}</div>
+					{% endfor %}
+				</td>
+			</tr>
+			<tr>
+				<td><label for="password">{{ gettext('password') }}:</label></td>
+				<td><input type="password" name="password" id="password" /></td>
+			</tr>
+			<tr>
+				<td><label for="confirm_password">{{ gettext('confirm_password') }}:</label></td>
+				<td><input type="password" name="confirm_password" id="confirm_password" /></td>
+			</tr>
+			<tr>
+				<td><a href="{{ url_for('auth.change_password') }}">{{ gettext('change_password') }}</a></td>
+				<td><input type="submit" value="{{ gettext('register') }}" /></td>
+			</tr>
+		</table>
+	</form>
+{% include 'footer.html' %}

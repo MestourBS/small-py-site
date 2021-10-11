@@ -1,0 +1,15 @@
+{% include 'header.html' %}
+	<h2>{{ gettext('group_invite') }}</h2>
+    <div><a href="{{ url_for('chat.group_view', group_id=group_id) }}">{{ gettext('cancel') }}</a></div>
+    <form method="POST">
+        <ul class="list-no-decoration">
+            {% for user in users %}
+            <li>
+                <input type="checkbox" name="users" id="user_{{ user['id'] }}" value="{{ user['id'] }}" />
+                <label for="user_{{ user['id'] }}">{{ user['username'] }}</label>
+            </li>
+            {% endfor %}
+            <li><input type="submit" value="{{ gettext('group_invite') }}" /></li>
+        </ul>
+    </form>
+{% include 'footer.html' %}
