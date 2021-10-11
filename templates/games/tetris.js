@@ -753,7 +753,7 @@
         }
 
         // Neat popup for points gained
-        let gain = Math.round(rows.length ** 1.5) * 100;
+        let gain = Math.round(rows.length ** 1.75) * 100;
 
         make_popup(gain, CANVAS.offsetTop + Math.max(...rows) * BLOCK_SIZE[1], CANVAS.offsetLeft + (BOARD_SIZE[0] / 2 - 1) * BLOCK_SIZE[0]);
 
