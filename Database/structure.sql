@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : 127.0.0.1
--- Généré le : mer. 06 oct. 2021 à 08:54
+-- Généré le : lun. 11 oct. 2021 à 14:29
 -- Version du serveur : 10.4.21-MariaDB
 -- Version de PHP : 7.4.24
 
@@ -37,12 +37,9 @@ CREATE TABLE IF NOT EXISTS `chat_groups` (
 
 CREATE TABLE IF NOT EXISTS `chat_messages` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `content` varchar(255) NOT NULL,
-  `fk_type` int(11) NOT NULL,
   `fk_user` int(11) DEFAULT NULL,
   `fk_chat_group` int(11) NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `fk_type` (`fk_type`),
   KEY `fk_user` (`fk_user`),
   KEY `fk_chat_group` (`fk_chat_group`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -50,10 +47,26 @@ CREATE TABLE IF NOT EXISTS `chat_messages` (
 -- --------------------------------------------------------
 
 --
--- Structure de la table `chat_message_types`
+-- Structure de la table `chat_message_contents`
 --
 
-CREATE TABLE IF NOT EXISTS `chat_message_types` (
+CREATE TABLE IF NOT EXISTS `chat_message_contents` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `fk_message` int(11) NOT NULL,
+  `fk_type` int(11) NOT NULL,
+  `content` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_message` (`fk_message`),
+  KEY `fk_type` (`fk_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `chat_message_content_types`
+--
+
+CREATE TABLE IF NOT EXISTS `chat_message_content_types` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `type` varchar(20) NOT NULL,
   PRIMARY KEY (`id`),
@@ -61,10 +74,11 @@ CREATE TABLE IF NOT EXISTS `chat_message_types` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
--- Déchargement des données de la table `chat_message_types`
+-- Déchargement des données de la table `chat_message_content_types`
 --
 
-INSERT INTO `chat_message_types` (`id`, `type`) VALUES
+INSERT INTO `chat_message_content_types` (`id`, `type`) VALUES
+(5, 'file'),
 (2, 'image'),
 (4, 'sound'),
 (1, 'text'),
@@ -107,9 +121,15 @@ CREATE TABLE IF NOT EXISTS `user_chat_group` (
 -- Contraintes pour la table `chat_messages`
 --
 ALTER TABLE `chat_messages`
-  ADD CONSTRAINT `chat_messages_ibfk_1` FOREIGN KEY (`fk_type`) REFERENCES `chat_message_types` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  ADD CONSTRAINT `chat_messages_ibfk_2` FOREIGN KEY (`fk_user`) REFERENCES `users` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  ADD CONSTRAINT `chat_messages_ibfk_3` FOREIGN KEY (`fk_chat_group`) REFERENCES `chat_groups` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION;
+  ADD CONSTRAINT `chat_messages_ibfk_1` FOREIGN KEY (`fk_chat_group`) REFERENCES `chat_groups` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  ADD CONSTRAINT `chat_messages_ibfk_2` FOREIGN KEY (`fk_user`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE NO ACTION;
+
+--
+-- Contraintes pour la table `chat_message_contents`
+--
+ALTER TABLE `chat_message_contents`
+  ADD CONSTRAINT `chat_message_contents_ibfk_1` FOREIGN KEY (`fk_message`) REFERENCES `chat_messages` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  ADD CONSTRAINT `chat_message_contents_ibfk_2` FOREIGN KEY (`fk_type`) REFERENCES `chat_message_content_types` (`id`) ON DELETE CASCADE ON UPDATE NO ACTION;
 
 --
 -- Contraintes pour la table `user_chat_group`

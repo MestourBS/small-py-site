@@ -224,11 +224,17 @@
      */
     const ACTIONS = new Proxy(Object.freeze({
         'move_shape_right': {
-            func: (force = false) => {current_shape.move(DIRECTION.right, force);},
+            func: (force = false) => {
+                if (!current_shape || game_state != 'playing') return;
+                current_shape.move(DIRECTION.right, force);
+            },
             name: "{{ gettext('game_tetris_action_move_shape_right') }}",
         },
         'move_shape_left': {
-            func: (force = false) => {current_shape.move(DIRECTION.left, force);},
+            func: (force = false) => {
+                if (!current_shape || game_state != 'playing') return;
+                current_shape.move(DIRECTION.left, force);
+            },
             name: "{{ gettext('game_tetris_action_move_shape_left') }}",
         },
         'move_shape_down': {
@@ -616,13 +622,19 @@
         document.getElementById('select_options').addEventListener('click', e => {
             destroy_options();
             if (options_content != 'options') {
-                create_options();
+                options_create();
+                options_content = 'options';
+            } else {
+                options_content = 'empty';
             }
         });
         document.getElementById('select_keybinds').addEventListener('click', e => {
             destroy_options();
             if (options_content != 'keybinds') {
-                create_keybinds();
+                keybinds_create();
+                options_content = 'keybinds';
+            } else {
+                options_content = 'empty';
             }
         });
 
@@ -780,6 +792,7 @@
         if (game_state in KEYBINDS) {
             let key = e.key.toLowerCase();
             let actions = KEYBINDS[game_state][key];
+            if (!actions?.length) return;
 
             for (let action of actions) {
                 if (!(action in ACTIONS)) return;
@@ -793,7 +806,7 @@
     /**
      * Creates the option fields
      */
-    function create_options() {
+    function options_create() {
         function make_theme() {
             let theme_row = document.createElement('tr');
             let theme_label_cell = document.createElement('td');
@@ -1107,9 +1120,184 @@
         }
     }
     /**
+     * Updates an option's effect on the game
+     *
+     * @param {string} option_name
+     * @param {any} value
+     * @param {Event} e
+     */
+    function option_update(option_name, value, e) {
+        switch(option_name) {
+            // Selects
+            case 'theme':
+                if (value in THEMES) theme = value;
+                else {
+                    let i = Object.keys(THEMES).indexOf(theme);
+                    /** @type {HTMLSelectElement} */
+                    let target = e.target;
+                    target.selectedIndex = i;
+                }
+                return;
+            case 'shape':
+                if (value in BLOCK_SHAPES) block_shape = value;
+                else {
+                    let i = Object.keys(BLOCK_SHAPES).indexOf(block_shape);
+                    /** @type {HTMLSelectElement} */
+                    let target = e.target;
+                    target.selectedIndex = i;
+                }
+                return;
+            case 'unit':
+                if (value in UNITS) unit = value;
+                else {
+                    let i = Object.keys(UNITS).indexOf(unit);
+                    /** @type {HTMLSelectElement} */
+                    let target = e.target;
+                    target.selectedIndex = i;
+                }
+                return;
+            // Numbers
+            case 'block_width':
+                if (value >= 1) {
+                    BLOCK_SIZE[0] = +value;
+                    reset();
+                } else {
+                    /** @type {HTMLInputElement} */
+                    let target = e.target;
+                    target.value = BLOCK_SIZE[0];
+                }
+                return;
+            case 'block_height':
+                if (value >= 1) {
+                    BLOCK_SIZE[1] = +value;
+                    reset();
+                } else {
+                    /** @type {HTMLInputElement} */
+                    let target = e.target;
+                    target.value = BLOCK_SIZE[1];
+                }
+                return;
+            case 'board_width':
+                if (value >= 1) {
+                    BOARD_SIZE[0] = +value;
+                    reset();
+                } else {
+                    /** @type {HTMLInputElement} */
+                    let target = e.target;
+                    target.value = BOARD_SIZE[0];
+                }
+                return;
+            case 'board_height':
+                if (value >= 1) {
+                    BOARD_SIZE[1] = +value;
+                    reset();
+                } else {
+                    /** @type {HTMLInputElement} */
+                    let target = e.target;
+                    target.value = BOARD_SIZE[1];
+                }
+                return;
+            // Ranges
+            case 'size_min':
+                if (value >= 1 && value <= SHAPE_SIZE[1]) SHAPE_SIZE[0] = +value;
+                else if (value > SHAPE_SIZE[1]) SHAPE_SIZE[0] = SHAPE_SIZE[1];
+                {/** @type {HTMLInputElement} */
+                let target = e.target;
+                target.value = SHAPE_SIZE[0];}
+                return;
+            case 'size_max':
+                if (value >= 1 && value >= SHAPE_SIZE[0]) SHAPE_SIZE[1] = +value;
+                else if (value < SHAPE_SIZE[0]) SHAPE_SIZE[1] = SHAPE_SIZE[0];
+                {/** @type {HTMLInputElement} */
+                let target = e.target;
+                target.value = SHAPE_SIZE[1];}
+                return;
+            // Booleans
+            case 'trim_score':
+                trim_score = !!value;
+                return;
+            case 'rainbow_shapes':
+                rainbow_shapes = !!value;
+                return;
+            case 'rainbow_blocks':
+                rainbow_blocks = !!value;
+                return;
+            case 'painbow_mode':
+                painbow_mode = !!value;
+                return;
+            // Default
+            default:
+                console.error(`Unknown option: "${option_name}"`);
+                return;
+        }
+    }
+    /**
      * Creates the keybinds fields
      */
-    function create_keybinds() {
+    function keybinds_create() {
+        /**
+         * @param {'playing'|'pause'|'gameover'} name
+         * @param { {[key: string]: string[]} } keygroup
+         */
+        function make_keygroup(name, keygroup) {
+            let group = document.createElement('tbody');
+            let group_head_row = document.createElement('tr');
+            let group_head_cell = document.createElement('td');
+            let group_head = document.createElement('b');
+
+            group.appendChild(group_head_row);
+            group_head_row.appendChild(group_head_cell);
+            group_head_cell.appendChild(group_head);
+            group_head.innerText = {
+                'playing': "{{ gettext('game_tetris_keybinds_group_playing') }}",
+                'pause': "{{ gettext('game_tetris_keybinds_group_pause') }}",
+                'gameover': "{{ gettext('game_tetris_keybinds_group_gameover') }}",
+            }[name];
+
+            for (let [action, keys] of Object.entries(keygroup)) {
+                /**
+                 * @param {string} key
+                 * @param {number} index
+                 */
+                function make_cell(key) {
+                    let cell = document.createElement('td');
+                    let input = document.createElement('input');
+
+                    input.type = 'text';
+                    input.value = key;
+                    input.title = "{{ gettext('game_tetris_keybind_leave_blank_tip') }}";
+
+                    input.addEventListener('change', e => {
+                        keybind_update(name, action, input.value, key);
+
+                        key = input.value;
+                    });
+
+                    cell.appendChild(input);
+                    return cell;
+                }
+
+                let row = document.createElement('tr');
+                let action_cell = document.createElement('td');
+                let add_button = document.createElement('button');
+
+                row.appendChild(action_cell);
+                keys.map(make_cell).forEach(e => row.appendChild(e));
+                row.appendChild(add_button);
+
+                action_cell.innerText = ACTIONS[action].name;
+                add_button.innerText = '➕';
+                add_button.addEventListener('click', () => {
+                    let cell = make_cell('', row.children.length - 2);
+                    row.insertBefore(cell, add_button);
+                });
+
+                group.appendChild(row);
+            }
+
+            OPTIONS.appendChild(group);
+        }
+
         /**
          * @type { {[key: string]: string[]} }
          */
@@ -1147,87 +1335,41 @@
             }
         }
 
-        /**
-         * @param {'playing'|'pause'|'gameover'} name
-         * @param { {[key: string]: string[]} } keygroup
-         */
-        function make_keygroup(name, keygroup) {
-            let group = document.createElement('tbody');
-            let group_head_row = document.createElement('tr');
-            let group_head_cell = document.createElement('td');
-            let group_head = document.createElement('b');
+        Object.entries(complete).forEach(([name, group]) => make_keygroup(name, group));
+    }
+    /**
+     * Updates a keybind
+     *
+     * @param {'playing'|'pause'|'gameover'} group_id
+     * @param {string} action
+     * @param {string} key If empty, removes the previous key
+     * @param {string} previous
+     */
+    function keybind_update(group_id, action, key, previous) {
+        if (!(group_id in KEYBINDS)) return;
 
-            group.appendChild(group_head_row);
-            group_head_row.appendChild(group_head_cell);
-            group_head_cell.appendChild(group_head);
-            group_head.innerText = {
-                'playing': "{{ gettext('game_tetris_keybinds_group_playing') }}",
-                'pause': "{{ gettext('game_tetris_keybinds_group_pause') }}",
-                'gameover': "{{ gettext('game_tetris_keybinds_group_gameover') }}",
-            }[name];
+        let group = KEYBINDS[group_id];
+
+        if (previous != '') {
+            if (!(previous in group)) return;
+
+            let actions = group[previous];
+
+            if (!actions.includes(action)) return;
+
+            let i = actions.indexOf(action);
+            actions.splice(i, 1);
+        }
+        if (key != '') {
+            if (!(key in group)) group[key] = [];
+            group[key].push(action);
         }
     }
-    //todo
-    function destroy_options() {}
     /**
-     * Updates an option's effect on the game
-     *
-     * @param {string} option_name
-     * @param {any} value
-     * @param {Event} e
+     * Empties the options
      */
-    function option_update(option_name, value, e) {
-        switch(option_name) {
-            // Selects
-            case 'theme':
-                if (value in THEMES) theme = value;
-                return;
-            case 'shape':
-                if (value in BLOCK_SHAPES) block_shape = value;
-                return;
-            case 'unit':
-                if (value in UNITS) unit = value;
-                return;
-            // Numbers
-            case 'block_width':
-                if (value >= 1) BLOCK_SIZE[0] = +value;
-                return;
-            case 'block_height':
-                if (value >= 1) BLOCK_SIZE[1] = +value;
-                return;
-            case 'board_width':
-                if (value >= 1) BOARD_SIZE[0] = +value;
-                return;
-            case 'board_height':
-                if (value >= 1) BOARD_SIZE[1] = +value;
-                return;
-            // Rangers
-            case 'size_min':
-                if (value >= 1 && value <= SHAPE_SIZE[1]) SHAPE_SIZE[0] = +value;
-                else if (value > SHAPE_SIZE[1]) SHAPE_SIZE[0] = SHAPE_SIZE[1];
-                return;
-            case 'size_max':
-                if (value >= 1 && value >= SHAPE_SIZE[0]) SHAPE_SIZE[1] = +value;
-                else if (value < SHAPE_SIZE[0]) SHAPE_SIZE[1] = SHAPE_SIZE[0];
-                return;
-            // Booleans
-            case 'trim_score':
-                trim_score = !!value;
-                return;
-            case 'rainbow_shapes':
-                rainbow_shapes = !!value;
-                return;
-            case 'rainbow_blocks':
-                rainbow_blocks = !!value;
-                return;
-            case 'painbow_mode':
-                painbow_mode = !!value;
-                return;
-            // Default
-            default:
-                console.error(`Unknown option: "${option_name}"`);
-                return;
-        }
+    function destroy_options() {
+        OPTIONS.textContent = '';
     }
 
     class Block {

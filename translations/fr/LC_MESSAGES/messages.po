@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-10-11 11:37+0200\n"
+"POT-Creation-Date: 2021-10-11 15:46+0200\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -82,7 +82,7 @@ msgstr "Se déconnecter"
 msgid "games_tetris"
 msgstr "Tetris"
 
-#: templates/home.html:5
+#: templates/home.html:6
 msgid "home_view_chat"
 msgstr "Aller aux discussions"
 
@@ -146,15 +146,144 @@ msgstr "Êtes-vous sûr de vouloir supprimer le message?"
 msgid "error_404"
 msgstr "Erreur 404"
 
-#: templates/games/tetris.js:47
+#: templates/games/tetris.html:6
+msgid "tetris_game_options"
+msgstr "Options"
+
+#: templates/games/tetris.html:7
+msgid "tetris_game_keybinds"
+msgstr "Raccourcis clavier"
+
+#: templates/games/tetris.js:53
 msgid "game_tetris_theme_name_dark"
 msgstr "Mode sombre"
 
-#: templates/games/tetris.js:68
+#: templates/games/tetris.js:74
 msgid "game_tetris_theme_name_light"
 msgstr "Mode lumineux"
 
-#: templates/games/tetris.js:205
+#: templates/games/tetris.js:117
+msgid "game_tetris_shape_square"
+msgstr "Carré"
+
+#: templates/games/tetris.js:134
+msgid "game_tetris_unit_none"
+msgstr "Raccourci scientific"
+
+#: templates/games/tetris.js:138
+msgid "game_tetris_unit_si"
+msgstr "Raccourci SI"
+
+#: templates/games/tetris.js:144
+msgid "game_tetris_unit_numeral"
+msgstr "Raccourci numérique"
+
+#: templates/games/tetris.js:231
+msgid "game_tetris_action_move_shape_right"
+msgstr "Déplacer la forme à droite"
+
+#: templates/games/tetris.js:238
+msgid "game_tetris_action_move_shape_left"
+msgstr "Déplacer la forme à gauche"
+
+#: templates/games/tetris.js:242
+msgid "game_tetris_action_move_shape_down"
+msgstr "Déplacer la forme en bas"
+
+#: templates/games/tetris.js:246
+msgid "game_tetris_action_game_state_pause"
+msgstr "Mettre sur pause"
+
+#: templates/games/tetris.js:250
+msgid "game_tetris_action_game_state_playing"
+msgstr "Continuer"
+
+#: templates/games/tetris.js:254
+msgid "game_tetris_action_rotate_shape_clockwise"
+msgstr "Tourner la forme dans le sens des aiguilles"
+
+#: templates/games/tetris.js:258
+msgid "game_tetris_action_rotate_shape_counter_clockwise"
+msgstr "Tourner la forme dans le sens contraire des aiguilles"
+
+#: templates/games/tetris.js:261
 msgid "game_tetris_reset_confirm"
 msgstr "Remettre le tetris à zéro?"
+
+#: templates/games/tetris.js:262
+msgid "game_tetris_action_reset_game"
+msgstr "Remettre à zéro"
+
+#: templates/games/tetris.js:822
+msgid "game_tetris_option_theme"
+msgstr "Jeu de couleur"
+
+#: templates/games/tetris.js:848
+msgid "game_tetris_option_block_width"
+msgstr "Largeur d'un bloc"
+
+#: templates/games/tetris.js:854 templates/games/tetris.js:877
+#: templates/games/tetris.js:994 templates/games/tetris.js:1017
+msgid "game_tetris_warn_option_reset"
+msgstr "Changer cette option va remettre votre jeu à zéro. Continuer?"
+
+#: templates/games/tetris.js:871
+msgid "game_tetris_option_block_height"
+msgstr "Hauteur d'un bloc"
+
+#: templates/games/tetris.js:894
+msgid "game_tetris_option_shape"
+msgstr "Forme d'un bloc"
+
+#: templates/games/tetris.js:920
+msgid "game_tetris_option_unit"
+msgstr "Raccourci de score"
+
+#: templates/games/tetris.js:946
+msgid "game_tetris_option_block_size_min"
+msgstr "Mimimum de blocs dans une forme"
+
+#: templates/games/tetris.js:967
+msgid "game_tetris_option_block_size_max"
+msgstr "Maximum de blocs dans une forme"
+
+#: templates/games/tetris.js:988
+msgid "game_tetris_option_board_width"
+msgstr "Largeur du jeu"
+
+#: templates/games/tetris.js:1011
+msgid "game_tetris_option_board_height"
+msgstr "Hauteur du jeu"
+
+#: templates/games/tetris.js:1034
+msgid "game_tetris_option_trim_score"
+msgstr "Enlever les zéros qui suivent le score"
+
+#: templates/games/tetris.js:1056
+msgid "game_tetris_option_rainbow_shapes"
+msgstr "Couleurs de formes aléatoires"
+
+#: templates/games/tetris.js:1078
+msgid "game_tetris_option_rainbow_blocks"
+msgstr "Couleurs de blocs aléatoires"
+
+#: templates/games/tetris.js:1100
+msgid "game_tetris_option_painbow_mode"
+msgstr "Couleurs changent à chaque rafraichissement"
+
+#: templates/games/tetris.js:1252
+msgid "game_tetris_keybinds_group_playing"
+msgstr "En jeu"
+
+#: templates/games/tetris.js:1253
+msgid "game_tetris_keybinds_group_pause"
+msgstr "Sur pause"
+
+#: templates/games/tetris.js:1254
+msgid "game_tetris_keybinds_group_gameover"
+msgstr "Après une défaite"
+
+#: templates/games/tetris.js:1268
+msgid "game_tetris_keybind_leave_blank_tip"
+msgstr "Laisser vide pour enlever le raccourci"
 
