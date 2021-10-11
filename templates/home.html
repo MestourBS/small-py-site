@@ -1,6 +1,6 @@
 {% include 'header.html' %}
 <ul class="list-no-decoration">
-    <li><a href="{{ url_for('games.tetris_game') }}">{{ gettext('games_tetris') }}</a></li>
+    <li><a href="{{ url_for('games.blockus_game') }}">{{ gettext('games_blockus') }}</a></li>
     {% if 'user_id' in session %}
     <li>​</li><!-- Zero width space -->
     <li><a href="{{ url_for('chat.group_list') }}">{{ gettext('home_view_chat') }}</a></li>

@@ -4,7 +4,7 @@
      *
      * @type {HTMLCanvasElement}
      */
-    const CANVAS = document.getElementById('tetris_game');
+    const CANVAS = document.getElementById('blockus_game');
     /**
      * For drawing on the canvas
      *
@@ -22,13 +22,13 @@
      *
      * @type {HTMLSpanElement}
      */
-    const SCORE = document.getElementById('tetris_score');
+    const SCORE = document.getElementById('blockus_score');
     /**
      * Available themes
      *
      * @type { {[key: string]: {
      *  name: string,
-     *  tetris: {
+     *  blockus: {
      *      playing: {
         *      background: string,
         *      color: string,
@@ -50,8 +50,8 @@
      */
     const THEMES = {
         'dark': {
-            name: "{{ gettext('game_tetris_theme_name_dark') }}",
-            tetris: {
+            name: "{{ gettext('game_blockus_theme_name_dark') }}",
+            blockus: {
                 playing: {
                     background: '#000',
                     color: '#fff',
@@ -71,8 +71,8 @@
             },
         },
         'light': {
-            name: "{{ gettext('game_tetris_theme_name_light') }}",
-            tetris: {
+            name: "{{ gettext('game_blockus_theme_name_light') }}",
+            blockus: {
                 playing: {
                     background: '#fff',
                     color: '#000',
@@ -114,7 +114,7 @@
      */
     const BLOCK_SHAPES = {
         'square': {
-            name: "{{ gettext('game_tetris_shape_square') }}",
+            name: "{{ gettext('game_blockus_shape_square') }}",
             paths: [
                 [[0,0], [0,1], [1,1], [1,0]],
             ],
@@ -131,17 +131,17 @@
     const UNITS = {
         'none': {
             units: [],
-            name: "{{ gettext('game_tetris_unit_none') }}",
+            name: "{{ gettext('game_blockus_unit_none') }}",
         },
         'SI': {
             units: ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'],
-            name: "{{ gettext('game_tetris_unit_si') }}",
+            name: "{{ gettext('game_blockus_unit_si') }}",
         },
         'numeral': {
             units: ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'S', 'Se', 'O', 'N',
                 'D', 'UD', 'DD', 'TD', 'QaD', 'QiD', 'SD', 'SeD', 'OD', 'ND',
                 'V', 'UV', 'DV', 'TV', 'QaV', 'QiV', 'SV', 'SeV', 'OV', 'NV'],
-                name: "{{ gettext('game_tetris_unit_numeral') }}",
+                name: "{{ gettext('game_blockus_unit_numeral') }}",
         },
     };
     /**
@@ -228,38 +228,38 @@
                 if (!current_shape || game_state != 'playing') return;
                 current_shape.move(DIRECTION.right, force);
             },
-            name: "{{ gettext('game_tetris_action_move_shape_right') }}",
+            name: "{{ gettext('game_blockus_action_move_shape_right') }}",
         },
         'move_shape_left': {
             func: (force = false) => {
                 if (!current_shape || game_state != 'playing') return;
                 current_shape.move(DIRECTION.left, force);
             },
-            name: "{{ gettext('game_tetris_action_move_shape_left') }}",
+            name: "{{ gettext('game_blockus_action_move_shape_left') }}",
         },
         'move_shape_down': {
             func: () => {descend(true);},
-            name: "{{ gettext('game_tetris_action_move_shape_down') }}",
+            name: "{{ gettext('game_blockus_action_move_shape_down') }}",
         },
         'game_state_pause': {
             func: () => {game_state = 'pause';},
-            name: "{{ gettext('game_tetris_action_game_state_pause') }}",
+            name: "{{ gettext('game_blockus_action_game_state_pause') }}",
         },
         'game_state_playing': {
             func: () => {game_state = 'playing';},
-            name: "{{ gettext('game_tetris_action_game_state_playing') }}",
+            name: "{{ gettext('game_blockus_action_game_state_playing') }}",
         },
         'rotate_shape_clockwise': {
             func: (force = false) => {current_shape.rotate(true, force);},
-            name: "{{ gettext('game_tetris_action_rotate_shape_clockwise') }}",
+            name: "{{ gettext('game_blockus_action_rotate_shape_clockwise') }}",
         },
         'rotate_shape_counter_clockwise': {
             func: (force = false) => {current_shape.rotate(false, force);},
-            name: "{{ gettext('game_tetris_action_rotate_shape_counter_clockwise') }}",
+            name: "{{ gettext('game_blockus_action_rotate_shape_counter_clockwise') }}",
         },
         'reset_game': {
-            func: () => {if (confirm("{{ gettext('game_tetris_reset_confirm') }}")) {reset();}},
-            name: "{{ gettext('game_tetris_action_reset_game') }}",
+            func: () => {if (confirm("{{ gettext('game_blockus_reset_confirm') }}")) {reset();}},
+            name: "{{ gettext('game_blockus_action_reset_game') }}",
         },
     }), {
         get: (obj, prop) => {
@@ -592,7 +592,7 @@
     function dom_styles_apply() {
         let chosen = THEMES[theme];
 
-        CANVAS.style.backgroundColor = chosen.tetris[game_state].background;
+        CANVAS.style.backgroundColor = chosen.blockus[game_state].background;
         SCORE.style.backgroundColor = chosen.score.background;
         SCORE.style.color = chosen.score.color;
         SCORE.style.textAlign = 'right';
@@ -819,7 +819,7 @@
             theme_label_cell.appendChild(theme_label);
             theme_select_cell.appendChild(theme_select);
 
-            theme_label.innerText = "{{ gettext('game_tetris_option_theme') }}";
+            theme_label.innerText = "{{ gettext('game_blockus_option_theme') }}";
 
             for (let id in THEMES) {
                 let option = document.createElement('option');
@@ -845,13 +845,13 @@
             width_label_cell.appendChild(width_label);
             width_cell.appendChild(width);
 
-            width_label.innerText = "{{ gettext('game_tetris_option_block_width') }}";
+            width_label.innerText = "{{ gettext('game_blockus_option_block_width') }}";
             width.type = 'number';
             width.min = 1;
             width.value = BLOCK_SIZE[0];
 
             width.addEventListener('change', e => {
-                if (confirm("{{ gettext('game_tetris_warn_option_reset') }}")) option_update('block_width', width.value, e);
+                if (confirm("{{ gettext('game_blockus_warn_option_reset') }}")) option_update('block_width', width.value, e);
             });
 
             return width_row;
@@ -868,13 +868,13 @@
             height_label_cell.appendChild(height_label);
             height_cell.appendChild(height);
 
-            height_label.innerText = "{{ gettext('game_tetris_option_block_height') }}";
+            height_label.innerText = "{{ gettext('game_blockus_option_block_height') }}";
             height.type = 'number';
             height.min = 1;
             height.value = BLOCK_SIZE[1];
 
             height.addEventListener('change', e => {
-                if (confirm("{{ gettext('game_tetris_warn_option_reset') }}")) option_update('block_height', height.value, e);
+                if (confirm("{{ gettext('game_blockus_warn_option_reset') }}")) option_update('block_height', height.value, e);
             });
 
             return height_row;
@@ -891,7 +891,7 @@
             shape_label_cell.appendChild(shape_label);
             shape_select_cell.appendChild(shape_select);
 
-            shape_label.innerText = "{{ gettext('game_tetris_option_shape') }}";
+            shape_label.innerText = "{{ gettext('game_blockus_option_shape') }}";
 
             for (let id in BLOCK_SHAPES) {
                 let option = document.createElement('option');
@@ -917,7 +917,7 @@
             unit_label_cell.appendChild(unit_label);
             unit_select_cell.appendChild(unit_select);
 
-            unit_label.innerText = "{{ gettext('game_tetris_option_unit') }}";
+            unit_label.innerText = "{{ gettext('game_blockus_option_unit') }}";
 
             for (let id in UNITS) {
                 let option = document.createElement('option');
@@ -943,7 +943,7 @@
             size_min_label_cell.appendChild(size_min_label);
             size_min_cell.appendChild(size_min);
 
-            size_min_label.innerText = "{{ gettext('game_tetris_option_block_size_min') }}";
+            size_min_label.innerText = "{{ gettext('game_blockus_option_block_size_min') }}";
             size_min.type = 'number';
             size_min.min = 1;
             size_min.value = SHAPE_SIZE[0];
@@ -964,7 +964,7 @@
             size_max_label_cell.appendChild(size_max_label);
             size_max_cell.appendChild(size_max);
 
-            size_max_label.innerText = "{{ gettext('game_tetris_option_block_size_max') }}";
+            size_max_label.innerText = "{{ gettext('game_blockus_option_block_size_max') }}";
             size_max.type = 'number';
             size_max.min = 1;
             size_max.value = SHAPE_SIZE[1];
@@ -985,13 +985,13 @@
             width_label_cell.appendChild(width_label);
             width_cell.appendChild(width);
 
-            width_label.innerText = "{{ gettext('game_tetris_option_board_width') }}";
+            width_label.innerText = "{{ gettext('game_blockus_option_board_width') }}";
             width.type = 'number';
             width.min = 1;
             width.value = BOARD_SIZE[0];
 
             width.addEventListener('change', e => {
-                if (confirm("{{ gettext('game_tetris_warn_option_reset') }}")) option_update('board_width', width.value, e);
+                if (confirm("{{ gettext('game_blockus_warn_option_reset') }}")) option_update('board_width', width.value, e);
             });
 
             return width_row;
@@ -1008,13 +1008,13 @@
             height_label_cell.appendChild(height_label);
             height_cell.appendChild(height);
 
-            height_label.innerText = "{{ gettext('game_tetris_option_board_height') }}";
+            height_label.innerText = "{{ gettext('game_blockus_option_board_height') }}";
             height.type = 'number';
             height.min = 1;
             height.value = BOARD_SIZE[1];
 
             height.addEventListener('change', e => {
-                if (confirm("{{ gettext('game_tetris_warn_option_reset') }}")) option_update('board_height', height.value, e);
+                if (confirm("{{ gettext('game_blockus_warn_option_reset') }}")) option_update('board_height', height.value, e);
             });
 
             return height_row;
@@ -1031,7 +1031,7 @@
             trim_label_cell.appendChild(trim_label);
             trim_cell.appendChild(trim);
 
-            trim_label.innerText = "{{ gettext('game_tetris_option_trim_score') }}";
+            trim_label.innerText = "{{ gettext('game_blockus_option_trim_score') }}";
             trim.type = 'checkbox';
             trim.checked = trim_score;
 
@@ -1053,7 +1053,7 @@
             rainbow_label_cell.appendChild(rainbow_label);
             rainbow_cell.appendChild(rainbow);
 
-            rainbow_label.innerText = "{{ gettext('game_tetris_option_rainbow_shapes') }}";
+            rainbow_label.innerText = "{{ gettext('game_blockus_option_rainbow_shapes') }}";
             rainbow.type = 'checkbox';
             rainbow.checked = rainbow_shapes;
 
@@ -1075,7 +1075,7 @@
             rainbow_label_cell.appendChild(rainbow_label);
             rainbow_cell.appendChild(rainbow);
 
-            rainbow_label.innerText = "{{ gettext('game_tetris_option_rainbow_blocks') }}";
+            rainbow_label.innerText = "{{ gettext('game_blockus_option_rainbow_blocks') }}";
             rainbow.type = 'checkbox';
             rainbow.checked = rainbow_blocks;
 
@@ -1097,7 +1097,7 @@
             painbow_label_cell.appendChild(painbow_label);
             painbow_cell.appendChild(painbow);
 
-            painbow_label.innerText = "{{ gettext('game_tetris_option_painbow_mode') }}";
+            painbow_label.innerText = "{{ gettext('game_blockus_option_painbow_mode') }}";
             painbow.type = 'checkbox';
             painbow.checked = painbow_mode;
 
@@ -1249,9 +1249,9 @@
             group_head_row.appendChild(group_head_cell);
             group_head_cell.appendChild(group_head);
             group_head.innerText = {
-                'playing': "{{ gettext('game_tetris_keybinds_group_playing') }}",
-                'pause': "{{ gettext('game_tetris_keybinds_group_pause') }}",
-                'gameover': "{{ gettext('game_tetris_keybinds_group_gameover') }}",
+                'playing': "{{ gettext('game_blockus_keybinds_group_playing') }}",
+                'pause': "{{ gettext('game_blockus_keybinds_group_pause') }}",
+                'gameover': "{{ gettext('game_blockus_keybinds_group_gameover') }}",
             }[name];
 
             for (let [action, keys] of Object.entries(keygroup)) {
@@ -1265,7 +1265,7 @@
 
                     input.type = 'text';
                     input.value = key;
-                    input.title = "{{ gettext('game_tetris_keybind_leave_blank_tip') }}";
+                    input.title = "{{ gettext('game_blockus_keybind_leave_blank_tip') }}";
 
                     input.addEventListener('change', e => {
                         keybind_update(name, action, input.value, key);

@@ -26,11 +26,11 @@ html, body {
     min-width: 500px;
     margin: auto;
 }
-#tetris_score {
+#blockus_score {
     font-family: 'Courier New', Courier, monospace;
     display: block;
 }
-#tetris_score, #tetris_game {
+#blockus_score, #blockus_game {
     border: 1px solid black;
 }
 
