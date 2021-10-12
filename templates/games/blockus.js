@@ -601,6 +601,9 @@
      * Launches the game
      */
     function init() {
+        options_load();
+        keybinds_load();
+
         canvas_reset();
         dom_styles_apply();
         reset_shape();
@@ -625,6 +628,7 @@
                 options_create();
                 options_content = 'options';
             } else {
+                options_save();
                 options_content = 'empty';
             }
         });
@@ -634,6 +638,7 @@
                 keybinds_create();
                 options_content = 'keybinds';
             } else {
+                keybinds_save();
                 options_content = 'empty';
             }
         });
@@ -996,7 +1001,7 @@
 
             return width_row;
         }
-        function make_board_width() {
+        function make_board_height() {
             let height_row = document.createElement('tr');
             let height_label_cell = document.createElement('td');
             let height_cell = document.createElement('td');
@@ -1110,7 +1115,7 @@
 
         let rows = [make_theme, make_block_width, make_block_height,
             make_block_shape, make_units, make_shape_size_min,
-            make_shape_size_max, make_board_width, make_board_width,
+            make_shape_size_max, make_board_width, make_board_height,
             make_trim_score, make_rainbow_shapes, make_rainbow_blocks,
             make_painbow_mode
         ];
@@ -1230,6 +1235,82 @@
                 console.error(`Unknown option: "${option_name}"`);
                 return;
         }
+    }
+    /**
+     * Saves the options to the localstorage
+     */
+    function options_save() {
+        let options = {
+            // Selects
+            theme, block_shape, unit,
+            // Numbers
+            block_size: BLOCK_SIZE, board_size: BOARD_SIZE,
+            // Ranges
+            shape_size: SHAPE_SIZE,
+            // Booleans
+            trim_score, rainbow_shapes, rainbow_blocks, //painbow_mode,
+        };
+
+        let json = JSON.stringify(options);
+        localStorage.setItem('blockus_options', json);
+    }
+    /**
+     * Retrives the options from the localstorage
+     */
+    function options_load() {
+        let json = localStorage.getItem('blockus_options');
+
+        if (!json) return;
+
+        let options;
+        try {
+            options = JSON.parse(json);
+        } catch {
+            localStorage.removeItem('blockus_options');
+            return;
+        }
+
+        // Selects
+        let _theme = options.theme ?? theme;
+        if (_theme in THEMES) theme = _theme;
+
+        let _block_shape = options.block_shape ?? block_shape;
+        if (_block_shape in THEMES) block_shape = _block_shape;
+
+        let _unit = options.unit ?? unit;
+        if (_unit in UNITS) unit = _unit;
+
+        // Numbers
+        let _block_size = options.block_size ?? BLOCK_SIZE;
+        for (let i = 0; i < 2; i++) {
+            if (isNaN(_block_size[i])) continue;
+            BLOCK_SIZE[i] = +(_block_size[i] ?? BLOCK_SIZE[i]);
+        }
+
+        let _board_size = options.board_size ?? BOARD_SIZE;
+        for (let i = 0; i < 2; i++) {
+            if (isNaN(_board_size[i])) continue;
+            BOARD_SIZE[i] = +(_board_size[i] ?? BOARD_SIZE[i]);
+        }
+
+        // Ranges
+        let _shape_size = options.shape_size ?? SHAPE_SIZE;
+        for (let i = 0; i < 2; i++) {
+            if (isNaN(_shape_size[i])) continue;
+            SHAPE_SIZE[i] = +(_shape_size[i] ?? SHAPE_SIZE[i]);
+        }
+        if (SHAPE_SIZE[0] > SHAPE_SIZE[1]) {
+            [SHAPE_SIZE[0], SHAPE_SIZE[1]] = [SHAPE_SIZE[1], SHAPE_SIZE[0]];
+        }
+
+        // Booleans
+        trim_score = !!(options.trim_score ?? trim_score);
+
+        rainbow_shapes = !!(options.rainbow_shapes ?? rainbow_shapes);
+
+        rainbow_blocks = !!(options.rainbow_blocks ?? rainbow_blocks);
+
+        painbow_mode = !!(options.painbow_mode ?? painbow_mode);
     }
     /**
      * Creates the keybinds fields
@@ -1361,8 +1442,106 @@
             actions.splice(i, 1);
         }
         if (key != '') {
+            key = key.toLowerCase();
             if (!(key in group)) group[key] = [];
             group[key].push(action);
+        }
+    }
+    /**
+     * Saves the keybinds to the localstorage
+     */
+    function keybinds_save() {
+        /**
+         * @type { {[key: string]: string[]} }
+         */
+        let playing = {};
+        /**
+         * @type { {[key: string]: string[]} }
+         */
+        let pause = {};
+        /**
+         * @type { {[key: string]: string[]} }
+         */
+        let gameover = {};
+        let complete = {playing, pause, gameover};
+        let actions = Object.keys(ACTIONS);
+
+        for (let id of actions) {
+            playing[id] = [];
+            pause[id] = [];
+            gameover[id] = [];
+        }
+        for (let state of Object.keys(KEYBINDS)) {
+            /**
+             * @type { {[key: string]: string[]} }
+             */
+            let target_map = complete[state];
+            /**
+             * @type { {[key: string]: string[]} }
+             */
+            let target_source = KEYBINDS[state];
+
+            for (let [key, actions] of Object.entries(target_source)) {
+                for (let action of actions) {
+                    if (!target_map[action].includes(key)) target_map[action].push(key);
+                }
+            }
+        }
+
+        let json = JSON.stringify(complete);
+
+        localStorage.setItem('blockus_keybinds', json);
+    }
+    /**
+     * Retrives the keybinds from the localstorage
+     */
+    function keybinds_load() {
+        let json = localStorage.getItem('blockus_keybinds');
+
+        if (!json) return;
+
+        /**
+         * @type { {
+         *  playing: {
+         *      [key: string]: string[];
+         *  };
+         *  pause: {
+         *      [key: string]: string[];
+         *  };
+         *  gameover: {
+         *      [key: string]: string[];
+         *  };
+         * } }
+         */
+        let keybinds;
+        try {
+            keybinds = JSON.parse(json);
+        } catch {
+            localStorage.removeItem('blockus_keybinds');
+            return;
+        }
+
+        for (let state of Object.keys(keybinds)) {
+            if (!(state in KEYBINDS)) continue;
+
+            /**
+             * @type { {[key: string]: string[]} }
+             */
+            let target_map = KEYBINDS[state];
+            /**
+             * @type { {[key: string]: string[]} }
+             */
+            let target_source = keybinds[state];
+
+            for (let [key, actions] of Object.entries(target_source)) {
+                key = key.toLowerCase();
+                for (let action of actions) {
+                    if (!(action in ACTIONS)) continue;
+
+                    if (!(key in target_map)) target_map[key] = [action];
+                    else if (!target_map[key].includes(action)) target_map[key].push(action);
+                }
+            }
         }
     }
     /**

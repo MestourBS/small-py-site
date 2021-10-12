@@ -80,7 +80,7 @@ msgstr "Log out"
 
 #: templates/home.html:3
 msgid "games_blockus"
-msgstr "blockus"
+msgstr "Blockus"
 
 #: templates/home.html:6
 msgid "home_view_chat"
