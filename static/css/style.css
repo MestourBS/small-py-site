@@ -1,4 +1,4 @@
-html, body {
+html {
     height: 99%;
 }
 
@@ -12,8 +12,8 @@ html, body {
     margin: 0;
 }
 #footer {
-    width: 100%;
-    position: fixed;
+    width: 95%;
+    position: absolute;
     bottom: 0;
 }
 #messages {
@@ -32,6 +32,40 @@ html, body {
 }
 #blockus_score, #blockus_game {
     border: 1px solid black;
+}
+#current_boss_div {
+    border-radius: 0;
+}
+#current_boss_div img {
+    position: relative;
+}
+#idle_container {
+    height: calc(100% - 150px);
+}
+#idle_container > * {
+    vertical-align: top;
+}
+#resources_table {
+    height: 100%;
+}
+#boss_div, #damage_table, #current_boss_div, .building, #buildings_div {
+    height: 200px;
+}
+#boss_div, #damage_table, #current_boss_div, .building, #resources_table {
+    width: 200px;
+    display: inline-block;
+}
+#buildings_div, #upgrades_div {
+    max-width: 100%;
+}
+#upgrades_div {
+    height: 100px;
+}
+#idle_tooltip {
+    border: solid 5px antiquewhite;
+    background-color: black;
+    color: white;
+    padding: 5px;
 }
 
 .text-align-left {
@@ -57,6 +91,27 @@ html, body {
     position: absolute;
     animation: popup 1.5s linear, rainbow-text 250ms linear infinite;
     font-family: 'Courier New', Courier, monospace;
+}
+.progress-bar {
+    background-color: lime;
+    height: 100%;
+}
+.progress-bar-background {
+    background-color: darkred;
+    height: 15px;
+    width: 100%;
+    margin-top: -15px;
+}
+.display-inline-block {
+    display: inline-block;
+}
+.upgrade {
+    height: 100px;
+    width: 100px;
+    display: inline-block;
+}
+.cant-afford {
+    color: red;
 }
 
 @keyframes popup {

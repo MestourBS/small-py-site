@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-10-11 15:46+0200\n"
+"POT-Creation-Date: 2021-10-26 10:34+0200\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -59,22 +59,138 @@ msgstr "Erreur: Pas de nom dde groupe"
 msgid "chat_unknown_user"
 msgstr "Utilisateur inconnu"
 
+#: static/js/idle.js:22 templates/games/blockus.js:134
+msgid "game_blockus_unit_none"
+msgstr "Raccourci scientific"
+
+#: static/js/idle.js:26 templates/games/blockus.js:138
+msgid "game_blockus_unit_si"
+msgstr "Raccourci SI"
+
+#: static/js/idle.js:32 templates/games/blockus.js:144
+msgid "game_blockus_unit_numeral"
+msgstr "Raccourci numérique"
+
+#: static/js/idle.js:249
+msgid "games_idle_bosses_traits"
+msgstr "Types"
+
+#: static/js/idle.js:267
+msgid "games_idle_bosses_drops"
+msgstr "Trésors"
+
+#: static/js/idle.js:813
+msgid "games_idle_buildings_cost"
+msgstr "Cout"
+
+#: static/js/idle.js:846
+msgid "games_idle_buildings_production"
+msgstr "Production"
+
+#: static/js/idle.js:878
+msgid "games_idle_buildings_damage"
+msgstr "Dégats"
+
+#: static/js/idle.js:1108
+msgid "games_idle_upgradess_cost"
+msgstr "Cout"
+
+#: static/js/idle.js:1142
+msgid "games_idle_upgradess_multipliers"
+msgstr "Effets"
+
+#: static/js/idle.js:1421
+msgid "games_idle_trait_none"
+msgstr "Aucun"
+
+#: static/js/idle.js:1426
+msgid "games_idle_trait_plant"
+msgstr "Plante"
+
+#: static/js/idle.js:1435
+msgid "games_idle_trait_fire"
+msgstr "Feu"
+
+#: static/js/idle.js:1444
+msgid "games_idle_trait_water"
+msgstr "Eau"
+
+#: static/js/idle.js:1476
+msgid "games_idle_boss_scarecrow"
+msgstr "Epouvantaille"
+
+#: static/js/idle.js:1483
+msgid "games_idle_boss_small_rat"
+msgstr "Petit rat"
+
+#: static/js/idle.js:1490
+msgid "games_idle_boss_infinity"
+msgstr "L'infini"
+
+#: static/js/idle.js:1519
+msgid "games_idle_resource_points"
+msgstr "Points"
+
+#: static/js/idle.js:1555
+msgid "games_idle_building_puncher"
+msgstr "Frappeur"
+
+#: static/js/idle.js:1601
+msgid "games_idle_upgrade_building_puncher_01"
+msgstr "Deuxième main"
+
+#: static/js/idle.js:1618
+msgid "games_idle_upgrade_building_puncher_02"
+msgstr "Gros poings"
+
+#: static/js/idle.js:1635
+msgid "games_idle_upgrade_building_puncher_03"
+msgstr "Mains géantes"
+
+#: static/js/idle.js:1652
+msgid "games_idle_upgrade_building_puncher_04"
+msgstr "Gants de boxe"
+
+#: static/js/idle.js:1669
+msgid "games_idle_upgrade_building_puncher_05"
+msgstr "Gants épineux"
+
+#: static/js/idle.js:1686
+msgid "games_idle_upgrade_building_puncher_06"
+msgstr "Double poings"
+
+#: static/js/idle.js:1703
+msgid "games_idle_upgrade_building_puncher_07"
+msgstr "Plus de muscles"
+
+#: static/js/idle.js:1720
+msgid "games_idle_upgrade_building_puncher_08"
+msgstr "Grand doigts"
+
+#: static/js/idle.js:1737
+msgid "games_idle_upgrade_building_puncher_09"
+msgstr "Mains cybernétiques"
+
+#: static/js/idle.js:1754
+msgid "games_idle_upgrade_building_puncher_10"
+msgstr "Quatre bras"
+
 #: templates/auth/change_password.html:2 templates/auth/login.html:14
 #: templates/auth/register.html:2 templates/auth/register.html:22
-#: templates/header.html:19
+#: templates/header.html:20
 msgid "register"
 msgstr "S'enregistrer"
 
 #: templates/auth/login.html:2 templates/auth/login.html:15
-#: templates/header.html:19
+#: templates/header.html:20
 msgid "login"
 msgstr "Se connecter"
 
-#: templates/header.html:21
+#: templates/header.html:22
 msgid "logged_in_as"
 msgstr "Connecté en tant que %(username)s"
 
-#: templates/header.html:21
+#: templates/header.html:22
 msgid "logout"
 msgstr "Se déconnecter"
 
@@ -166,18 +282,6 @@ msgstr "Mode lumineux"
 msgid "game_blockus_shape_square"
 msgstr "Carré"
 
-#: templates/games/blockus.js:134
-msgid "game_blockus_unit_none"
-msgstr "Raccourci scientific"
-
-#: templates/games/blockus.js:138
-msgid "game_blockus_unit_si"
-msgstr "Raccourci SI"
-
-#: templates/games/blockus.js:144
-msgid "game_blockus_unit_numeral"
-msgstr "Raccourci numérique"
-
 #: templates/games/blockus.js:231
 msgid "game_blockus_action_move_shape_right"
 msgstr "Déplacer la forme à droite"
@@ -214,76 +318,76 @@ msgstr "Remettre le blockus à zéro?"
 msgid "game_blockus_action_reset_game"
 msgstr "Remettre à zéro"
 
-#: templates/games/blockus.js:822
+#: templates/games/blockus.js:827
 msgid "game_blockus_option_theme"
 msgstr "Jeu de couleur"
 
-#: templates/games/blockus.js:848
+#: templates/games/blockus.js:853
 msgid "game_blockus_option_block_width"
 msgstr "Largeur d'un bloc"
 
-#: templates/games/blockus.js:854 templates/games/blockus.js:877
-#: templates/games/blockus.js:994 templates/games/blockus.js:1017
+#: templates/games/blockus.js:859 templates/games/blockus.js:882
+#: templates/games/blockus.js:999 templates/games/blockus.js:1022
 msgid "game_blockus_warn_option_reset"
 msgstr "Changer cette option va remettre votre jeu à zéro. Continuer?"
 
-#: templates/games/blockus.js:871
+#: templates/games/blockus.js:876
 msgid "game_blockus_option_block_height"
 msgstr "Hauteur d'un bloc"
 
-#: templates/games/blockus.js:894
+#: templates/games/blockus.js:899
 msgid "game_blockus_option_shape"
 msgstr "Forme d'un bloc"
 
-#: templates/games/blockus.js:920
+#: templates/games/blockus.js:925
 msgid "game_blockus_option_unit"
 msgstr "Raccourci de score"
 
-#: templates/games/blockus.js:946
+#: templates/games/blockus.js:951
 msgid "game_blockus_option_block_size_min"
 msgstr "Mimimum de blocs dans une forme"
 
-#: templates/games/blockus.js:967
+#: templates/games/blockus.js:972
 msgid "game_blockus_option_block_size_max"
 msgstr "Maximum de blocs dans une forme"
 
-#: templates/games/blockus.js:988
+#: templates/games/blockus.js:993
 msgid "game_blockus_option_board_width"
 msgstr "Largeur du jeu"
 
-#: templates/games/blockus.js:1011
+#: templates/games/blockus.js:1016
 msgid "game_blockus_option_board_height"
 msgstr "Hauteur du jeu"
 
-#: templates/games/blockus.js:1034
+#: templates/games/blockus.js:1039
 msgid "game_blockus_option_trim_score"
 msgstr "Enlever les zéros qui suivent le score"
 
-#: templates/games/blockus.js:1056
+#: templates/games/blockus.js:1061
 msgid "game_blockus_option_rainbow_shapes"
 msgstr "Couleurs de formes aléatoires"
 
-#: templates/games/blockus.js:1078
+#: templates/games/blockus.js:1083
 msgid "game_blockus_option_rainbow_blocks"
 msgstr "Couleurs de blocs aléatoires"
 
-#: templates/games/blockus.js:1100
+#: templates/games/blockus.js:1105
 msgid "game_blockus_option_painbow_mode"
 msgstr "Couleurs changent à chaque rafraichissement"
 
-#: templates/games/blockus.js:1252
+#: templates/games/blockus.js:1333
 msgid "game_blockus_keybinds_group_playing"
 msgstr "En jeu"
 
-#: templates/games/blockus.js:1253
+#: templates/games/blockus.js:1334
 msgid "game_blockus_keybinds_group_pause"
 msgstr "Sur pause"
 
-#: templates/games/blockus.js:1254
+#: templates/games/blockus.js:1335
 msgid "game_blockus_keybinds_group_gameover"
 msgstr "Après une défaite"
 
-#: templates/games/blockus.js:1268
+#: templates/games/blockus.js:1349
 msgid "game_blockus_keybind_leave_blank_tip"
 msgstr "Laisser vide pour enlever le raccourci"
 

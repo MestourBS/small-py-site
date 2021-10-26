@@ -8,11 +8,14 @@ sys.path.append('./modules')
 from flask import Flask, render_template, request, session
 from flask_babel import Babel
 from flask_jsglue import JSGlue
+from flask_babel_js import BabelJS
 from Controllers import routeHome, routeAuth, routeChat, routeGame
 
 app = Flask(__name__)
 babel = Babel(app)
 jsglue = JSGlue(app)
+babel_js = BabelJS(app)
+
 app.secret_key = 'a'
 app.url_map.strict_slashes = False
 app.register_blueprint(routeHome, url_prefix='/')

@@ -11,3 +11,7 @@ def blockus_game():
 def blockus_js():
     script = render_template('games/blockus.js')
     return Response(script, mimetype='application/javascript')
+
+@routeGame.route('/idle')
+def idle_game():
+    return render_template('games/idle.html')

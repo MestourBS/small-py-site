@@ -1,0 +1,14 @@
+{% include 'header.html' %}
+<div id="idle_container">
+    <table id="resources_table"></table>
+    <div class="display-inline-block" style="width: calc(100% - 220px); margin-left: 10px;">
+        <div>
+            <div id="boss_div"></div>
+            <table id="damage_table"></table>
+        </div>
+        <div><div id="buildings_div"></div></div>
+        <div><div id="upgrades_div"></div></div>
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/idle.js') }}"></script>
+{% include 'footer.html' %}
