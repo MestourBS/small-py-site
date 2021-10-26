@@ -3,6 +3,13 @@
 	<form method="POST">
 		<table>
 			<tr>
+				<td colspan="2" class="error">
+					{% for error in errors %}
+					<div>{{ error }}</div>
+					{% endfor %}
+				</td>
+			</tr>
+			<tr>
 				<td><label for="username">{{ gettext('username') }}:</label></td>
 				<td><input type="text" name="username" id="username" value="{{ username }}" /></td>
 			</tr>

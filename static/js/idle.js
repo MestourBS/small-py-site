@@ -1,4 +1,4 @@
-//(() => {
+(() => {
     if (typeof gettext != 'function') {
         /**
          * @param {string} string
@@ -1766,4 +1766,4 @@
     }
 
     init();
-//})();
+})();

@@ -1,5 +1,4 @@
-from flask import Blueprint
-from flask import render_template, Response
+from flask import Blueprint, render_template, Response
 
 routeGame = Blueprint('games', __name__, template_folder='templates')
 
