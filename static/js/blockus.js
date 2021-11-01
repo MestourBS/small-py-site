@@ -1,4 +1,4 @@
-(() => {
+//(() => {
     /**
      * Canvas of the game
      *
@@ -50,7 +50,7 @@
      */
     const THEMES = {
         'dark': {
-            name: "{{ gettext('game_blockus_theme_name_dark') }}",
+            name: gettext('game_blockus_theme_name_dark'),
             blockus: {
                 playing: {
                     background: '#000',
@@ -71,7 +71,7 @@
             },
         },
         'light': {
-            name: "{{ gettext('game_blockus_theme_name_light') }}",
+            name: gettext('game_blockus_theme_name_light'),
             blockus: {
                 playing: {
                     background: '#fff',
@@ -114,7 +114,7 @@
      */
     const BLOCK_SHAPES = {
         'square': {
-            name: "{{ gettext('game_blockus_shape_square') }}",
+            name: gettext('game_blockus_shape_square'),
             paths: [
                 [[0,0], [0,1], [1,1], [1,0]],
             ],
@@ -131,17 +131,17 @@
     const UNITS = {
         'none': {
             units: [],
-            name: "{{ gettext('game_blockus_unit_none') }}",
+            name: gettext('game_blockus_unit_none'),
         },
         'SI': {
             units: ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'],
-            name: "{{ gettext('game_blockus_unit_si') }}",
+            name: gettext('game_blockus_unit_si'),
         },
         'numeral': {
             units: ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'S', 'Se', 'O', 'N',
                 'D', 'UD', 'DD', 'TD', 'QaD', 'QiD', 'SD', 'SeD', 'OD', 'ND',
                 'V', 'UV', 'DV', 'TV', 'QaV', 'QiV', 'SV', 'SeV', 'OV', 'NV'],
-                name: "{{ gettext('game_blockus_unit_numeral') }}",
+                name: gettext('game_blockus_unit_numeral'),
         },
     };
     /**
@@ -224,42 +224,56 @@
      */
     const ACTIONS = new Proxy(Object.freeze({
         'move_shape_right': {
-            func: (force = false) => {
+            func: () => {
                 if (!current_shape || game_state != 'playing') return;
-                current_shape.move(DIRECTION.right, force);
+                current_shape.move(DIRECTION.right, 10/TPS);
+                current_shadow = current_shape.get_shadow();
             },
-            name: "{{ gettext('game_blockus_action_move_shape_right') }}",
+            name: gettext('game_blockus_action_move_shape_right'),
         },
         'move_shape_left': {
-            func: (force = false) => {
+            func: () => {
                 if (!current_shape || game_state != 'playing') return;
-                current_shape.move(DIRECTION.left, force);
+                current_shape.move(DIRECTION.left, 10/TPS);
+                current_shadow = current_shape.get_shadow();
             },
-            name: "{{ gettext('game_blockus_action_move_shape_left') }}",
+            name: gettext('game_blockus_action_move_shape_left'),
         },
         'move_shape_down': {
-            func: () => {descend(true);},
-            name: "{{ gettext('game_blockus_action_move_shape_down') }}",
+            func: () => {descend(10/TPS);},
+            name: gettext('game_blockus_action_move_shape_down'),
         },
         'game_state_pause': {
-            func: () => {game_state = 'pause';},
-            name: "{{ gettext('game_blockus_action_game_state_pause') }}",
+            func: () => {
+                game_state = 'pause';
+                current_shadow = null;
+            },
+            name: gettext('game_blockus_action_game_state_pause'),
         },
         'game_state_playing': {
-            func: () => {game_state = 'playing';},
-            name: "{{ gettext('game_blockus_action_game_state_playing') }}",
+            func: () => {
+                game_state = 'playing';
+                current_shadow = null;
+            },
+            name: gettext('game_blockus_action_game_state_playing'),
         },
         'rotate_shape_clockwise': {
-            func: (force = false) => {current_shape.rotate(true, force);},
-            name: "{{ gettext('game_blockus_action_rotate_shape_clockwise') }}",
+            func: () => {
+                current_shape.rotate(true);
+                current_shadow = current_shape.get_shadow();
+            },
+            name: gettext('game_blockus_action_rotate_shape_clockwise'),
         },
         'rotate_shape_counter_clockwise': {
-            func: (force = false) => {current_shape.rotate(false, force);},
-            name: "{{ gettext('game_blockus_action_rotate_shape_counter_clockwise') }}",
+            func: () => {
+                current_shape.rotate(false);
+                current_shadow = current_shape.get_shadow();
+            },
+            name: gettext('game_blockus_action_rotate_shape_counter_clockwise'),
         },
         'reset_game': {
-            func: () => {if (confirm("{{ gettext('game_blockus_reset_confirm') }}")) {reset();}},
-            name: "{{ gettext('game_blockus_action_reset_game') }}",
+            func: () => {if (confirm(gettext('game_blockus_reset_confirm'))) {reset();}},
+            name: gettext('game_blockus_action_reset_game'),
         },
     }), {
         get: (obj, prop) => {
@@ -349,17 +363,17 @@
      */
     let current_shape = null;
     /**
+     * Bottom grid shadow of the current shape
+     *
+     * @type {Shape|null}
+     */
+    let current_shadow = null;
+    /**
      * Current game state
      *
      * @type {'playing'|'pause'|'gameover'}
      */
     let game_state = 'playing';
-    /**
-     * Ticks between 2 descents
-     *
-     * @type {Number}
-     */
-    let descend_cooldown = TPS;
     /**
      * Whether the loop should tick or not
      *
@@ -372,6 +386,12 @@
      * @type {'empty'|'options'|'keybinds'}
      */
     let options_content = 'empty';
+    /**
+     * Moment of the last move, in ms
+     *
+     * @type {number}
+     */
+    let last_move;
 
     /**
      * Makes a number look good
@@ -384,7 +404,7 @@
     function beautify(number, trim = true, min_short = 2) {
         if (isNaN(number)) return '0';
         let num = String(BigInt(Math.floor(number)));
-        let part = String(BigInt(Math.floor((number * 1e3) % 1e3)));
+        let part = String(BigInt(Math.floor((Math.abs(number) * 1e3) % 1e3)));
         let e = 0;
         let end = '';
 
@@ -400,6 +420,9 @@
             end = UNITS[unit].units[e] || `e${e * 3}`;
         }
         if (Number(part) || !trim) {
+            while (part.length < 3) {
+                part = `0${part}`;
+            }
             part = `.${part}`;
             while (part.endsWith('0') && trim) {
                 part = part.slice(0, -1);
@@ -417,12 +440,24 @@
         SCORE.innerText = beautify(score, trim_score);
     }
     /**
+     * Displays the fps in the top left corner
+     *
+     * @param {number} fps
+     */
+    function show_fps(fps) {
+        if (!fps) return;
+
+        CONTEXT.strokeStyle = THEMES[theme].blockus[game_state].color;
+        CONTEXT.strokeText(fps.toString(), 10, 10);
+    }
+    /**
      * Generates a random color
      *
      * @returns {string}
      */
     function random_color() {
-        return '#000000'.replace(/0/g, () => Math.floor(Math.random() * 16).toString(16));
+        let color = '#000000'.replace(/0/g, () => Math.floor(Math.random() * 16).toString(16));
+        return color;
     }
     /**
      * Creates a random set of coordinates for a shape
@@ -530,6 +565,7 @@
     function reset_shape() {
         let {coords, color, center} = random_shape();
         current_shape = new Shape(color, coords, Math.floor(BOARD_SIZE[0] / 2), 0, center);
+        current_shadow = current_shape.get_shadow();
     }
     /**
      * Gets the opposite of a color in either black or white
@@ -573,7 +609,7 @@
         CANVAS.height = BLOCK_SIZE[1] * BOARD_SIZE[1];
     }
     /**
-     * Refresh the canvas contents
+     * Refreshes the canvas contents
      */
     function canvas_refresh() {
         canvas_reset();
@@ -582,6 +618,7 @@
             return b._x - a._x;
         }).forEach(b => b.draw());
 
+        if (current_shadow) current_shadow.draw();
         if (current_shape) current_shape.draw();
 
         refresh_canvas = false;
@@ -643,7 +680,8 @@
             }
         });
 
-        setTimeout(() => loop(), 1e3 / TPS);
+        last_move = Date.now();
+        requestAnimationFrame(loop);
     }
     /**
      * Resets the game
@@ -660,7 +698,6 @@
         update_score();
         reset_shape();
         canvas_refresh();
-        descend_cooldown = TPS;
 
         loop_cancel = false;
     }
@@ -668,12 +705,22 @@
      * Main game loop
      */
     function loop() {
-        if (!loop_cancel) {
-            descend();
+        let now = Date.now();
+        let diff = now - last_move;
+        let fps = 1 / (diff / 1e3);
+        diff /= 5e2;
+        last_move = now;
 
-            if (refresh_canvas || painbow_mode && (rainbow_blocks || rainbow_shapes)) {
-                canvas_refresh();
+        canvas_refresh();
+        show_fps(Math.round(fps));
+
+        if (!loop_cancel) {
+            descend(diff);
+
+            if (!current_shadow) {
+                current_shadow = current_shape.get_shadow();
             }
+
             if (refresh_score) {
                 update_score();
             }
@@ -682,29 +729,24 @@
             }
         }
 
-        setTimeout(() => loop(), 1e3 / TPS);
+        requestAnimationFrame(loop);
     }
     /**
      * Moves the current shape down
      *
      * If it can't move down, it creates a new one
      *
-     * @param {Boolean} ignore_cooldown
+     * @param {number} diff
      */
-    function descend(ignore_cooldown = false) {
-        if (!current_shape || game_state != 'playing') return;
+    function descend(diff = 1) {
+        if (!current_shape || game_state != 'playing' || diff <= 0) return;
 
-        if (!ignore_cooldown) {
-            descend_cooldown--;
-            if (descend_cooldown > 0) return;
-        }
-        descend_cooldown = get_descend_cooldown();
-
-        if (current_shape.can_move(DIRECTION.down)) {
-            current_shape.move(DIRECTION.down);
+        if (current_shape.can_move(DIRECTION.down, diff)) {
+            current_shape.move(DIRECTION.down, diff);
         } else {
             current_shape.add_to_grid();
             current_shape = null;
+            current_shadow = null;
 
             // Check rows
             check_rows();
@@ -713,26 +755,12 @@
             if (Block.GRID.some(b => b._y < 0)) {
                 game_state = 'gameover';
                 refresh_dom = true;
+                current_shadow = null;
             }
 
             // Reset current shape
             reset_shape();
         }
-    }
-    /**
-     * Calculates the descend cooldown
-     *
-     * Allows up to 6 descents per second
-     *
-     * @returns {Number}
-     */
-    function get_descend_cooldown() {
-        let base = TPS;
-        let min = 5;
-
-        base -= Math.floor((score / 100) ** .5);
-
-        return Math.max(base, min);
     }
     /**
      * Checks for any now row
@@ -754,7 +782,7 @@
                 let j = Block.GRID.findIndex(b => b._y == i);
                 Block.GRID.splice(j, 1);
             }
-            Block.GRID.filter(b => b._y < i).forEach(b => b.move(DIRECTION.down, true));
+            Block.GRID.filter(b => b._y < i).forEach(b => b.move(DIRECTION.down, 1, true));
         }
 
         // Neat popup for points gained
@@ -778,7 +806,7 @@
         if (!cls.length) cls.push('popup');
 
         let popup = document.createElement('div');
-        popup.classList.add('popup');
+        popup.classList.add(...cls);
         popup.style.top = `${top}px`;
         popup.style.left = `${left}px`;
         popup.innerText = text;
@@ -824,7 +852,7 @@
             theme_label_cell.appendChild(theme_label);
             theme_select_cell.appendChild(theme_select);
 
-            theme_label.innerText = "{{ gettext('game_blockus_option_theme') }}";
+            theme_label.innerText = gettext('game_blockus_option_theme');
 
             for (let id in THEMES) {
                 let option = document.createElement('option');
@@ -850,13 +878,13 @@
             width_label_cell.appendChild(width_label);
             width_cell.appendChild(width);
 
-            width_label.innerText = "{{ gettext('game_blockus_option_block_width') }}";
+            width_label.innerText = gettext('game_blockus_option_block_width');
             width.type = 'number';
             width.min = 1;
             width.value = BLOCK_SIZE[0];
 
             width.addEventListener('change', e => {
-                if (confirm("{{ gettext('game_blockus_warn_option_reset') }}")) option_update('block_width', width.value, e);
+                if (confirm(gettext('game_blockus_warn_option_reset'))) option_update('block_width', width.value, e);
             });
 
             return width_row;
@@ -873,13 +901,13 @@
             height_label_cell.appendChild(height_label);
             height_cell.appendChild(height);
 
-            height_label.innerText = "{{ gettext('game_blockus_option_block_height') }}";
+            height_label.innerText = gettext('game_blockus_option_block_height');
             height.type = 'number';
             height.min = 1;
             height.value = BLOCK_SIZE[1];
 
             height.addEventListener('change', e => {
-                if (confirm("{{ gettext('game_blockus_warn_option_reset') }}")) option_update('block_height', height.value, e);
+                if (confirm(gettext('game_blockus_warn_option_reset'))) option_update('block_height', height.value, e);
             });
 
             return height_row;
@@ -896,7 +924,7 @@
             shape_label_cell.appendChild(shape_label);
             shape_select_cell.appendChild(shape_select);
 
-            shape_label.innerText = "{{ gettext('game_blockus_option_shape') }}";
+            shape_label.innerText = gettext('game_blockus_option_shape');
 
             for (let id in BLOCK_SHAPES) {
                 let option = document.createElement('option');
@@ -922,7 +950,7 @@
             unit_label_cell.appendChild(unit_label);
             unit_select_cell.appendChild(unit_select);
 
-            unit_label.innerText = "{{ gettext('game_blockus_option_unit') }}";
+            unit_label.innerText = gettext('game_blockus_option_unit');
 
             for (let id in UNITS) {
                 let option = document.createElement('option');
@@ -948,7 +976,7 @@
             size_min_label_cell.appendChild(size_min_label);
             size_min_cell.appendChild(size_min);
 
-            size_min_label.innerText = "{{ gettext('game_blockus_option_block_size_min') }}";
+            size_min_label.innerText = gettext('game_blockus_option_block_size_min');
             size_min.type = 'number';
             size_min.min = 1;
             size_min.value = SHAPE_SIZE[0];
@@ -969,7 +997,7 @@
             size_max_label_cell.appendChild(size_max_label);
             size_max_cell.appendChild(size_max);
 
-            size_max_label.innerText = "{{ gettext('game_blockus_option_block_size_max') }}";
+            size_max_label.innerText = gettext('game_blockus_option_block_size_max');
             size_max.type = 'number';
             size_max.min = 1;
             size_max.value = SHAPE_SIZE[1];
@@ -990,13 +1018,13 @@
             width_label_cell.appendChild(width_label);
             width_cell.appendChild(width);
 
-            width_label.innerText = "{{ gettext('game_blockus_option_board_width') }}";
+            width_label.innerText = gettext('game_blockus_option_board_width');
             width.type = 'number';
             width.min = 1;
             width.value = BOARD_SIZE[0];
 
             width.addEventListener('change', e => {
-                if (confirm("{{ gettext('game_blockus_warn_option_reset') }}")) option_update('board_width', width.value, e);
+                if (confirm(gettext('game_blockus_warn_option_reset'))) option_update('board_width', width.value, e);
             });
 
             return width_row;
@@ -1013,13 +1041,13 @@
             height_label_cell.appendChild(height_label);
             height_cell.appendChild(height);
 
-            height_label.innerText = "{{ gettext('game_blockus_option_board_height') }}";
+            height_label.innerText = gettext('game_blockus_option_board_height');
             height.type = 'number';
             height.min = 1;
             height.value = BOARD_SIZE[1];
 
             height.addEventListener('change', e => {
-                if (confirm("{{ gettext('game_blockus_warn_option_reset') }}")) option_update('board_height', height.value, e);
+                if (confirm(gettext('game_blockus_warn_option_reset'))) option_update('board_height', height.value, e);
             });
 
             return height_row;
@@ -1036,7 +1064,7 @@
             trim_label_cell.appendChild(trim_label);
             trim_cell.appendChild(trim);
 
-            trim_label.innerText = "{{ gettext('game_blockus_option_trim_score') }}";
+            trim_label.innerText = gettext('game_blockus_option_trim_score');
             trim.type = 'checkbox';
             trim.checked = trim_score;
 
@@ -1058,7 +1086,7 @@
             rainbow_label_cell.appendChild(rainbow_label);
             rainbow_cell.appendChild(rainbow);
 
-            rainbow_label.innerText = "{{ gettext('game_blockus_option_rainbow_shapes') }}";
+            rainbow_label.innerText = gettext('game_blockus_option_rainbow_shapes');
             rainbow.type = 'checkbox';
             rainbow.checked = rainbow_shapes;
 
@@ -1080,7 +1108,7 @@
             rainbow_label_cell.appendChild(rainbow_label);
             rainbow_cell.appendChild(rainbow);
 
-            rainbow_label.innerText = "{{ gettext('game_blockus_option_rainbow_blocks') }}";
+            rainbow_label.innerText = gettext('game_blockus_option_rainbow_blocks');
             rainbow.type = 'checkbox';
             rainbow.checked = rainbow_blocks;
 
@@ -1102,7 +1130,7 @@
             painbow_label_cell.appendChild(painbow_label);
             painbow_cell.appendChild(painbow);
 
-            painbow_label.innerText = "{{ gettext('game_blockus_option_painbow_mode') }}";
+            painbow_label.innerText = gettext('game_blockus_option_painbow_mode');
             painbow.type = 'checkbox';
             painbow.checked = painbow_mode;
 
@@ -1112,12 +1140,34 @@
 
             return painbow_row;
         }
+        function make_diagonals() {
+            let diagonals_row = document.createElement('tr');
+            let diagonals_label_cell = document.createElement('td');
+            let diagonals_cell = document.createElement('td');
+            let diagonals_label = document.createElement('label');
+            let diagonals = document.createElement('input');
+
+            diagonals_row.appendChild(diagonals_label_cell);
+            diagonals_row.appendChild(diagonals_cell);
+            diagonals_label_cell.appendChild(diagonals_label);
+            diagonals_cell.appendChild(diagonals);
+
+            diagonals_label.innerText = gettext('game_blockus_option_diagonals');
+            diagonals.type = 'checkbox';
+            diagonals.checked = diagonal_shapes;
+
+            diagonals.addEventListener('change', e => {
+                option_update('diagonal_shapes', diagonals.checked, e);
+            });
+
+            return diagonals_row;
+        }
 
         let rows = [make_theme, make_block_width, make_block_height,
             make_block_shape, make_units, make_shape_size_min,
             make_shape_size_max, make_board_width, make_board_height,
             make_trim_score, make_rainbow_shapes, make_rainbow_blocks,
-            make_painbow_mode
+            make_painbow_mode, make_diagonals,
         ];
 
         for (let r of rows) {
@@ -1230,6 +1280,9 @@
             case 'painbow_mode':
                 painbow_mode = !!value;
                 return;
+            case 'diagonal_shapes':
+                diagonal_shapes = !!value;
+                return;
             // Default
             default:
                 console.error(`Unknown option: "${option_name}"`);
@@ -1248,7 +1301,7 @@
             // Ranges
             shape_size: SHAPE_SIZE,
             // Booleans
-            trim_score, rainbow_shapes, rainbow_blocks, //painbow_mode,
+            trim_score, rainbow_shapes, rainbow_blocks, diagonal_shapes, //painbow_mode,
         };
 
         let json = JSON.stringify(options);
@@ -1311,6 +1364,8 @@
         rainbow_blocks = !!(options.rainbow_blocks ?? rainbow_blocks);
 
         painbow_mode = !!(options.painbow_mode ?? painbow_mode);
+
+        diagonal_shapes = !!(options.diagonal_shapes ?? diagonal_shapes);
     }
     /**
      * Creates the keybinds fields
@@ -1550,6 +1605,33 @@
     function destroy_options() {
         OPTIONS.textContent = '';
     }
+    /**
+     * Mixes 2 colors and returns the average
+     *
+     * @param {string} colora
+     * @param {string} colorb
+     * @returns {string}
+     */
+    function blend_colors(colora, colorb) {
+        if (colora.startsWith('#')) colora = colora.slice(1);
+        if (colorb.startsWith('#')) colorb = colorb.slice(1);
+
+        if (colora.length == 3) {
+            colora = colora[0].repeat(2) + colora[1].repeat(2) + colora[2].repeat(2);
+        }
+        if (colorb.length == 3) {
+            colorb = colorb[0].repeat(2) + colorb[1].repeat(2) + colorb[2].repeat(2);
+        }
+
+        let colorc = '#';
+        for (let i = 0; i < 6; i+=2) {
+            let a = parseInt(colora.slice(i, i+2), 16);
+            let b = parseInt(colorb.slice(i, i+2), 16);
+            colorc += Math.round((a + b) / 2).toString(16).padStart(2, '0');
+        }
+
+        return colorc;
+    }
 
     class Block {
         /**
@@ -1576,7 +1658,7 @@
          */
         static out_of_bounds(coords) {
             for (let i = 0; i < 2; i++) {
-                if (coords[i] < 0 || coords[i] >= BOARD_SIZE[i]) return true;
+                if (coords[i] < 0 || coords[i] > BOARD_SIZE[i] - 1) return true;
             }
             return false;
         }
@@ -1588,7 +1670,7 @@
          * @param {number} x - The x position of the block
          * @param {number} y - The y position of the block
          */
-        constructor(color, x, y) {
+        constructor(color, x, y, transparent = false) {
             if (!/^#[0-9a-f]{3}([0-9a-f]{3})?$/.test(color)) {
                 throw new Error('invalid block color');
             }
@@ -1599,6 +1681,7 @@
                 throw new Error('invalid block y coordinate');
             }
             if (rainbow_blocks) color = random_color();
+            this._transparent = !!transparent;
             this._color = color;
             this._x = x;
             this._y = y;
@@ -1626,7 +1709,7 @@
 
                 CONTEXT.closePath();
                 CONTEXT.fillStyle = this._color;
-                CONTEXT.strokeStyle = anti_bicolor(this._color);
+                CONTEXT.strokeStyle = this._transparent ? '#777' : anti_bicolor(this._color);
                 CONTEXT.stroke();
                 CONTEXT.fill();
             }
@@ -1635,24 +1718,32 @@
          * Checks whether the block can move in a given direction
          *
          * @param {DIRECTION} dir
+         * @param {number} [amount]
          * @returns {boolean}
          */
-        can_move(dir) {
-            if (this.out_of_bounds([this._x + dir[1], this._y + dir[0]])) return false;
+        can_move(dir, amount = 1) {
+            let target_x = this._x + dir[1] * amount;
+            let target_y = this._y + dir[0] * amount;
 
-            return !Block.GRID.some(b => b._x == (this._x + dir[1]) && b._y == (this._y + dir[0]));
+            if (this.out_of_bounds([target_x, target_y])) return false;
+
+            target_x = Math.round(target_x);
+            target_y = Math.round(target_y);
+
+            return !Block.GRID.some(b => b._x == target_x && b._y == target_y);
         }
         /**
          * Moves the block in a given direction
          *
          * @param {DIRECTION} dir
-         * @param {boolean} force True if you really want it move in a direction
+         * @param {number} [amount]
+         * @param {boolean} [force] True if you really want it move in a direction
          */
-        move(dir, force = false) {
-            if (!this.can_move(dir) && !force) return;
+        move(dir, amount = 1, force = false) {
+            if (!this.can_move(dir, amount) && !force) return;
 
-            this._x += dir[1];
-            this._y += dir[0];
+            this._x = Math.floor((this._x + dir[1] * amount) * 100) / 100;
+            this._y = Math.floor((this._y + dir[0] * amount) * 100) / 100;
 
             refresh_canvas = true;
         }
@@ -1662,6 +1753,9 @@
         add_to_grid() {
             // We don't exist
             if (this.out_of_bounds()) return;
+
+            this._x = Math.round(this._x);
+            this._y = Math.round(this._y);
 
             let i;
             if (i = Block.GRID.findIndex(b => b._x == this._x && b._y == this._y) != -1) {
@@ -1694,7 +1788,7 @@
          * @param {number} y The y position of the center block
          * @param {[number, number]} center Potentially non existant block that serves as the center of all rotations
          */
-        constructor(color, coords, x, y, center = [0, 0]) {
+        constructor(color, coords, x, y, center = [0, 0], transparent = false) {
             if (!/^#[0-9a-f]{3}([0-9a-f]{3})?$/.test(color)) {
                 throw new Error('invalid shape color');
             }
@@ -1710,13 +1804,14 @@
             if (!Array.isArray(center)) {
                 throw new Error('invalid shape center coordinate');
             }
+            this._transparent = !!transparent;
             this._center = [center[0] + x, center[1] + y];
             /**
              * @type {Block[]}
              */
             this._blocks = [];
             coords.forEach(c => {
-                this._blocks.push(new Block(color, c[0] + x, c[1] + y));
+                this._blocks.push(new Block(color, c[0] + x, c[1] + y, !!transparent));
             });
         }
         /**
@@ -1743,23 +1838,25 @@
          * Checks if the shape can move in a given direction
          *
          * @param {DIRECTION} dir
+         * @param {number} [amount]
          * @returns {boolean}
          */
-        can_move(dir) {
-            return this._blocks.every(b => b.can_move(dir));
+        can_move(dir, amount = 1) {
+            return this._blocks.every(b => b.can_move(dir, amount));
         }
         /**
          * Moves the block in a given direction
          *
          * @param {DIRECTION} dir
-         * @param {boolean} force True if you really want it move in a direction
+         * @param {number} [amount]
+         * @param {boolean} [force] True if you really want it move in a direction
          */
-        move(dir, force = false) {
-            if (!this.can_move(dir) && !force) return;
+        move(dir, amount = 1, force = false) {
+            if (!this.can_move(dir, amount) && !force) return;
 
-            this._blocks.forEach(b => b.move(dir, force));
-            this._center[0] += dir[1];
-            this._center[1] += dir[0];
+            this._blocks.forEach(b => b.move(dir, amount, force));
+            this._center[0] = Math.floor((this._center[0] +dir[1] * amount) * 100) / 100;
+            this._center[1] = Math.floor((this._center[1] +dir[0] * amount) * 100) / 100;
         }
         /**
          * Checks if the shape can rotate in a given direction
@@ -1865,7 +1962,25 @@
         add_to_grid() {
             this._blocks.forEach(b => b.add_to_grid());
         }
+        /**
+         * Returns the lowest placed version of this shape
+         *
+         * It's also transparent!
+         *
+         * @returns {Shape}
+         */
+        get_shadow() {
+            let color = blend_colors(this._blocks[0]._color, THEMES[theme].blockus[game_state].background);
+            let coords = this._blocks.map(b => [Math.round(b._x), Math.round(b._y)]);
+            let center = [...this._center.map(Math.round)];
+
+            let clone = new Shape(color, coords, 0, 0, center, true);
+
+            while(clone.can_move(DIRECTION.down)) clone.move(DIRECTION.down);
+
+            return clone;
+        }
     }
 
     init();
-})();
+//})();
