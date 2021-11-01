@@ -1,4 +1,4 @@
-//(() => {
+(() => {
     /**
      * Canvas of the game
      *
@@ -226,7 +226,7 @@
         'move_shape_right': {
             func: () => {
                 if (!current_shape || game_state != 'playing') return;
-                current_shape.move(DIRECTION.right, 10/TPS);
+                current_shape.move(DIRECTION.right, 15/TPS);
                 current_shadow = current_shape.get_shadow();
             },
             name: gettext('game_blockus_action_move_shape_right'),
@@ -234,13 +234,13 @@
         'move_shape_left': {
             func: () => {
                 if (!current_shape || game_state != 'playing') return;
-                current_shape.move(DIRECTION.left, 10/TPS);
+                current_shape.move(DIRECTION.left, 15/TPS);
                 current_shadow = current_shape.get_shadow();
             },
             name: gettext('game_blockus_action_move_shape_left'),
         },
         'move_shape_down': {
-            func: () => {descend(10/TPS);},
+            func: () => {descend(15/TPS);},
             name: gettext('game_blockus_action_move_shape_down'),
         },
         'game_state_pause': {
@@ -613,12 +613,14 @@
      */
     function canvas_refresh() {
         canvas_reset();
+
+        if (current_shadow) current_shadow.draw();
+
         Block.GRID.sort((a, b) => {
             if (b._y != a._y) return b._y - a._y;
             return b._x - a._x;
         }).forEach(b => b.draw());
 
-        if (current_shadow) current_shadow.draw();
         if (current_shape) current_shape.draw();
 
         refresh_canvas = false;
@@ -1722,15 +1724,23 @@
          * @returns {boolean}
          */
         can_move(dir, amount = 1) {
-            let target_x = this._x + dir[1] * amount;
-            let target_y = this._y + dir[0] * amount;
+            dir = [...dir];
+            let amounts = [amount * dir[0], amount * dir[1]].map(Math.abs);
+            if (dir[0] > 0) {
+                dir[0] = 1;
+            } else if (dir[0] < 0) {
+                dir[0] = -1;
+            }
+            if (dir[1] > 0) {
+                dir[1] = 1;
+            } else if (dir[1] < 0) {
+                dir[1] = -1;
+            }
 
-            if (this.out_of_bounds([target_x, target_y])) return false;
-
-            target_x = Math.round(target_x);
-            target_y = Math.round(target_y);
-
-            return !Block.GRID.some(b => b._x == target_x && b._y == target_y);
+            let limits = this.move_space();
+            if (dir[1] && amounts[1] > limits[dir[1]][0]) return false;
+            if (dir[0] && amounts[0] > limits[dir[0]][1]) return false;
+            return true;
         }
         /**
          * Moves the block in a given direction
@@ -1742,8 +1752,9 @@
         move(dir, amount = 1, force = false) {
             if (!this.can_move(dir, amount) && !force) return;
 
-            this._x = Math.floor((this._x + dir[1] * amount) * 100) / 100;
-            this._y = Math.floor((this._y + dir[0] * amount) * 100) / 100;
+            // Round positions so we don't end up with long numbers
+            this._x = Math.floor((this._x + dir[1] * amount) * 1e3) / 1e3;
+            this._y = Math.floor((this._y + dir[0] * amount) * 1e3) / 1e3;
 
             refresh_canvas = true;
         }
@@ -1776,6 +1787,48 @@
         out_of_bounds(coords = null) {
             coords ??= [this._x, this._y];
             return Block.out_of_bounds(coords);
+        }
+        /**
+         * Checks the max movement possible until the bounds
+         *
+         * @returns {{'-1': [number, number], '1': [number, number]}} [x, y]
+         */
+        move_space() {
+            let space_left = this._x;
+            let space_right = BOARD_SIZE[0] - this._x - 1;
+            let space_up = this._y;
+            let space_down = BOARD_SIZE[1] - this._y - 1;
+
+            // Include nearby blocks
+            let blocks_left = Block.GRID.filter(b => b._x < this._x && b._y == Math.round(this._y));
+            let blocks_right = Block.GRID.filter(b => b._x > this._x && b._y == Math.round(this._y));
+            let blocks_up = Block.GRID.filter(b => b._x == Math.round(this._x) && b._y < this._y);
+            let blocks_down = Block.GRID.filter(b => b._x == Math.round(this._x) && b._y > this._y);
+            if (blocks_left.length) {
+                space_left = this._x - blocks_left.map(b => b._x + 1).reduce((m, x) => Math.max(m ,x), 0);
+            }
+            if (blocks_right.length) {
+                let least_right = blocks_right.map(b => b._x).reduce((m, x) => Math.min(m, x), Infinity);
+                space_right = least_right - this._x - 1;
+            }
+            if (blocks_up.length) {
+                space_up = this._y - blocks_up.map(b => b._y + 1).reduce((m, y) => Math.max(m, y), 0);
+            }
+            if (blocks_down.length) {
+                let least_down = blocks_down.map(b => b._y).reduce((m, y) => Math.min(m, y), Infinity);
+                space_down = least_down - this._y - 1;
+            }
+
+            return {
+                '-1': [
+                    space_left,
+                    space_up,
+                ],
+                '1': [
+                    space_right,
+                    space_down,
+                ],
+            };
         }
     }
     class Shape {
@@ -1852,11 +1905,24 @@
          * @param {boolean} [force] True if you really want it move in a direction
          */
         move(dir, amount = 1, force = false) {
-            if (!this.can_move(dir, amount) && !force) return;
+            dir = [...dir];
+            if (!this.can_move(dir, amount) && !force) {
+                let limit = this.get_limits();
+                limit['-1'] = limit['-1'].map(i => -i);
+                for (let i = 0; i < 2; i++) {
+                    // I knew the swapped [y,x]s for directions would bite me back at some point
+                    dir[i] = (dir[i] in limit) ? limit[dir[i]][(i+1)%2] : 0;
+                }
 
-            this._blocks.forEach(b => b.move(dir, amount, force));
-            this._center[0] = Math.floor((this._center[0] +dir[1] * amount) * 100) / 100;
-            this._center[1] = Math.floor((this._center[1] +dir[0] * amount) * 100) / 100;
+                if (!(dir[0] || dir[1])) return;
+            } else {
+                dir[1] *= amount;
+                dir[0] *= amount;
+            }
+
+            this._blocks.forEach(b => b.move(dir, 1, force));
+            this._center[0] = this._center[0] + dir[1];
+            this._center[1] = this._center[1] + dir[0];
         }
         /**
          * Checks if the shape can rotate in a given direction
@@ -1875,7 +1941,7 @@
                 /**
                  * Start X
                  */
-                let x_start = b._x - x_center;
+                const x_start = b._x - x_center;
                 /**
                  * End X
                  */
@@ -1883,7 +1949,7 @@
                 /**
                  * Start Y
                  */
-                let y_start = b._y - y_center;
+                const y_start = b._y - y_center;
                 /**
                  * End Y
                  */
@@ -1897,12 +1963,26 @@
                     x_end += y_start - x_start;
                     y_end += (x_start + y_start) * -1;
                 }
+                /** @type {(x: number) => number} */
+                let x_func = Math.round;
+                /** @type {(x: number) => number} */
+                let y_func = Math.round;
+                if (x_start < x_end) {
+                    x_func = Math.ceil;
+                } else if (x_start > x_end) {
+                    x_func = Math.floor;
+                }
+                if (y_start < y_end) {
+                    y_func = Math.ceil;
+                } else if (y_start > y_end) {
+                    y_func = Math.floor;
+                }
 
                 // Offset by the central block
                 x_end += x_center;
                 y_end += y_center;
 
-                if (Block.out_of_bounds([x_end, y_end]) || Block.GRID.some(b => b[0] == x_end && b[1] == y_end))
+                if (Block.out_of_bounds([x_end, y_end]) || Block.GRID.some(b => b._x == x_func(x_end) && b._y == y_func(y_end)))
                     can_rotate = false;
             });
             return can_rotate;
@@ -1975,12 +2055,43 @@
             let center = [...this._center.map(Math.round)];
 
             let clone = new Shape(color, coords, 0, 0, center, true);
+            /*this._blocks.forEach((b, i) => {
+                let color = blend_colors(b._color, THEMES[theme].blockus[game_state].background);
+                clone._blocks[i]._color = color;
+            });*/
 
-            while(clone.can_move(DIRECTION.down)) clone.move(DIRECTION.down);
+            let down = this.get_limits()[1][1];
+            clone.move(DIRECTION.down, Math.round(down));
 
             return clone;
+        }
+        /**
+         * Gets the max movement in a given direction
+         *
+         * @returns {{
+         *  '-1': [number, number],
+         *  '1': [number, number],
+         * }}
+         */
+        get_limits() {
+            let diffs = this._blocks.map(b => b.move_space());
+            return diffs.reduce((prev, diff) => {
+                return {
+                    '-1': [
+                        Math.min(prev['-1'][0], diff['-1'][0]),
+                        Math.min(prev['-1'][1], diff['-1'][1]),
+                    ],
+                    '1': [
+                        Math.min(prev['1'][0], diff['1'][0]),
+                        Math.min(prev['1'][1], diff['1'][1]),
+                    ],
+                };
+            }, {
+                '-1': [Infinity, Infinity],
+                '1': [Infinity, Infinity],
+            });
         }
     }
 
     init();
-//})();
+})();
