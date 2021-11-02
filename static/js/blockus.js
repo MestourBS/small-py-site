@@ -240,7 +240,7 @@
             name: gettext('game_blockus_action_move_shape_left'),
         },
         'move_shape_down': {
-            func: () => {descend(15/TPS);},
+            func: () => {descend(15/TPS, true);},
             name: gettext('game_blockus_action_move_shape_down'),
         },
         'game_state_pause': {
@@ -739,9 +739,12 @@
      * If it can't move down, it creates a new one
      *
      * @param {number} diff
+     * @param {boolean} pressed
      */
-    function descend(diff = 1) {
+    function descend(diff = 1, pressed = false) {
         if (!current_shape || game_state != 'playing' || diff <= 0) return;
+
+        if (!pressed) diff = diff * (log_base(score + 1, 1e3/3) + 1);
 
         if (current_shape.can_move(DIRECTION.down, diff)) {
             current_shape.move(DIRECTION.down, diff);
@@ -1633,6 +1636,16 @@
         }
 
         return colorc;
+    }
+    /**
+     * Returns log`base`(number)
+     *
+     * @param {number} number
+     * @param {number} base
+     * @returns {number}
+     */
+    function log_base(number, base) {
+        return Math.log(number) / Math.log(base);
     }
 
     class Block {
