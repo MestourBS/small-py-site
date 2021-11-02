@@ -118,7 +118,7 @@
             paths: [
                 [[0,0], [0,1], [1,1], [1,0]],
             ],
-        }
+        },
     };
     /**
      * Unit types for beautify
@@ -178,10 +178,6 @@
         3: [1, 0],
     });
     /**
-     * Amount of times the loop runs each second
-     */
-    const TPS = 30;
-    /**
      * @type { {
      *  playing: {
      *      [key: string]: string[],
@@ -226,7 +222,7 @@
         'move_shape_right': {
             func: () => {
                 if (!current_shape || game_state != 'playing') return;
-                current_shape.move(DIRECTION.right, 15/TPS);
+                current_shape.move(DIRECTION.right, .5);
                 current_shadow = current_shape.get_shadow();
             },
             name: gettext('game_blockus_action_move_shape_right'),
@@ -234,13 +230,13 @@
         'move_shape_left': {
             func: () => {
                 if (!current_shape || game_state != 'playing') return;
-                current_shape.move(DIRECTION.left, 15/TPS);
+                current_shape.move(DIRECTION.left, .5);
                 current_shadow = current_shape.get_shadow();
             },
             name: gettext('game_blockus_action_move_shape_left'),
         },
         'move_shape_down': {
-            func: () => {descend(15/TPS, true);},
+            func: () => {descend(.5, true);},
             name: gettext('game_blockus_action_move_shape_down'),
         },
         'game_state_pause': {
@@ -338,12 +334,6 @@
      * @type {boolean}
      */
     let diagonal_shapes = false;
-    /**
-     * Determines whether the canvas needs to be refreshed or not
-     *
-     * @type {boolean}
-     */
-    let refresh_canvas = true;
     /**
      * Determines whether the score needs to be refreshed or not
      *
@@ -622,8 +612,6 @@
         }).forEach(b => b.draw());
 
         if (current_shape) current_shape.draw();
-
-        refresh_canvas = false;
     }
     /**
      * Applies the selected theme styles to the DOM
@@ -1390,9 +1378,9 @@
             group_head_row.appendChild(group_head_cell);
             group_head_cell.appendChild(group_head);
             group_head.innerText = {
-                'playing': "{{ gettext('game_blockus_keybinds_group_playing') }}",
-                'pause': "{{ gettext('game_blockus_keybinds_group_pause') }}",
-                'gameover': "{{ gettext('game_blockus_keybinds_group_gameover') }}",
+                'playing': gettext('game_blockus_keybinds_group_playing'),
+                'pause': gettext('game_blockus_keybinds_group_pause'),
+                'gameover': gettext('game_blockus_keybinds_group_gameover'),
             }[name];
 
             for (let [action, keys] of Object.entries(keygroup)) {
@@ -1406,7 +1394,7 @@
 
                     input.type = 'text';
                     input.value = key;
-                    input.title = "{{ gettext('game_blockus_keybind_leave_blank_tip') }}";
+                    input.title = gettext('game_blockus_keybind_leave_blank_tip');
 
                     input.addEventListener('change', e => {
                         keybind_update(name, action, input.value, key);
@@ -1768,8 +1756,6 @@
             // Round positions so we don't end up with long numbers
             this._x = Math.floor((this._x + dir[1] * amount) * 1e3) / 1e3;
             this._y = Math.floor((this._y + dir[0] * amount) * 1e3) / 1e3;
-
-            refresh_canvas = true;
         }
         /**
          * Shoves a block in the grid
@@ -2047,7 +2033,6 @@
                 b._x = x_end;
                 b._y = y_end;
             });
-            refresh_canvas = true;
         }
         /**
          * Adds every block to the grid
