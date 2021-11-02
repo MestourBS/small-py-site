@@ -23,7 +23,6 @@ app.register_blueprint(routeAuth, url_prefix='/auth')
 app.register_blueprint(routeChat, url_prefix='/chat')
 app.register_blueprint(routeGame, url_prefix='/games')
 
-# Page à afficher en cas d'erreur 404
 @app.errorhandler(404)
 def page_not_found(e):
 	return render_template('errors/404.html'), 404
@@ -38,5 +37,5 @@ if __name__ == '__main__':
 	app.secret_key = b'_5#_GRAND_PAS_ARAGORN_F4Q8z\n\xec]'
 	app.debug = True
 	context = ('sectioninformatique.net-2019-11-27.crt', 'sectioninformatique.net-2019-11-27.key')
-	app.run(host='127.0.0.1', port=5000)
-	app.run(host='0.0.0.0', port=5000, ssl_context=context)
+	app.run(host='192.168.4.149', port=5000)
+	app.run(host='192.168.4.149', port=5000, ssl_context=context)

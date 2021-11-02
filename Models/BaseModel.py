@@ -62,8 +62,9 @@ class BaseModel:
         # values
         query += 'VALUES '
         def vals_map(row: list[Any]) -> str:
-            return '(' + ', '.join(str(v) for v in row) + ')'
+            return '(' + ', '.join("'{}'".format(str(v).replace("'", "\\'")) for v in row) + ')'
         query += ', '.join(map(vals_map, values))
+        print(query)
 
         # Run
         result = self._run(query) is not None
@@ -139,6 +140,8 @@ class BaseModel:
         list[Any]
             The database rows
         '''
+        if not self._primary_key:
+            return None
         comp = '='
         cond = '{} {} {}'
         # If an array of primary values is passed, check with IN
@@ -195,6 +198,8 @@ class BaseModel:
         bool
             True on success, False on failure
         '''
+        if not self._primary_key:
+            return None
         comp = '='
         cond = '{} {} {}'
         # If an array of primary values is passed, check with IN
@@ -244,6 +249,8 @@ class BaseModel:
         bool
             True on success, False on failure
         '''
+        if not self._primary_key:
+            return None
         comp = '='
         cond = '{} {} {}'
         # If an array of primary values is passed, check with IN

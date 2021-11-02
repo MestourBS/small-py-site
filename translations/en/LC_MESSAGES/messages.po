@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-10-26 10:34+0200\n"
+"POT-Creation-Date: 2021-10-29 14:25+0200\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -59,129 +59,238 @@ msgstr "Error: No group name"
 msgid "chat_unknown_user"
 msgstr "Unknown user"
 
-#: static/js/idle.js:22 templates/games/blockus.js:134
+#: static/js/blockus.js:54
+msgid "game_blockus_theme_name_dark"
+msgstr "Dark mode"
+
+#: static/js/blockus.js:75
+msgid "game_blockus_theme_name_light"
+msgstr "Light mode"
+
+#: static/js/blockus.js:118
+msgid "game_blockus_shape_square"
+msgstr "Sqaure"
+
+#: static/js/blockus.js:135 static/js/idle.js:21
 msgid "game_blockus_unit_none"
 msgstr "Scientist notation"
 
-#: static/js/idle.js:26 templates/games/blockus.js:138
+#: static/js/blockus.js:139 static/js/idle.js:25
 msgid "game_blockus_unit_si"
 msgstr "SI notation"
 
-#: static/js/idle.js:32 templates/games/blockus.js:144
+#: static/js/blockus.js:145 static/js/idle.js:31
 msgid "game_blockus_unit_numeral"
 msgstr "Numeral notation"
 
-#: static/js/idle.js:249
+#: static/js/blockus.js:233
+msgid "game_blockus_action_move_shape_right"
+msgstr "Move shape to the right"
+
+#: static/js/blockus.js:241
+msgid "game_blockus_action_move_shape_left"
+msgstr "Move shape to the left"
+
+#: static/js/blockus.js:245
+msgid "game_blockus_action_move_shape_down"
+msgstr "Move shape down"
+
+#: static/js/blockus.js:252
+msgid "game_blockus_action_game_state_pause"
+msgstr "Pause"
+
+#: static/js/blockus.js:259
+msgid "game_blockus_action_game_state_playing"
+msgstr "Resume"
+
+#: static/js/blockus.js:266
+msgid "game_blockus_action_rotate_shape_clockwise"
+msgstr "Rotate shape clockwise"
+
+#: static/js/blockus.js:273
+msgid "game_blockus_action_rotate_shape_counter_clockwise"
+msgstr "Rotate shape counter clockwise"
+
+#: static/js/blockus.js:276
+msgid "game_blockus_reset_confirm"
+msgstr "Do you want to reset your blockus?"
+
+#: static/js/blockus.js:277
+msgid "game_blockus_action_reset_game"
+msgstr "Reset game"
+
+#: static/js/blockus.js:867
+msgid "game_blockus_option_theme"
+msgstr "Theme"
+
+#: static/js/blockus.js:893
+msgid "game_blockus_option_block_width"
+msgstr "Block width"
+
+#: static/js/blockus.js:899 static/js/blockus.js:922 static/js/blockus.js:1039
+#: static/js/blockus.js:1062
+msgid "game_blockus_warn_option_reset"
+msgstr "This option will reset the game. Continue?"
+
+#: static/js/blockus.js:916
+msgid "game_blockus_option_block_height"
+msgstr "Block height"
+
+#: static/js/blockus.js:939
+msgid "game_blockus_option_shape"
+msgstr "Block shape"
+
+#: static/js/blockus.js:965
+msgid "game_blockus_option_unit"
+msgstr "Score unit"
+
+#: static/js/blockus.js:991
+msgid "game_blockus_option_block_size_min"
+msgstr "Minimum amount of blocks in a shape"
+
+#: static/js/blockus.js:1012
+msgid "game_blockus_option_block_size_max"
+msgstr "Maxmimum amount of blocks in a shape"
+
+#: static/js/blockus.js:1033
+msgid "game_blockus_option_board_width"
+msgstr "Game width"
+
+#: static/js/blockus.js:1056
+msgid "game_blockus_option_board_height"
+msgstr "Game height"
+
+#: static/js/blockus.js:1079
+msgid "game_blockus_option_trim_score"
+msgstr "Trim the trailing zeros"
+
+#: static/js/blockus.js:1101
+msgid "game_blockus_option_rainbow_shapes"
+msgstr "Randomly colored shapes"
+
+#: static/js/blockus.js:1123
+msgid "game_blockus_option_rainbow_blocks"
+msgstr "Randomly colored blocks"
+
+#: static/js/blockus.js:1145
+msgid "game_blockus_option_painbow_mode"
+msgstr "Constant rainbow mode"
+
+#: static/js/blockus.js:1167
+msgid "game_blockus_option_diagonals"
+msgstr "Diagonals in shapes"
+
+#: static/js/idle.js:248
 msgid "games_idle_bosses_traits"
 msgstr "Types"
 
-#: static/js/idle.js:267
+#: static/js/idle.js:266
 msgid "games_idle_bosses_drops"
 msgstr "Drops"
 
-#: static/js/idle.js:813
+#: static/js/idle.js:812
 msgid "games_idle_buildings_cost"
 msgstr "Cost"
 
-#: static/js/idle.js:846
+#: static/js/idle.js:845
 msgid "games_idle_buildings_production"
 msgstr "Production"
 
-#: static/js/idle.js:878
+#: static/js/idle.js:877
 msgid "games_idle_buildings_damage"
 msgstr "Damage"
 
-#: static/js/idle.js:1108
+#: static/js/idle.js:1107
 msgid "games_idle_upgradess_cost"
 msgstr "Cost"
 
-#: static/js/idle.js:1142
+#: static/js/idle.js:1141
 msgid "games_idle_upgradess_multipliers"
 msgstr "Effects"
 
-#: static/js/idle.js:1421
+#: static/js/idle.js:1420
 msgid "games_idle_trait_none"
 msgstr "None"
 
-#: static/js/idle.js:1426
+#: static/js/idle.js:1425
 msgid "games_idle_trait_plant"
 msgstr "Plant"
 
-#: static/js/idle.js:1435
+#: static/js/idle.js:1434
 msgid "games_idle_trait_fire"
 msgstr "Fire"
 
-#: static/js/idle.js:1444
+#: static/js/idle.js:1443
 msgid "games_idle_trait_water"
 msgstr "Water"
 
-#: static/js/idle.js:1476
+#: static/js/idle.js:1475
 msgid "games_idle_boss_scarecrow"
 msgstr "Scarecrow"
 
-#: static/js/idle.js:1483
+#: static/js/idle.js:1482
 msgid "games_idle_boss_small_rat"
 msgstr "Small rat"
 
-#: static/js/idle.js:1490
+#: static/js/idle.js:1489
 msgid "games_idle_boss_infinity"
 msgstr "Infinity"
 
-#: static/js/idle.js:1519
+#: static/js/idle.js:1518
 msgid "games_idle_resource_points"
 msgstr "Points"
 
-#: static/js/idle.js:1555
+#: static/js/idle.js:1554
 msgid "games_idle_building_puncher"
 msgstr "Puncher"
 
-#: static/js/idle.js:1601
+#: static/js/idle.js:1600
 msgid "games_idle_upgrade_building_puncher_01"
 msgstr "Two hands"
 
-#: static/js/idle.js:1618
+#: static/js/idle.js:1617
 msgid "games_idle_upgrade_building_puncher_02"
 msgstr "Big fists"
 
-#: static/js/idle.js:1635
+#: static/js/idle.js:1634
 msgid "games_idle_upgrade_building_puncher_03"
 msgstr "Giant hands"
 
-#: static/js/idle.js:1652
+#: static/js/idle.js:1651
 msgid "games_idle_upgrade_building_puncher_04"
 msgstr "Boxing gloves"
 
-#: static/js/idle.js:1669
+#: static/js/idle.js:1668
 msgid "games_idle_upgrade_building_puncher_05"
 msgstr "Spiny gloves"
 
-#: static/js/idle.js:1686
+#: static/js/idle.js:1685
 msgid "games_idle_upgrade_building_puncher_06"
 msgstr "Double fists"
 
-#: static/js/idle.js:1703
+#: static/js/idle.js:1702
 msgid "games_idle_upgrade_building_puncher_07"
 msgstr "More muscle"
 
-#: static/js/idle.js:1720
+#: static/js/idle.js:1719
 msgid "games_idle_upgrade_building_puncher_08"
 msgstr "Big fingers"
 
-#: static/js/idle.js:1737
+#: static/js/idle.js:1736
 msgid "games_idle_upgrade_building_puncher_09"
 msgstr "Cyber hands"
 
-#: static/js/idle.js:1754
+#: static/js/idle.js:1753
 msgid "games_idle_upgrade_building_puncher_10"
 msgstr "Four arms"
 
-#: templates/auth/change_password.html:2 templates/auth/login.html:14
+#: templates/auth/change_password.html:2 templates/auth/login.html:21
 #: templates/auth/register.html:2 templates/auth/register.html:22
 #: templates/header.html:20
 msgid "register"
 msgstr "Register"
 
-#: templates/auth/login.html:2 templates/auth/login.html:15
+#: templates/auth/login.html:2 templates/auth/login.html:22
 #: templates/header.html:20
 msgid "login"
 msgstr "Login"
@@ -202,7 +311,7 @@ msgstr "Blockus"
 msgid "home_view_chat"
 msgstr "Go to the chat"
 
-#: templates/auth/change_password.html:13 templates/auth/login.html:10
+#: templates/auth/change_password.html:13 templates/auth/login.html:17
 #: templates/auth/register.html:13
 msgid "password"
 msgstr "Password"
@@ -224,7 +333,7 @@ msgstr "Cancel"
 msgid "change_password"
 msgstr "Change password"
 
-#: templates/auth/login.html:6
+#: templates/auth/login.html:13
 msgid "username"
 msgstr "Username"
 
@@ -270,124 +379,31 @@ msgstr "Options"
 msgid "blockus_game_keybinds"
 msgstr "Keybinds"
 
-#: templates/games/blockus.js:53
-msgid "game_blockus_theme_name_dark"
-msgstr "Dark mode"
+#: templates/rpg/create.html:12
+msgid "rpg_character_name"
+msgstr ""
 
-#: templates/games/blockus.js:74
-msgid "game_blockus_theme_name_light"
-msgstr "Light mode"
+#: templates/rpg/create.html:16
+msgid "rpg_character_race"
+msgstr ""
 
-#: templates/games/blockus.js:117
-msgid "game_blockus_shape_square"
-msgstr "Sqaure"
+#: templates/rpg/create.html:24
+msgid "rpg_character_class"
+msgstr ""
 
-#: templates/games/blockus.js:231
-msgid "game_blockus_action_move_shape_right"
-msgstr "Move shape to the right"
+#: templates/rpg/create.html:33
+msgid "rpg_character_create"
+msgstr ""
 
-#: templates/games/blockus.js:238
-msgid "game_blockus_action_move_shape_left"
-msgstr "Move shape to the left"
+#~ msgid "game_blockus_keybinds_group_playing"
+#~ msgstr "While playing"
 
-#: templates/games/blockus.js:242
-msgid "game_blockus_action_move_shape_down"
-msgstr "Move shape down"
+#~ msgid "game_blockus_keybinds_group_pause"
+#~ msgstr "While paused"
 
-#: templates/games/blockus.js:246
-msgid "game_blockus_action_game_state_pause"
-msgstr "Pause"
+#~ msgid "game_blockus_keybinds_group_gameover"
+#~ msgstr "After losing"
 
-#: templates/games/blockus.js:250
-msgid "game_blockus_action_game_state_playing"
-msgstr "Resume"
-
-#: templates/games/blockus.js:254
-msgid "game_blockus_action_rotate_shape_clockwise"
-msgstr "Rotate shape clockwise"
-
-#: templates/games/blockus.js:258
-msgid "game_blockus_action_rotate_shape_counter_clockwise"
-msgstr "Rotate shape counter clockwise"
-
-#: templates/games/blockus.js:261
-msgid "game_blockus_reset_confirm"
-msgstr "Do you want to reset your blockus?"
-
-#: templates/games/blockus.js:262
-msgid "game_blockus_action_reset_game"
-msgstr "Reset game"
-
-#: templates/games/blockus.js:827
-msgid "game_blockus_option_theme"
-msgstr "Theme"
-
-#: templates/games/blockus.js:853
-msgid "game_blockus_option_block_width"
-msgstr "Block width"
-
-#: templates/games/blockus.js:859 templates/games/blockus.js:882
-#: templates/games/blockus.js:999 templates/games/blockus.js:1022
-msgid "game_blockus_warn_option_reset"
-msgstr "This option will reset the game. Continue?"
-
-#: templates/games/blockus.js:876
-msgid "game_blockus_option_block_height"
-msgstr "Block height"
-
-#: templates/games/blockus.js:899
-msgid "game_blockus_option_shape"
-msgstr "Block shape"
-
-#: templates/games/blockus.js:925
-msgid "game_blockus_option_unit"
-msgstr "Score unit"
-
-#: templates/games/blockus.js:951
-msgid "game_blockus_option_block_size_min"
-msgstr "Minimum amount of blocks in a shape"
-
-#: templates/games/blockus.js:972
-msgid "game_blockus_option_block_size_max"
-msgstr "Maxmimum amount of blocks in a shape"
-
-#: templates/games/blockus.js:993
-msgid "game_blockus_option_board_width"
-msgstr "Game width"
-
-#: templates/games/blockus.js:1016
-msgid "game_blockus_option_board_height"
-msgstr "Game height"
-
-#: templates/games/blockus.js:1039
-msgid "game_blockus_option_trim_score"
-msgstr "Trim the trailing zeros"
-
-#: templates/games/blockus.js:1061
-msgid "game_blockus_option_rainbow_shapes"
-msgstr "Randomly colored shapes"
-
-#: templates/games/blockus.js:1083
-msgid "game_blockus_option_rainbow_blocks"
-msgstr "Randomly colored blocks"
-
-#: templates/games/blockus.js:1105
-msgid "game_blockus_option_painbow_mode"
-msgstr "Constant rainbow mode"
-
-#: templates/games/blockus.js:1333
-msgid "game_blockus_keybinds_group_playing"
-msgstr "While playing"
-
-#: templates/games/blockus.js:1334
-msgid "game_blockus_keybinds_group_pause"
-msgstr "While paused"
-
-#: templates/games/blockus.js:1335
-msgid "game_blockus_keybinds_group_gameover"
-msgstr "After losing"
-
-#: templates/games/blockus.js:1349
-msgid "game_blockus_keybind_leave_blank_tip"
-msgstr "Leave blank to remove"
+#~ msgid "game_blockus_keybind_leave_blank_tip"
+#~ msgstr "Leave blank to remove"
 
