@@ -732,7 +732,7 @@
     function descend(diff = 1, pressed = false) {
         if (!current_shape || game_state != 'playing' || diff <= 0) return;
 
-        if (!pressed) diff = diff * (log_base(score + 1, 1e3/3) + 1);
+        if (!pressed) diff = diff * (log_base(score + 1, 1e3/3) / 2 + 1);
 
         if (current_shape.can_move(DIRECTION.down, diff)) {
             current_shape.move(DIRECTION.down, diff);
