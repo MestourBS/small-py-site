@@ -607,8 +607,8 @@
         if (current_shadow) current_shadow.draw();
 
         Block.GRID.sort((a, b) => {
-            if (b._y != a._y) return b._y - a._y;
-            return b._x - a._x;
+            if (b.y != a.y) return b.y - a.y;
+            return b.x - a.x;
         }).forEach(b => b.draw());
 
         if (current_shape) current_shape.draw();
@@ -745,7 +745,7 @@
             check_rows();
 
             // Check game over
-            if (Block.GRID.some(b => b._y < 0)) {
+            if (Block.GRID.some(b => b.y < 0)) {
                 game_state = 'gameover';
                 refresh_dom = true;
                 current_shadow = null;
@@ -766,16 +766,16 @@
          */
         let rows = [];
         for (let i = 0; i < BOARD_SIZE[1]; i++) {
-            if (Block.GRID.filter(b => b._y == i).length == BOARD_SIZE[0]) rows.push(i);
+            if (Block.GRID.filter(b => b.y == i).length == BOARD_SIZE[0]) rows.push(i);
         }
         if (!rows.length) return;
 
         for (let i of rows) {
-            while (Block.GRID.filter(b => b._y == i).length) {
-                let j = Block.GRID.findIndex(b => b._y == i);
+            while (Block.GRID.filter(b => b.y == i).length) {
+                let j = Block.GRID.findIndex(b => b.y == i);
                 Block.GRID.splice(j, 1);
             }
-            Block.GRID.filter(b => b._y < i).forEach(b => b.move(DIRECTION.down, 1, true));
+            Block.GRID.filter(b => b.y < i).forEach(b => b.move(DIRECTION.down, 1, true));
         }
 
         // Neat popup for points gained
@@ -1640,10 +1640,9 @@
         /**
          * Game grid
          *
-         * @private
          * @type {Block[]}
          */
-        static _GRID = [];
+        static #GRID = [];
         /**
          * Game grid
          *
@@ -1651,7 +1650,7 @@
          * @type {Block[]}
          */
         static get GRID() {
-            return this._GRID;
+            return this.#GRID;
         }
         /**
          * Checks if a pair of coordinates are out of bounds
@@ -1665,6 +1664,8 @@
             }
             return false;
         }
+
+        #transparent;
 
         /**
          * Creates a new block
@@ -1684,21 +1685,21 @@
                 throw new Error('invalid block y coordinate');
             }
             if (rainbow_blocks) color = random_color();
-            this._transparent = !!transparent;
-            this._color = color;
-            this._x = x;
-            this._y = y;
+            this.#transparent = !!transparent;
+            this.color = color;
+            this.x = x;
+            this.y = y;
         }
         /**
          * Draws the block
          */
         draw() {
             if (painbow_mode && rainbow_blocks) {
-                this._color = random_color();
+                this.color = random_color();
             }
 
-            let start_x = this._x * BLOCK_SIZE[0];
-            let start_y = this._y * BLOCK_SIZE[1];
+            let start_x = this.x * BLOCK_SIZE[0];
+            let start_y = this.y * BLOCK_SIZE[1];
 
             for (let path of BLOCK_SHAPES[block_shape].paths) {
                 // Close path
@@ -1711,8 +1712,8 @@
                 }
 
                 CONTEXT.closePath();
-                CONTEXT.fillStyle = this._color;
-                CONTEXT.strokeStyle = this._transparent ? '#777' : anti_bicolor(this._color);
+                CONTEXT.fillStyle = this.color;
+                CONTEXT.strokeStyle = this.#transparent ? '#777' : anti_bicolor(this.color);
                 CONTEXT.stroke();
                 CONTEXT.fill();
             }
@@ -1754,8 +1755,8 @@
             if (!this.can_move(dir, amount) && !force) return;
 
             // Round positions so we don't end up with long numbers
-            this._x = Math.floor((this._x + dir[1] * amount) * 1e3) / 1e3;
-            this._y = Math.floor((this._y + dir[0] * amount) * 1e3) / 1e3;
+            this.x = Math.floor((this.x + dir[1] * amount) * 1e3) / 1e3;
+            this.y = Math.floor((this.y + dir[0] * amount) * 1e3) / 1e3;
         }
         /**
          * Shoves a block in the grid
@@ -1764,15 +1765,15 @@
             // We don't exist
             if (this.out_of_bounds()) return;
 
-            this._x = Math.round(this._x);
-            this._y = Math.round(this._y);
+            this.x = Math.round(this.x);
+            this.y = Math.round(this.y);
 
             let i;
-            if (i = Block.GRID.findIndex(b => b._x == this._x && b._y == this._y) != -1) {
+            if (i = Block.GRID.findIndex(b => b.x == this.x && b.y == this.y) != -1) {
                 if (Block.GRID[i] != this) return; // Already in, let's leave
 
                 // There's already a block there, so we replace its data
-                Block.GRID[i]._color = this._color;
+                Block.GRID[i]._color = this.color;
             } else {
                 Block.GRID.push(this);
             }
@@ -1784,7 +1785,7 @@
          * @returns {boolean}
          */
         out_of_bounds(coords = null) {
-            coords ??= [this._x, this._y];
+            coords ??= [this.x, this.y];
             return Block.out_of_bounds(coords);
         }
         /**
@@ -1793,29 +1794,29 @@
          * @returns {{'-1': [number, number], '1': [number, number]}} [x, y]
          */
         move_space() {
-            let space_left = this._x;
-            let space_right = BOARD_SIZE[0] - this._x - 1;
-            let space_up = this._y;
-            let space_down = BOARD_SIZE[1] - this._y - 1;
+            let space_left = this.x;
+            let space_right = BOARD_SIZE[0] - this.x - 1;
+            let space_up = this.y;
+            let space_down = BOARD_SIZE[1] - this.y - 1;
 
             // Include nearby blocks
-            let blocks_left = Block.GRID.filter(b => b._x < this._x && b._y == Math.round(this._y));
-            let blocks_right = Block.GRID.filter(b => b._x > this._x && b._y == Math.round(this._y));
-            let blocks_up = Block.GRID.filter(b => b._x == Math.round(this._x) && b._y < this._y);
-            let blocks_down = Block.GRID.filter(b => b._x == Math.round(this._x) && b._y > this._y);
+            let blocks_left = Block.GRID.filter(b => b.x < this.x && b.y == Math.round(this.y));
+            let blocks_right = Block.GRID.filter(b => b.x > this.x && b.y == Math.round(this.y));
+            let blocks_up = Block.GRID.filter(b => b.x == Math.round(this.x) && b.y < this.y);
+            let blocks_down = Block.GRID.filter(b => b.x == Math.round(this.x) && b.y > this.y);
             if (blocks_left.length) {
-                space_left = this._x - blocks_left.map(b => b._x + 1).reduce((m, x) => Math.max(m ,x), 0);
+                space_left = this.x - blocks_left.map(b => b.x + 1).reduce((m, x) => Math.max(m ,x), 0);
             }
             if (blocks_right.length) {
-                let least_right = blocks_right.map(b => b._x).reduce((m, x) => Math.min(m, x), Infinity);
-                space_right = least_right - this._x - 1;
+                let least_right = blocks_right.map(b => b.x).reduce((m, x) => Math.min(m, x), Infinity);
+                space_right = least_right - this.x - 1;
             }
             if (blocks_up.length) {
-                space_up = this._y - blocks_up.map(b => b._y + 1).reduce((m, y) => Math.max(m, y), 0);
+                space_up = this.y - blocks_up.map(b => b.y + 1).reduce((m, y) => Math.max(m, y), 0);
             }
             if (blocks_down.length) {
-                let least_down = blocks_down.map(b => b._y).reduce((m, y) => Math.min(m, y), Infinity);
-                space_down = least_down - this._y - 1;
+                let least_down = blocks_down.map(b => b.y).reduce((m, y) => Math.min(m, y), Infinity);
+                space_down = least_down - this.y - 1;
             }
 
             return {
@@ -1831,6 +1832,11 @@
         }
     }
     class Shape {
+        /** @type {[number, number]} */
+        #center;
+        /** @type {Block[]} */
+        #blocks;
+
         /**
          * Creates a new shape
          *
@@ -1856,14 +1862,10 @@
             if (!Array.isArray(center)) {
                 throw new Error('invalid shape center coordinate');
             }
-            this._transparent = !!transparent;
-            this._center = [center[0] + x, center[1] + y];
-            /**
-             * @type {Block[]}
-             */
-            this._blocks = [];
+            this.#center = [center[0] + x, center[1] + y];
+            this.#blocks = [];
             coords.forEach(c => {
-                this._blocks.push(new Block(color, c[0] + x, c[1] + y, !!transparent));
+                this.#blocks.push(new Block(color, c[0] + x, c[1] + y, !!transparent));
             });
         }
         /**
@@ -1879,9 +1881,9 @@
             if (painbow_mode && !rainbow_blocks && rainbow_shapes) {
                 color = random_color();
             }
-            this._blocks.forEach(b => {
+            this.#blocks.forEach(b => {
                 if (painbow_mode && !rainbow_blocks && rainbow_shapes) {
-                    b._color = color;
+                    b.color = color;
                 }
                 b.draw();
             })
@@ -1894,7 +1896,7 @@
          * @returns {boolean}
          */
         can_move(dir, amount = 1) {
-            return this._blocks.every(b => b.can_move(dir, amount));
+            return this.#blocks.every(b => b.can_move(dir, amount));
         }
         /**
          * Moves the block in a given direction
@@ -1919,9 +1921,9 @@
                 dir[0] *= amount;
             }
 
-            this._blocks.forEach(b => b.move(dir, 1, force));
-            this._center[0] = this._center[0] + dir[1];
-            this._center[1] = this._center[1] + dir[0];
+            this.#blocks.forEach(b => b.move(dir, 1, force));
+            this.#center[0] = this.#center[0] + dir[1];
+            this.#center[1] = this.#center[1] + dir[0];
         }
         /**
          * Checks if the shape can rotate in a given direction
@@ -1930,29 +1932,29 @@
          * @returns {boolean}
          */
         can_rotate(clockwise = true) {
-            let center = this._center;
+            let center = this.#center;
             let [x_center, y_center] = center;
             let can_rotate = true;
 
-            this._blocks.forEach(b => {
+            this.#blocks.forEach(b => {
                 if (!can_rotate) return;
 
                 /**
                  * Start X
                  */
-                const x_start = b._x - x_center;
+                const x_start = b.x - x_center;
                 /**
                  * End X
                  */
-                let x_end = b._x - x_center;
+                let x_end = b.x - x_center;
                 /**
                  * Start Y
                  */
-                const y_start = b._y - y_center;
+                const y_start = b.y - y_center;
                 /**
                  * End Y
                  */
-                let y_end = b._y - y_center;
+                let y_end = b.y - y_center;
 
                 // Rotate
                 if (clockwise) {
@@ -1981,7 +1983,7 @@
                 x_end += x_center;
                 y_end += y_center;
 
-                if (Block.out_of_bounds([x_end, y_end]) || Block.GRID.some(b => b._x == x_func(x_end) && b._y == y_func(y_end)))
+                if (Block.out_of_bounds([x_end, y_end]) || Block.GRID.some(b => b.x == x_func(x_end) && b.y == y_func(y_end)))
                     can_rotate = false;
             });
             return can_rotate;
@@ -1995,26 +1997,26 @@
         rotate(clockwise = true, force = false) {
             if (!this.can_rotate(clockwise) && !force) return;
 
-            let center = this._center;
+            let center = this.#center;
             let [x_center, y_center] = center;
 
-            this._blocks.forEach(b => {
+            this.#blocks.forEach(b => {
                 /**
                  * Start X
                  */
-                let x_start = b._x - x_center;
+                let x_start = b.x - x_center;
                 /**
                  * End X
                  */
-                let x_end = b._x - x_center;
+                let x_end = b.x - x_center;
                 /**
                  * Start Y
                  */
-                let y_start = b._y - y_center;
+                let y_start = b.y - y_center;
                 /**
                  * End Y
                  */
-                let y_end = b._y - y_center;
+                let y_end = b.y - y_center;
 
                 // Rotate
                 if (clockwise) {
@@ -2030,15 +2032,15 @@
                 y_end += y_center;
 
                 // Move the block itself
-                b._x = x_end;
-                b._y = y_end;
+                b.x = x_end;
+                b.y = y_end;
             });
         }
         /**
          * Adds every block to the grid
          */
         add_to_grid() {
-            this._blocks.forEach(b => b.add_to_grid());
+            this.#blocks.forEach(b => b.add_to_grid());
         }
         /**
          * Returns the lowest placed version of this shape
@@ -2048,9 +2050,9 @@
          * @returns {Shape}
          */
         get_shadow() {
-            let color = blend_colors(this._blocks[0]._color, THEMES[theme].blockus[game_state].background);
-            let coords = this._blocks.map(b => [Math.round(b._x), Math.round(b._y)]);
-            let center = [...this._center.map(Math.round)];
+            let color = blend_colors(this.#blocks[0].color, THEMES[theme].blockus[game_state].background);
+            let coords = this.#blocks.map(b => [Math.round(b.x), Math.round(b.y)]);
+            let center = [...this.#center.map(Math.round)];
 
             let clone = new Shape(color, coords, 0, 0, center, true);
             /*this._blocks.forEach((b, i) => {
@@ -2072,7 +2074,7 @@
          * }}
          */
         get_limits() {
-            let diffs = this._blocks.map(b => b.move_space());
+            let diffs = this.#blocks.map(b => b.move_space());
             return diffs.reduce((prev, diff) => {
                 return {
                     '-1': [
