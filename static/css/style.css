@@ -35,6 +35,9 @@ html {
 }
 #current_boss_div {
     border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 #current_boss_div img {
     position: relative;
@@ -48,11 +51,13 @@ html {
 #resources_table {
     height: 100%;
 }
-#boss_div, #damage_table, #current_boss_div, .building, #buildings_div {
+#boss_div, #damage_table, #damage_table > tr, #current_boss_div, .building, #resources_table {
+    width: 200px;
+}
+#boss_div, #damage_table, #current_boss_div, .building, #buildings_div, #prestige_div {
     height: 200px;
 }
-#boss_div, #damage_table, #current_boss_div, .building, #resources_table {
-    width: 200px;
+#boss_div, #damage_table, #damage_table > tr, .building, #resources_table, #prestige_div {
     display: inline-block;
 }
 #buildings_div, #upgrades_div {
@@ -66,6 +71,14 @@ html {
     background-color: black;
     color: white;
     padding: 5px;
+    min-width: 200px;
+}
+#boss_div {
+    vertical-align: top;
+}
+#prestige_div {
+    vertical-align: top;
+    width: calc(100% - 410px);
 }
 
 .text-align-left {
@@ -100,7 +113,6 @@ html {
     background-color: darkred;
     height: 15px;
     width: 100%;
-    margin-top: -15px;
 }
 .display-inline-block {
     display: inline-block;
@@ -113,17 +125,20 @@ html {
 .cant-afford {
     color: red;
 }
+.building {
+    white-space: nowrap;
+}
 
 @keyframes popup {
     from {margin-top: 0}
     to {margin-top: -30px}
 }
 @keyframes rainbow-text {
-    0% {color: #f00}
-    16% {color: #ff0}
-    33% {color: #0f0}
-    50% {color: #0ff}
-    67% {color: #00f}
-    83% {color: #f0f}
+    0%   {color: #f00}
+    16%  {color: #ff0}
+    33%  {color: #0f0}
+    50%  {color: #0ff}
+    67%  {color: #00f}
+    83%  {color: #f0f}
     100% {color: #f00}
 }
