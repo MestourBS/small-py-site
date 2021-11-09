@@ -21,8 +21,11 @@ def login():
             errors.append(gettext('auth_error_no_password'))
         if not user_model.check_password(password, username):
             errors.append(gettext('auth_error_invalid_login'))
+        users = user_model.get(['id'], f'username = "{username}"')
+        if not users:
+            errors.append(gettext('auth_error_user_not_exist'))
         if not errors:
-            user = user_model.get(['id'], f'username = "{username}"')[0]
+            user = users[0]
             session['username'] = username
             session['user_id'] = user['id']
             return redirect(url_for('home.home'))
