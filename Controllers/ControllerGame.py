@@ -9,3 +9,7 @@ def blockus_game():
 @routeGame.route('/idle')
 def idle_game():
     return render_template('games/idle.html')
+
+@routeGame.route('/rpg')
+def rpg_game():
+    return render_template('games/rpg.html')

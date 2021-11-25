@@ -2411,7 +2411,7 @@ if (typeof gettext != 'function') {
             //#region Puncher-Dancer synergies
             {
                 id: 'puncher_dancer_01',
-                name: gettext('games_idle_upgrade_building_puncher_dancer_01'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_dancer_01'),
                 cost: {
                     points: 200e6, //10 * 123 * 5 * 1.15 ** 75
                 },
@@ -2431,7 +2431,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_dancer_02',
-                name: gettext('games_idle_upgrade_building_puncher_dancer_02'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_dancer_02'),
                 cost: {
                     points: 15e12, //10 * 123 * 10 * 1.15 ** 150
                 },
@@ -2451,7 +2451,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_dancer_03',
-                name: gettext('games_idle_upgrade_building_puncher_dancer_03'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_dancer_03'),
                 cost: {
                     points: 30e21, //10 * 123 * 15 * 1.15 ** 300
                 },
@@ -2471,7 +2471,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_dancer_04',
-                name: gettext('games_idle_upgrade_building_puncher_dancer_04'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_dancer_04'),
                 cost: {
                     points: 35e30, //10 * 123 * 15 * 1.15 ** 450
                 },
@@ -2493,7 +2493,7 @@ if (typeof gettext != 'function') {
             //#region Knight-King synergies
             {
                 id: 'knight_king_01',
-                name: gettext('games_idle_upgrade_building_knight_king_01'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_king_01'),
                 cost: {
                     points: 4e12, //1_400 * 16_000 * 5 * 1.15 ** 75
                 },
@@ -2513,7 +2513,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_king_02',
-                name: gettext('games_idle_upgrade_building_knight_king_02'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_king_02'),
                 cost: {
                     points: 285e15, //1_400 * 16_000 * 10 * 1.15 ** 150
                 },
@@ -2533,7 +2533,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_king_03',
-                name: gettext('games_idle_upgrade_building_knight_king_03'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_king_03'),
                 cost: {
                     points: 555e24, //1_400 * 16_000 * 15 * 1.15 ** 300
                 },
@@ -2553,7 +2553,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_king_04',
-                name: gettext('games_idle_upgrade_building_knight_king_04'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_king_04'),
                 cost: {
                     points: 693e33, //1_400 * 16_000 * 15 * 1.15 ** 450
                 },
@@ -2576,7 +2576,7 @@ if (typeof gettext != 'function') {
             //#region Apprentice-Magician synergies
             {
                 id: 'apprentice_magician_01',
-                name: gettext('games_idle_upgrade_building_apprentice_magician_01'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_magician_01'),
                 cost: {
                     magic_powder: 198e6, //10 * 111 * 5 * 1.15 ** 75
                 },
@@ -2596,7 +2596,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_magician_02',
-                name: gettext('games_idle_upgrade_building_apprentice_magician_02'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_magician_02'),
                 cost: {
                     magic_powder: 15e12, //10 * 111 * 10 * 1.15 ** 150
                 },
@@ -2616,7 +2616,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_magician_03',
-                name: gettext('games_idle_upgrade_building_apprentice_magician_03'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_magician_03'),
                 cost: {
                     magic_powder: 26e21, //10 * 111 * 15 * 1.15 ** 300
                 },
@@ -2636,7 +2636,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_magician_04',
-                name: gettext('games_idle_upgrade_building_apprentice_magician_04'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_magician_04'),
                 cost: {
                     magic_powder: 33e30, //10 * 111 * 15 * 1.15 ** 450
                 },
@@ -2658,7 +2658,7 @@ if (typeof gettext != 'function') {
             //#region Wizard-Fairy synergies
             {
                 id: 'wizard_fairy_01',
-                name: gettext('games_idle_upgrade_building_wizard_fairy_01'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_fairy_01'),
                 cost: {
                     magic_powder: 3.2e12, //1_280 * 14_440 * 5 * 1.15 ** 75
                 },
@@ -2678,7 +2678,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_fairy_02',
-                name: gettext('games_idle_upgrade_building_wizard_fairy_02'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_fairy_02'),
                 cost: {
                     magic_powder: 233e15, //1_280 * 14_440 * 10 * 1.15 ** 150
                 },
@@ -2698,7 +2698,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_fairy_03',
-                name: gettext('games_idle_upgrade_building_wizard_fairy_03'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_fairy_03'),
                 cost: {
                     magic_powder: 512e24, //1_280 * 14_440 * 15 * 1.15 ** 300
                 },
@@ -2718,7 +2718,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_fairy_04',
-                name: gettext('games_idle_upgrade_building_wizard_fairy_04'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_fairy_04'),
                 cost: {
                     magic_powder: 567e33, //1_280 * 14_440 * 15 * 1.15 ** 450
                 },
@@ -2741,7 +2741,7 @@ if (typeof gettext != 'function') {
             //#region Fan-Wind synergies
             {
                 id: 'fan_wind_01',
-                name: gettext('games_idle_upgrade_building_fan_wind_01'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_wind_01'),
                 cost: {
                     dust: 175e6, //10 * 100 * 5 * 1.15 ** 75
                 },
@@ -2761,7 +2761,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_wind_02',
-                name: gettext('games_idle_upgrade_building_fan_wind_02'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_wind_02'),
                 cost: {
                     dust: 12e12, //10 * 100 * 10 * 1.15 ** 150
                 },
@@ -2781,7 +2781,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_wind_03',
-                name: gettext('games_idle_upgrade_building_fan_wind_03'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_wind_03'),
                 cost: {
                     dust: 24e21, //10 * 100 * 15 * 1.15 ** 300
                 },
@@ -2801,7 +2801,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_wind_04',
-                name: gettext('games_idle_upgrade_building_fan_wind_04'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_wind_04'),
                 cost: {
                     dust: 30e30, //10 * 100 * 15 * 1.15 ** 450
                 },
@@ -2823,7 +2823,7 @@ if (typeof gettext != 'function') {
             //#region Bird-Tornado synergies
             {
                 id: 'bird_tornado_01',
-                name: gettext('games_idle_upgrade_building_bird_tornado_01'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_tornado_01'),
                 cost: {
                     dust: 1.75e12, //1_000 * 10_000 * 5 * 1.15 ** 75
                 },
@@ -2843,7 +2843,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_tornado_02',
-                name: gettext('games_idle_upgrade_building_bird_tornado_02'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_tornado_02'),
                 cost: {
                     dust: 120e15, //1_000 * 10_000 * 10 * 1.15 ** 150
                 },
@@ -2863,7 +2863,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_tornado_03',
-                name: gettext('games_idle_upgrade_building_bird_tornado_03'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_tornado_03'),
                 cost: {
                     dust: 240e24, //1_000 * 10_000 * 15 * 1.15 ** 300
                 },
@@ -2883,7 +2883,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_tornado_04',
-                name: gettext('games_idle_upgrade_building_bird_tornado_04'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_tornado_04'),
                 cost: {
                     dust: 300e33, //1_000 * 10_000 * 15 * 1.15 ** 450
                 },
@@ -2909,7 +2909,7 @@ if (typeof gettext != 'function') {
             //#region Puncher upgrades
             {
                 id: 'puncher_01',
-                name: gettext('games_idle_upgrade_building_puncher_01'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_01'),
                 cost: {
                     points: 25, //10 * 2 * 1.15 ** 1
                 },
@@ -2927,7 +2927,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_02',
-                name: gettext('games_idle_upgrade_building_puncher_02'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_02'),
                 cost: {
                     points: 125, //10 * 3 * 1.15 ** 10
                 },
@@ -2945,7 +2945,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_03',
-                name: gettext('games_idle_upgrade_building_puncher_03'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_03'),
                 cost: {
                     points: 1_300, //10 * 4 * 1.15 ** 25
                 },
@@ -2963,7 +2963,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_04',
-                name: gettext('games_idle_upgrade_building_puncher_04'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_04'),
                 cost: {
                     points: 55_000, //10 * 5 * 1.15 ** 50
                 },
@@ -2981,7 +2981,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_05',
-                name: gettext('games_idle_upgrade_building_puncher_05'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_05'),
                 cost: {
                     points: 70e6, //10 * 6 * 1.15 ** 100
                 },
@@ -2999,7 +2999,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_06',
-                name: gettext('games_idle_upgrade_building_puncher_06'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_06'),
                 cost: {
                     points: 90e9, //10 * 7 * 1.15 ** 150
                 },
@@ -3017,7 +3017,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_07',
-                name: gettext('games_idle_upgrade_building_puncher_07'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_07'),
                 cost: {
                     points: 111e12, //10 * 8 * 1.15 ** 200
                 },
@@ -3035,7 +3035,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_08',
-                name: gettext('games_idle_upgrade_building_puncher_08'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_08'),
                 cost: {
                     points: 150e18, //10 * 9 * 1.15 ** 300
                 },
@@ -3053,7 +3053,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_09',
-                name: gettext('games_idle_upgrade_building_puncher_09'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_09'),
                 cost: {
                     points: 190e24, //10 * 10 * 1.15 ** 400
                 },
@@ -3071,7 +3071,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'puncher_10',
-                name: gettext('games_idle_upgrade_building_puncher_10'),
+                name: /*gettext*/('games_idle_upgrade_building_puncher_10'),
                 cost: {
                     points: 250e30, //10 * 11 * 1.15 ** 500
                 },
@@ -3091,7 +3091,7 @@ if (typeof gettext != 'function') {
             //#region Dancer upgrades
             {
                 id: 'dancer_01',
-                name: gettext('games_idle_upgrade_building_dancer_01'),
+                name: /*gettext*/('games_idle_upgrade_building_dancer_01'),
                 cost: {
                     points: 300, //123 * 2 * 1.15 ** 1
                 },
@@ -3109,7 +3109,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'dancer_02',
-                name: gettext('games_idle_upgrade_building_dancer_02'),
+                name: /*gettext*/('games_idle_upgrade_building_dancer_02'),
                 cost: {
                     points: 1_500, //123 * 3 * 1.15 ** 10
                 },
@@ -3127,7 +3127,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'dancer_03',
-                name: gettext('games_idle_upgrade_building_dancer_03'),
+                name: /*gettext*/('games_idle_upgrade_building_dancer_03'),
                 cost: {
                     points: 16_000, //123 * 4 * 1.15 ** 25
                 },
@@ -3145,7 +3145,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'dancer_04',
-                name: gettext('games_idle_upgrade_building_dancer_04'),
+                name: /*gettext*/('games_idle_upgrade_building_dancer_04'),
                 cost: {
                     points: 666_000, //123 * 5 * 1.15 ** 50
                 },
@@ -3163,7 +3163,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'dancer_05',
-                name: gettext('games_idle_upgrade_building_dancer_05'),
+                name: /*gettext*/('games_idle_upgrade_building_dancer_05'),
                 cost: {
                     points: 850e6, //123 * 6 * 1.15 ** 100
                 },
@@ -3181,7 +3181,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'dancer_06',
-                name: gettext('games_idle_upgrade_building_dancer_06'),
+                name: /*gettext*/('games_idle_upgrade_building_dancer_06'),
                 cost: {
                     points: 1e12, //123 * 7 * 1.15 ** 150
                 },
@@ -3199,7 +3199,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'dancer_07',
-                name: gettext('games_idle_upgrade_building_dancer_07'),
+                name: /*gettext*/('games_idle_upgrade_building_dancer_07'),
                 cost: {
                     points: 1.234e15, //123 * 8 * 1.15 ** 200
                 },
@@ -3217,7 +3217,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'dancer_08',
-                name: gettext('games_idle_upgrade_building_dancer_08'),
+                name: /*gettext*/('games_idle_upgrade_building_dancer_08'),
                 cost: {
                     points: 1.8e21, //123 * 9 * 1.15 ** 300
                 },
@@ -3235,7 +3235,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'dancer_09',
-                name: gettext('games_idle_upgrade_building_dancer_09'),
+                name: /*gettext*/('games_idle_upgrade_building_dancer_09'),
                 cost: {
                     points: 2.5e27, //123 * 10 * 1.15 ** 400
                 },
@@ -3253,7 +3253,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'dancer_10',
-                name: gettext('games_idle_upgrade_building_dancer_10'),
+                name: /*gettext*/('games_idle_upgrade_building_dancer_10'),
                 cost: {
                     points: 3.333e33, //123 * 11 * 1.15 ** 500
                 },
@@ -3273,7 +3273,7 @@ if (typeof gettext != 'function') {
             //#region Knight upgrades
             {
                 id: 'knight_01',
-                name: gettext('games_idle_upgrade_building_knight_01'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_01'),
                 cost: {
                     points: 3_300, //1_400 * 2 * 1.15 ** 1
                 },
@@ -3291,7 +3291,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_02',
-                name: gettext('games_idle_upgrade_building_knight_02'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_02'),
                 cost: {
                     points: 17_000, //1_400 * 3 * 1.15 ** 10
                 },
@@ -3309,7 +3309,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_03',
-                name: gettext('games_idle_upgrade_building_knight_03'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_03'),
                 cost: {
                     points: 185_000, //1_400 * 4 * 1.15 ** 25
                 },
@@ -3327,7 +3327,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_04',
-                name: gettext('games_idle_upgrade_building_knight_04'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_04'),
                 cost: {
                     points: 7.5e6, //1_400 * 5 * 1.15 ** 50
                 },
@@ -3345,7 +3345,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_05',
-                name: gettext('games_idle_upgrade_building_knight_05'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_05'),
                 cost: {
                     points: 9.85e9, //1_400 * 6 * 1.15 ** 100
                 },
@@ -3363,7 +3363,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_06',
-                name: gettext('games_idle_upgrade_building_knight_06'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_06'),
                 cost: {
                     points: 12.5e12, //1_400 * 7 * 1.15 ** 150
                 },
@@ -3381,7 +3381,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_07',
-                name: gettext('games_idle_upgrade_building_knight_07'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_07'),
                 cost: {
                     points: 15e15, //1_400 * 8 * 1.15 ** 200
                 },
@@ -3399,7 +3399,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_08',
-                name: gettext('games_idle_upgrade_building_knight_08'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_08'),
                 cost: {
                     points: 20.5e21, //1_400 * 9 * 1.15 ** 300
                 },
@@ -3417,7 +3417,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_09',
-                name: gettext('games_idle_upgrade_building_knight_09'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_09'),
                 cost: {
                     points: 25.6e27, //1_400 * 10 * 1.15 ** 400
                 },
@@ -3435,7 +3435,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'knight_10',
-                name: gettext('games_idle_upgrade_building_knight_10'),
+                name: /*gettext*/('games_idle_upgrade_building_knight_10'),
                 cost: {
                     points: 33.3e33, //1_400 * 11 * 1.15 ** 500
                 },
@@ -3455,7 +3455,7 @@ if (typeof gettext != 'function') {
             //#region King upgrades
             {
                 id: 'king_01',
-                name: gettext('games_idle_upgrade_building_king_01'),
+                name: /*gettext*/('games_idle_upgrade_building_king_01'),
                 cost: {
                     points: 36_800, //16_000 * 2 * 1.15 ** 1
                 },
@@ -3473,7 +3473,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'king_02',
-                name: gettext('games_idle_upgrade_building_king_02'),
+                name: /*gettext*/('games_idle_upgrade_building_king_02'),
                 cost: {
                     points: 195_000, //16_000 * 3 * 1.15 ** 10
                 },
@@ -3491,7 +3491,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'king_03',
-                name: gettext('games_idle_upgrade_building_king_03'),
+                name: /*gettext*/('games_idle_upgrade_building_king_03'),
                 cost: {
                     points: 2.1e6, //16_000 * 4 * 1.15 ** 25
                 },
@@ -3509,7 +3509,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'king_04',
-                name: gettext('games_idle_upgrade_building_king_04'),
+                name: /*gettext*/('games_idle_upgrade_building_king_04'),
                 cost: {
                     points: 87.6e6, //16_000 * 5 * 1.15 ** 50
                 },
@@ -3527,7 +3527,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'king_05',
-                name: gettext('games_idle_upgrade_building_king_05'),
+                name: /*gettext*/('games_idle_upgrade_building_king_05'),
                 cost: {
                     points: 111e9, //16_000 * 6 * 1.15 ** 100
                 },
@@ -3545,7 +3545,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'king_06',
-                name: gettext('games_idle_upgrade_building_king_06'),
+                name: /*gettext*/('games_idle_upgrade_building_king_06'),
                 cost: {
                     points: 140e12, //16_000 * 7 * 1.15 ** 150
                 },
@@ -3563,7 +3563,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'king_07',
-                name: gettext('games_idle_upgrade_building_king_07'),
+                name: /*gettext*/('games_idle_upgrade_building_king_07'),
                 cost: {
                     points: 175e15, //16_000 * 8 * 1.15 ** 200
                 },
@@ -3581,7 +3581,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'king_08',
-                name: gettext('games_idle_upgrade_building_king_08'),
+                name: /*gettext*/('games_idle_upgrade_building_king_08'),
                 cost: {
                     points: 231e21, //16_000 * 9 * 1.15 ** 300
                 },
@@ -3599,7 +3599,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'king_09',
-                name: gettext('games_idle_upgrade_building_king_09'),
+                name: /*gettext*/('games_idle_upgrade_building_king_09'),
                 cost: {
                     points: 300e27, //16_000 * 10 * 1.15 ** 400
                 },
@@ -3617,7 +3617,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'king_10',
-                name: gettext('games_idle_upgrade_building_king_10'),
+                name: /*gettext*/('games_idle_upgrade_building_king_10'),
                 cost: {
                     points: 393e33, //16_000 * 11 * 1.15 ** 500
                 },
@@ -3638,7 +3638,7 @@ if (typeof gettext != 'function') {
             //#region Apprentice upgrades
             {
                 id: 'apprentice_01',
-                name: gettext('games_idle_upgrade_building_apprentice_01'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_01'),
                 cost: {
                     magic_powder: 25, //10 * 2 * 1.15 ** 1
                 },
@@ -3656,7 +3656,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_02',
-                name: gettext('games_idle_upgrade_building_apprentice_02'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_02'),
                 cost: {
                     magic_powder: 125, //10 * 3 * 1.15 ** 10
                 },
@@ -3674,7 +3674,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_03',
-                name: gettext('games_idle_upgrade_building_apprentice_03'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_03'),
                 cost: {
                     magic_powder: 1_300, //10 * 4 * 1.15 ** 25
                 },
@@ -3692,7 +3692,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_04',
-                name: gettext('games_idle_upgrade_building_apprentice_04'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_04'),
                 cost: {
                     magic_powder: 55_000, //10 * 5 * 1.15 ** 50
                 },
@@ -3710,7 +3710,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_05',
-                name: gettext('games_idle_upgrade_building_apprentice_05'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_05'),
                 cost: {
                     magic_powder: 70e6, //10 * 6 * 1.15 ** 100
                 },
@@ -3728,7 +3728,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_06',
-                name: gettext('games_idle_upgrade_building_apprentice_06'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_06'),
                 cost: {
                     magic_powder: 90e9, //10 * 7 * 1.15 ** 150
                 },
@@ -3746,7 +3746,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_07',
-                name: gettext('games_idle_upgrade_building_apprentice_07'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_07'),
                 cost: {
                     magic_powder: 111e12, //10 * 8 * 1.15 ** 200
                 },
@@ -3764,7 +3764,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_08',
-                name: gettext('games_idle_upgrade_building_apprentice_08'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_08'),
                 cost: {
                     magic_powder: 150e18, //10 * 9 * 1.15 ** 300
                 },
@@ -3782,7 +3782,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_09',
-                name: gettext('games_idle_upgrade_building_apprentice_09'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_09'),
                 cost: {
                     magic_powder: 190e24, //10 * 10 * 1.15 ** 400
                 },
@@ -3800,7 +3800,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'apprentice_10',
-                name: gettext('games_idle_upgrade_building_apprentice_10'),
+                name: /*gettext*/('games_idle_upgrade_building_apprentice_10'),
                 cost: {
                     magic_powder: 250e30, //10 * 11 * 1.15 ** 500
                 },
@@ -3820,7 +3820,7 @@ if (typeof gettext != 'function') {
             //#region Magician upgrades
             {
                 id: 'magician_01',
-                name: gettext('games_idle_upgrade_building_magician_01'),
+                name: /*gettext*/('games_idle_upgrade_building_magician_01'),
                 cost: {
                     magic_powder: 255, //111 * 2 * 1.15 ** 1
                 },
@@ -3838,7 +3838,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'magician_02',
-                name: gettext('games_idle_upgrade_building_magician_02'),
+                name: /*gettext*/('games_idle_upgrade_building_magician_02'),
                 cost: {
                     magic_powder: 1_345, //111 * 3 * 1.15 ** 10
                 },
@@ -3856,7 +3856,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'magician_03',
-                name: gettext('games_idle_upgrade_building_magician_03'),
+                name: /*gettext*/('games_idle_upgrade_building_magician_03'),
                 cost: {
                     magic_powder: 14_500, //111 * 4 * 1.15 ** 25
                 },
@@ -3874,7 +3874,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'magician_04',
-                name: gettext('games_idle_upgrade_building_magician_04'),
+                name: /*gettext*/('games_idle_upgrade_building_magician_04'),
                 cost: {
                     magic_powder: 600_000, //111 * 5 * 1.15 ** 50
                 },
@@ -3892,7 +3892,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'magician_05',
-                name: gettext('games_idle_upgrade_building_magician_05'),
+                name: /*gettext*/('games_idle_upgrade_building_magician_05'),
                 cost: {
                     magic_powder: 789e6, //111 * 6 * 1.15 ** 100
                 },
@@ -3910,7 +3910,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'magician_06',
-                name: gettext('games_idle_upgrade_building_magician_06'),
+                name: /*gettext*/('games_idle_upgrade_building_magician_06'),
                 cost: {
                     magic_powder: 987e9, //111 * 7 * 1.15 ** 150
                 },
@@ -3928,7 +3928,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'magician_07',
-                name: gettext('games_idle_upgrade_building_magician_07'),
+                name: /*gettext*/('games_idle_upgrade_building_magician_07'),
                 cost: {
                     magic_powder: 1.23e15, //111 * 8 * 1.15 ** 200
                 },
@@ -3946,7 +3946,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'magician_08',
-                name: gettext('games_idle_upgrade_building_magician_08'),
+                name: /*gettext*/('games_idle_upgrade_building_magician_08'),
                 cost: {
                     magic_powder: 1.5e21, //111 * 9 * 1.15 ** 300
                 },
@@ -3964,7 +3964,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'magician_09',
-                name: gettext('games_idle_upgrade_building_magician_09'),
+                name: /*gettext*/('games_idle_upgrade_building_magician_09'),
                 cost: {
                     magic_powder: 2.11e27, //111 * 10 * 1.15 ** 400
                 },
@@ -3982,7 +3982,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'magician_10',
-                name: gettext('games_idle_upgrade_building_magician_10'),
+                name: /*gettext*/('games_idle_upgrade_building_magician_10'),
                 cost: {
                     magic_powder: 2.75e33, //111 * 11 * 1.15 ** 500
                 },
@@ -4002,7 +4002,7 @@ if (typeof gettext != 'function') {
             //#region Wizard upgrades
             {
                 id: 'wizard_01',
-                name: gettext('games_idle_upgrade_building_wizard_01'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_01'),
                 cost: {
                     magic_powder: 3_200, //1_280 * 2 * 1.15 ** 1
                 },
@@ -4020,7 +4020,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_02',
-                name: gettext('games_idle_upgrade_building_wizard_02'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_02'),
                 cost: {
                     magic_powder: 16_000, //1_280 * 3 * 1.15 ** 10
                 },
@@ -4038,7 +4038,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_03',
-                name: gettext('games_idle_upgrade_building_wizard_03'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_03'),
                 cost: {
                     magic_powder: 128_000, //1_280 * 4 * 1.15 ** 25
                 },
@@ -4056,7 +4056,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_04',
-                name: gettext('games_idle_upgrade_building_wizard_04'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_04'),
                 cost: {
                     magic_powder: 6.4e6, //1_280 * 5 * 1.15 ** 50
                 },
@@ -4074,7 +4074,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_05',
-                name: gettext('games_idle_upgrade_building_wizard_05'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_05'),
                 cost: {
                     magic_powder: 8e9, //1_280 * 6 * 1.15 ** 100
                 },
@@ -4092,7 +4092,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_06',
-                name: gettext('games_idle_upgrade_building_wizard_06'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_06'),
                 cost: {
                     magic_powder: 12.8e12, //1_280 * 7 * 1.15 ** 150
                 },
@@ -4110,7 +4110,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_07',
-                name: gettext('games_idle_upgrade_building_wizard_07'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_07'),
                 cost: {
                     magic_powder: 16e15, //1_280 * 8 * 1.15 ** 200
                 },
@@ -4128,7 +4128,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_08',
-                name: gettext('games_idle_upgrade_building_wizard_08'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_08'),
                 cost: {
                     magic_powder: 16e21, //1_280 * 9 * 1.15 ** 300
                 },
@@ -4146,7 +4146,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_09',
-                name: gettext('games_idle_upgrade_building_wizard_09'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_09'),
                 cost: {
                     magic_powder: 25.8e27, //1_280 * 10 * 1.15 ** 400
                 },
@@ -4164,7 +4164,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wizard_10',
-                name: gettext('games_idle_upgrade_building_wizard_10'),
+                name: /*gettext*/('games_idle_upgrade_building_wizard_10'),
                 cost: {
                     magic_powder: 32e33, //1_280 * 11 * 1.15 ** 500
                 },
@@ -4184,7 +4184,7 @@ if (typeof gettext != 'function') {
             //#region Fairy upgrades
             {
                 id: 'fairy_01',
-                name: gettext('games_idle_upgrade_building_fairy_01'),
+                name: /*gettext*/('games_idle_upgrade_building_fairy_01'),
                 cost: {
                     magic_powder: 33_333, //14_440 * 2 * 1.15 ** 1
                 },
@@ -4202,7 +4202,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fairy_02',
-                name: gettext('games_idle_upgrade_building_fairy_02'),
+                name: /*gettext*/('games_idle_upgrade_building_fairy_02'),
                 cost: {
                     magic_powder: 175_000, //14_440 * 3 * 1.15 ** 10
                 },
@@ -4220,7 +4220,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fairy_03',
-                name: gettext('games_idle_upgrade_building_fairy_03'),
+                name: /*gettext*/('games_idle_upgrade_building_fairy_03'),
                 cost: {
                     magic_powder: 1.4e6, //14_440 * 4 * 1.15 ** 25
                 },
@@ -4238,7 +4238,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fairy_04',
-                name: gettext('games_idle_upgrade_building_fairy_04'),
+                name: /*gettext*/('games_idle_upgrade_building_fairy_04'),
                 cost: {
                     magic_powder: 77e6, //14_440 * 5 * 1.15 ** 50
                 },
@@ -4256,7 +4256,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fairy_05',
-                name: gettext('games_idle_upgrade_building_fairy_05'),
+                name: /*gettext*/('games_idle_upgrade_building_fairy_05'),
                 cost: {
                     magic_powder: 98e9, //14_440 * 6 * 1.15 ** 100
                 },
@@ -4274,7 +4274,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fairy_06',
-                name: gettext('games_idle_upgrade_building_fairy_06'),
+                name: /*gettext*/('games_idle_upgrade_building_fairy_06'),
                 cost: {
                     magic_powder: 126e12, //14_440 * 7 * 1.15 ** 150
                 },
@@ -4292,7 +4292,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fairy_07',
-                name: gettext('games_idle_upgrade_building_fairy_07'),
+                name: /*gettext*/('games_idle_upgrade_building_fairy_07'),
                 cost: {
                     magic_powder: 161e15, //14_440 * 8 * 1.15 ** 200
                 },
@@ -4310,7 +4310,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fairy_08',
-                name: gettext('games_idle_upgrade_building_fairy_08'),
+                name: /*gettext*/('games_idle_upgrade_building_fairy_08'),
                 cost: {
                     magic_powder: 210e21, //14_440 * 9 * 1.15 ** 300
                 },
@@ -4328,7 +4328,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fairy_09',
-                name: gettext('games_idle_upgrade_building_fairy_09'),
+                name: /*gettext*/('games_idle_upgrade_building_fairy_09'),
                 cost: {
                     magic_powder: 273e27, //14_440 * 10 * 1.15 ** 400
                 },
@@ -4346,7 +4346,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fairy_10',
-                name: gettext('games_idle_upgrade_building_fairy_10'),
+                name: /*gettext*/('games_idle_upgrade_building_fairy_10'),
                 cost: {
                     magic_powder: 350e33, //14_440 * 11 * 1.15 ** 500
                 },
@@ -4367,7 +4367,7 @@ if (typeof gettext != 'function') {
             //#region Fan upgrades
             {
                 id: 'fan_01',
-                name: gettext('games_idle_upgrade_building_fan_01'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_01'),
                 cost: {
                     dust: 25, //10 * 2 * 1.15 ** 1
                 },
@@ -4385,7 +4385,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_02',
-                name: gettext('games_idle_upgrade_building_fan_02'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_02'),
                 cost: {
                     dust: 125, //10 * 3 * 1.15 ** 10
                 },
@@ -4403,7 +4403,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_03',
-                name: gettext('games_idle_upgrade_building_fan_03'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_03'),
                 cost: {
                     dust: 1_300, //10 * 4 * 1.15 ** 25
                 },
@@ -4421,7 +4421,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_04',
-                name: gettext('games_idle_upgrade_building_fan_04'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_04'),
                 cost: {
                     dust: 55_000, //10 * 5 * 1.15 ** 50
                 },
@@ -4439,7 +4439,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_05',
-                name: gettext('games_idle_upgrade_building_fan_05'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_05'),
                 cost: {
                     dust: 70e6, //10 * 6 * 1.15 ** 100
                 },
@@ -4457,7 +4457,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_06',
-                name: gettext('games_idle_upgrade_building_fan_06'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_06'),
                 cost: {
                     dust: 90e9, //10 * 7 * 1.15 ** 150
                 },
@@ -4475,7 +4475,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_07',
-                name: gettext('games_idle_upgrade_building_fan_07'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_07'),
                 cost: {
                     dust: 111e12, //10 * 8 * 1.15 ** 200
                 },
@@ -4493,7 +4493,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_08',
-                name: gettext('games_idle_upgrade_building_fan_08'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_08'),
                 cost: {
                     dust: 150e18, //10 * 9 * 1.15 ** 300
                 },
@@ -4511,7 +4511,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_09',
-                name: gettext('games_idle_upgrade_building_fan_09'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_09'),
                 cost: {
                     dust: 190e24, //10 * 10 * 1.15 ** 400
                 },
@@ -4529,7 +4529,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'fan_10',
-                name: gettext('games_idle_upgrade_building_fan_10'),
+                name: /*gettext*/('games_idle_upgrade_building_fan_10'),
                 cost: {
                     dust: 250e30, //10 * 11 * 1.15 ** 500
                 },
@@ -4549,7 +4549,7 @@ if (typeof gettext != 'function') {
             //#region Wind upgrades
             {
                 id: 'wind_01',
-                name: gettext('games_idle_upgrade_building_wind_01'),
+                name: /*gettext*/('games_idle_upgrade_building_wind_01'),
                 cost: {
                     dust: 250, //100 * 2 * 1.15 ** 1
                 },
@@ -4567,7 +4567,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wind_02',
-                name: gettext('games_idle_upgrade_building_wind_02'),
+                name: /*gettext*/('games_idle_upgrade_building_wind_02'),
                 cost: {
                     dust: 1_250, //100 * 3 * 1.15 ** 10
                 },
@@ -4585,7 +4585,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wind_03',
-                name: gettext('games_idle_upgrade_building_wind_03'),
+                name: /*gettext*/('games_idle_upgrade_building_wind_03'),
                 cost: {
                     dust: 13_000, //100 * 4 * 1.15 ** 25
                 },
@@ -4603,7 +4603,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wind_04',
-                name: gettext('games_idle_upgrade_building_wind_04'),
+                name: /*gettext*/('games_idle_upgrade_building_wind_04'),
                 cost: {
                     dust: 550_000, //100 * 5 * 1.15 ** 50
                 },
@@ -4621,7 +4621,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wind_05',
-                name: gettext('games_idle_upgrade_building_wind_05'),
+                name: /*gettext*/('games_idle_upgrade_building_wind_05'),
                 cost: {
                     dust: 700e6, //100 * 6 * 1.15 ** 100
                 },
@@ -4639,7 +4639,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wind_06',
-                name: gettext('games_idle_upgrade_building_wind_06'),
+                name: /*gettext*/('games_idle_upgrade_building_wind_06'),
                 cost: {
                     dust: 900e9, //100 * 7 * 1.15 ** 150
                 },
@@ -4657,7 +4657,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wind_07',
-                name: gettext('games_idle_upgrade_building_wind_07'),
+                name: /*gettext*/('games_idle_upgrade_building_wind_07'),
                 cost: {
                     dust: 1.11e15, //100 * 8 * 1.15 ** 200
                 },
@@ -4675,7 +4675,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wind_08',
-                name: gettext('games_idle_upgrade_building_wind_08'),
+                name: /*gettext*/('games_idle_upgrade_building_wind_08'),
                 cost: {
                     dust: 1.5e21, //100 * 9 * 1.15 ** 300
                 },
@@ -4693,7 +4693,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wind_09',
-                name: gettext('games_idle_upgrade_building_wind_09'),
+                name: /*gettext*/('games_idle_upgrade_building_wind_09'),
                 cost: {
                     dust: 1.9e27, //100 * 10 * 1.15 ** 400
                 },
@@ -4711,7 +4711,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'wind_10',
-                name: gettext('games_idle_upgrade_building_wind_10'),
+                name: /*gettext*/('games_idle_upgrade_building_wind_10'),
                 cost: {
                     dust: 2.5e33, //100 * 11 * 1.15 ** 500
                 },
@@ -4731,7 +4731,7 @@ if (typeof gettext != 'function') {
             //#region Bird upgrades
             {
                 id: 'bird_01',
-                name: gettext('games_idle_upgrade_building_bird_01'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_01'),
                 cost: {
                     dust: 2_500, //1_000 * 2 * 1.15 ** 1
                 },
@@ -4749,7 +4749,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_02',
-                name: gettext('games_idle_upgrade_building_bird_02'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_02'),
                 cost: {
                     dust: 12_500, //1_000 * 3 * 1.15 ** 10
                 },
@@ -4767,7 +4767,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_03',
-                name: gettext('games_idle_upgrade_building_bird_03'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_03'),
                 cost: {
                     dust: 130_000, //1_000 * 4 * 1.15 ** 25
                 },
@@ -4785,7 +4785,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_04',
-                name: gettext('games_idle_upgrade_building_bird_04'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_04'),
                 cost: {
                     dust: 5.5e6, //1_000 * 5 * 1.15 ** 50
                 },
@@ -4803,7 +4803,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_05',
-                name: gettext('games_idle_upgrade_building_bird_05'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_05'),
                 cost: {
                     dust: 7e9, //1_000 * 6 * 1.15 ** 100
                 },
@@ -4821,7 +4821,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_06',
-                name: gettext('games_idle_upgrade_building_bird_06'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_06'),
                 cost: {
                     dust: 9e12, //1_000 * 7 * 1.15 ** 150
                 },
@@ -4839,7 +4839,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_07',
-                name: gettext('games_idle_upgrade_building_bird_07'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_07'),
                 cost: {
                     dust: 11.11e15, //1_000 * 8 * 1.15 ** 200
                 },
@@ -4857,7 +4857,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_08',
-                name: gettext('games_idle_upgrade_building_bird_08'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_08'),
                 cost: {
                     dust: 15e21, //1_000 * 9 * 1.15 ** 300
                 },
@@ -4875,7 +4875,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_09',
-                name: gettext('games_idle_upgrade_building_bird_09'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_09'),
                 cost: {
                     dust: 19e27, //1_000 * 10 * 1.15 ** 400
                 },
@@ -4893,7 +4893,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'bird_10',
-                name: gettext('games_idle_upgrade_building_bird_10'),
+                name: /*gettext*/('games_idle_upgrade_building_bird_10'),
                 cost: {
                     dust: 25e33, //1_000 * 11 * 1.15 ** 500
                 },
@@ -4913,7 +4913,7 @@ if (typeof gettext != 'function') {
             //#region Tornado upgrades
             {
                 id: 'tornado_01',
-                name: gettext('games_idle_upgrade_building_tornado_01'),
+                name: /*gettext*/('games_idle_upgrade_building_tornado_01'),
                 cost: {
                     dust: 25_000, //10_000 * 2 * 1.15 ** 1
                 },
@@ -4931,7 +4931,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'tornado_02',
-                name: gettext('games_idle_upgrade_building_tornado_02'),
+                name: /*gettext*/('games_idle_upgrade_building_tornado_02'),
                 cost: {
                     dust: 125_000, //10_000 * 3 * 1.15 ** 10
                 },
@@ -4949,7 +4949,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'tornado_03',
-                name: gettext('games_idle_upgrade_building_tornado_03'),
+                name: /*gettext*/('games_idle_upgrade_building_tornado_03'),
                 cost: {
                     dust: 1.3e6, //10_000 * 4 * 1.15 ** 25
                 },
@@ -4967,7 +4967,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'tornado_04',
-                name: gettext('games_idle_upgrade_building_tornado_04'),
+                name: /*gettext*/('games_idle_upgrade_building_tornado_04'),
                 cost: {
                     dust: 55e6, //10_000 * 5 * 1.15 ** 50
                 },
@@ -4985,7 +4985,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'tornado_05',
-                name: gettext('games_idle_upgrade_building_tornado_05'),
+                name: /*gettext*/('games_idle_upgrade_building_tornado_05'),
                 cost: {
                     dust: 70e9, //10_000 * 6 * 1.15 ** 100
                 },
@@ -5003,7 +5003,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'tornado_06',
-                name: gettext('games_idle_upgrade_building_tornado_06'),
+                name: /*gettext*/('games_idle_upgrade_building_tornado_06'),
                 cost: {
                     dust: 90e12, //10_000 * 7 * 1.15 ** 150
                 },
@@ -5021,7 +5021,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'tornado_07',
-                name: gettext('games_idle_upgrade_building_tornado_07'),
+                name: /*gettext*/('games_idle_upgrade_building_tornado_07'),
                 cost: {
                     dust: 111.11e15, //10_000 * 8 * 1.15 ** 200
                 },
@@ -5039,7 +5039,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'tornado_08',
-                name: gettext('games_idle_upgrade_building_tornado_08'),
+                name: /*gettext*/('games_idle_upgrade_building_tornado_08'),
                 cost: {
                     dust: 150e21, //10_000 * 9 * 1.15 ** 300
                 },
@@ -5057,7 +5057,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'tornado_09',
-                name: gettext('games_idle_upgrade_building_tornado_09'),
+                name: /*gettext*/('games_idle_upgrade_building_tornado_09'),
                 cost: {
                     dust: 190e27, //10_000 * 10 * 1.15 ** 400
                 },
@@ -5075,7 +5075,7 @@ if (typeof gettext != 'function') {
             },
             {
                 id: 'tornado_10',
-                name: gettext('games_idle_upgrade_building_tornado_10'),
+                name: /*gettext*/('games_idle_upgrade_building_tornado_10'),
                 cost: {
                     dust: 250e33, //10_000 * 11 * 1.15 ** 500
                 },

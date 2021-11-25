@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-10-29 14:25+0200\n"
+"POT-Creation-Date: 2021-11-25 11:21+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -18,12 +18,12 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.9.1\n"
 
-#: Controllers/ControllerAuth.py:19 Controllers/ControllerAuth.py:41
+#: Controllers/ControllerAuth.py:19 Controllers/ControllerAuth.py:44
 msgid "auth_error_no_username"
 msgstr "Error: No username"
 
-#: Controllers/ControllerAuth.py:21 Controllers/ControllerAuth.py:43
-#: Controllers/ControllerAuth.py:78
+#: Controllers/ControllerAuth.py:21 Controllers/ControllerAuth.py:46
+#: Controllers/ControllerAuth.py:81
 msgid "auth_error_no_password"
 msgstr "Error: No password"
 
@@ -31,23 +31,27 @@ msgstr "Error: No password"
 msgid "auth_error_invalid_login"
 msgstr "Error: Username or password is incorrect"
 
-#: Controllers/ControllerAuth.py:45 Controllers/ControllerAuth.py:82
+#: Controllers/ControllerAuth.py:26
+msgid "auth_error_user_not_exist"
+msgstr "Error: User does not exist"
+
+#: Controllers/ControllerAuth.py:48 Controllers/ControllerAuth.py:85
 msgid "auth_error_password_short"
 msgstr "Error: Password must be at least %(chars)s characters long"
 
-#: Controllers/ControllerAuth.py:47 Controllers/ControllerAuth.py:84
+#: Controllers/ControllerAuth.py:50 Controllers/ControllerAuth.py:87
 msgid "auth_error_passwords_not_match"
 msgstr "Error: Both passwords must match"
 
-#: Controllers/ControllerAuth.py:59 Controllers/ControllerAuth.py:91
+#: Controllers/ControllerAuth.py:62 Controllers/ControllerAuth.py:94
 msgid "auth_error_unknown"
 msgstr "Unknown error"
 
-#: Controllers/ControllerAuth.py:80
+#: Controllers/ControllerAuth.py:83
 msgid "auth_error_no_password_new"
 msgstr "Error: No new password"
 
-#: Controllers/ControllerAuth.py:86
+#: Controllers/ControllerAuth.py:89
 msgid "auth_error_wrong_password"
 msgstr "Error: Old password is invalid"
 
@@ -59,230 +63,646 @@ msgstr "Error: No group name"
 msgid "chat_unknown_user"
 msgstr "Unknown user"
 
-#: static/js/blockus.js:54
+#: static/js/blockus.js:53
 msgid "game_blockus_theme_name_dark"
 msgstr "Dark mode"
 
-#: static/js/blockus.js:75
+#: static/js/blockus.js:74
 msgid "game_blockus_theme_name_light"
 msgstr "Light mode"
 
-#: static/js/blockus.js:118
+#: static/js/blockus.js:117
 msgid "game_blockus_shape_square"
 msgstr "Sqaure"
 
-#: static/js/blockus.js:135 static/js/idle.js:21
+#: static/js/blockus.js:134 static/js/idle.js:23
 msgid "game_blockus_unit_none"
 msgstr "Scientist notation"
 
-#: static/js/blockus.js:139 static/js/idle.js:25
+#: static/js/blockus.js:138 static/js/idle.js:27
 msgid "game_blockus_unit_si"
 msgstr "SI notation"
 
-#: static/js/blockus.js:145 static/js/idle.js:31
+#: static/js/blockus.js:144 static/js/idle.js:33
 msgid "game_blockus_unit_numeral"
 msgstr "Numeral notation"
 
-#: static/js/blockus.js:233
+#: static/js/blockus.js:228
 msgid "game_blockus_action_move_shape_right"
 msgstr "Move shape to the right"
 
-#: static/js/blockus.js:241
+#: static/js/blockus.js:236
 msgid "game_blockus_action_move_shape_left"
 msgstr "Move shape to the left"
 
-#: static/js/blockus.js:245
+#: static/js/blockus.js:240
 msgid "game_blockus_action_move_shape_down"
 msgstr "Move shape down"
 
-#: static/js/blockus.js:252
+#: static/js/blockus.js:247
 msgid "game_blockus_action_game_state_pause"
 msgstr "Pause"
 
-#: static/js/blockus.js:259
+#: static/js/blockus.js:254
 msgid "game_blockus_action_game_state_playing"
 msgstr "Resume"
 
-#: static/js/blockus.js:266
+#: static/js/blockus.js:261
 msgid "game_blockus_action_rotate_shape_clockwise"
 msgstr "Rotate shape clockwise"
 
-#: static/js/blockus.js:273
+#: static/js/blockus.js:268
 msgid "game_blockus_action_rotate_shape_counter_clockwise"
 msgstr "Rotate shape counter clockwise"
 
-#: static/js/blockus.js:276
+#: static/js/blockus.js:271
 msgid "game_blockus_reset_confirm"
 msgstr "Do you want to reset your blockus?"
 
-#: static/js/blockus.js:277
+#: static/js/blockus.js:272
 msgid "game_blockus_action_reset_game"
 msgstr "Reset game"
 
-#: static/js/blockus.js:867
+#: static/js/blockus.js:859
 msgid "game_blockus_option_theme"
 msgstr "Theme"
 
-#: static/js/blockus.js:893
+#: static/js/blockus.js:885
 msgid "game_blockus_option_block_width"
 msgstr "Block width"
 
-#: static/js/blockus.js:899 static/js/blockus.js:922 static/js/blockus.js:1039
-#: static/js/blockus.js:1062
+#: static/js/blockus.js:891 static/js/blockus.js:914 static/js/blockus.js:1031
+#: static/js/blockus.js:1054
 msgid "game_blockus_warn_option_reset"
 msgstr "This option will reset the game. Continue?"
 
-#: static/js/blockus.js:916
+#: static/js/blockus.js:908
 msgid "game_blockus_option_block_height"
 msgstr "Block height"
 
-#: static/js/blockus.js:939
+#: static/js/blockus.js:931
 msgid "game_blockus_option_shape"
 msgstr "Block shape"
 
-#: static/js/blockus.js:965
+#: static/js/blockus.js:957
 msgid "game_blockus_option_unit"
 msgstr "Score unit"
 
-#: static/js/blockus.js:991
+#: static/js/blockus.js:983
 msgid "game_blockus_option_block_size_min"
 msgstr "Minimum amount of blocks in a shape"
 
-#: static/js/blockus.js:1012
+#: static/js/blockus.js:1004
 msgid "game_blockus_option_block_size_max"
 msgstr "Maxmimum amount of blocks in a shape"
 
-#: static/js/blockus.js:1033
+#: static/js/blockus.js:1025
 msgid "game_blockus_option_board_width"
 msgstr "Game width"
 
-#: static/js/blockus.js:1056
+#: static/js/blockus.js:1048
 msgid "game_blockus_option_board_height"
 msgstr "Game height"
 
-#: static/js/blockus.js:1079
+#: static/js/blockus.js:1071
 msgid "game_blockus_option_trim_score"
 msgstr "Trim the trailing zeros"
 
-#: static/js/blockus.js:1101
+#: static/js/blockus.js:1093
 msgid "game_blockus_option_rainbow_shapes"
 msgstr "Randomly colored shapes"
 
-#: static/js/blockus.js:1123
+#: static/js/blockus.js:1115
 msgid "game_blockus_option_rainbow_blocks"
 msgstr "Randomly colored blocks"
 
-#: static/js/blockus.js:1145
+#: static/js/blockus.js:1137
 msgid "game_blockus_option_painbow_mode"
 msgstr "Constant rainbow mode"
 
-#: static/js/blockus.js:1167
+#: static/js/blockus.js:1159
 msgid "game_blockus_option_diagonals"
 msgstr "Diagonals in shapes"
 
-#: static/js/idle.js:248
+#: static/js/blockus.js:1406
+msgid "game_blockus_keybinds_group_playing"
+msgstr "While playing"
+
+#: static/js/blockus.js:1407
+msgid "game_blockus_keybinds_group_pause"
+msgstr "While paused"
+
+#: static/js/blockus.js:1408
+msgid "game_blockus_keybinds_group_gameover"
+msgstr "After losing"
+
+#: static/js/blockus.js:1422
+msgid "game_blockus_keybind_leave_blank_tip"
+msgstr "Leave blank to delete"
+
+#: static/js/group_view.js:73
+msgid "chat_confirm_delete_message"
+msgstr "Are you sure you want to delete this message?"
+
+#: static/js/idle.js:261
 msgid "games_idle_bosses_traits"
 msgstr "Types"
 
-#: static/js/idle.js:266
+#: static/js/idle.js:279
 msgid "games_idle_bosses_drops"
 msgstr "Drops"
 
-#: static/js/idle.js:812
+#: static/js/idle.js:862
 msgid "games_idle_buildings_cost"
 msgstr "Cost"
 
-#: static/js/idle.js:845
+#: static/js/idle.js:896
 msgid "games_idle_buildings_production"
 msgstr "Production"
 
-#: static/js/idle.js:877
+#: static/js/idle.js:929
 msgid "games_idle_buildings_damage"
 msgstr "Damage"
 
-#: static/js/idle.js:1107
+#: static/js/idle.js:1188
 msgid "games_idle_upgradess_cost"
 msgstr "Cost"
 
-#: static/js/idle.js:1141
+#: static/js/idle.js:1222
 msgid "games_idle_upgradess_multipliers"
 msgstr "Effects"
 
-#: static/js/idle.js:1420
+#: static/js/idle.js:1585
 msgid "games_idle_trait_none"
 msgstr "None"
 
-#: static/js/idle.js:1425
-msgid "games_idle_trait_plant"
-msgstr "Plant"
+#: static/js/idle.js:1593
+msgid "games_idle_trait_magic"
+msgstr "Magic"
 
-#: static/js/idle.js:1434
+#: static/js/idle.js:1601
+msgid "games_idle_trait_boss"
+msgstr "Boss"
+
+#: static/js/idle.js:1608
+msgid "games_idle_trait_air"
+msgstr "Air"
+
+#: static/js/idle.js:1619
+msgid "games_idle_trait_earth"
+msgstr "Earth"
+
+#: static/js/idle.js:1629
 msgid "games_idle_trait_fire"
 msgstr "Fire"
 
-#: static/js/idle.js:1443
+#: static/js/idle.js:1639
 msgid "games_idle_trait_water"
 msgstr "Water"
 
-#: static/js/idle.js:1475
-msgid "games_idle_boss_scarecrow"
-msgstr "Scarecrow"
+#: static/js/idle.js:1653
+msgid "games_idle_trait_sound"
+msgstr "Sound"
 
-#: static/js/idle.js:1482
-msgid "games_idle_boss_small_rat"
-msgstr "Small rat"
+#: static/js/idle.js:1662
+msgid "games_idle_trait_metal"
+msgstr "Metal"
 
-#: static/js/idle.js:1489
+#: static/js/idle.js:1674
+msgid "games_idle_trait_electricity"
+msgstr "Electric"
+
+#: static/js/idle.js:1684
+msgid "games_idle_trait_ice"
+msgstr "Ice"
+
+#: static/js/idle.js:1720
+msgid "games_idle_boss_small_dummy"
+msgstr "Small dummy"
+
+#: static/js/idle.js:1733
+msgid "games_idle_boss_medium_dummy"
+msgstr "Medium dummy"
+
+#: static/js/idle.js:1746
+msgid "games_idle_boss_big_dummy"
+msgstr "Big dummy"
+
+#: static/js/idle.js:1759
+msgid "games_idle_boss_crash_dummy"
+msgstr "Crash test dummy"
+
+#: static/js/idle.js:1772
+msgid "games_idle_boss_boss_dummy"
+msgstr "Boss dummy"
+
+#: static/js/idle.js:1790
+msgid "games_idle_boss_clear_slime"
+msgstr "Clear slime"
+
+#: static/js/idle.js:1804
+msgid "games_idle_boss_red_slime"
+msgstr "Red slime"
+
+#: static/js/idle.js:1818
+msgid "games_idle_boss_green_slime"
+msgstr "Green slime"
+
+#: static/js/idle.js:1832
+msgid "games_idle_boss_blue_slime"
+msgstr "Blue slime"
+
+#: static/js/idle.js:1846
+msgid "games_idle_boss_yellow_slime"
+msgstr "Yellow slime"
+
+#: static/js/idle.js:1860
+msgid "games_idle_boss_magenta_slime"
+msgstr "Magenta slime"
+
+#: static/js/idle.js:1874
+msgid "games_idle_boss_cyan_slime"
+msgstr "Cyan slime"
+
+#: static/js/idle.js:1888
+msgid "games_idle_boss_white_slime"
+msgstr "White slime"
+
+#: static/js/idle.js:1902
+msgid "games_idle_boss_black_slime"
+msgstr "Black slime"
+
+#: static/js/idle.js:1916
+msgid "games_idle_boss_giant_slime"
+msgstr "Giant slime"
+
+#: static/js/idle.js:1937
 msgid "games_idle_boss_infinity"
 msgstr "Infinity"
 
-#: static/js/idle.js:1518
+#: static/js/idle.js:1975
+msgid "games_idle_resource_knowledge"
+msgstr "Knowledge"
+
+#: static/js/idle.js:1980
 msgid "games_idle_resource_points"
 msgstr "Points"
 
-#: static/js/idle.js:1554
+#: static/js/idle.js:1986
+msgid "games_idle_resource_magic_powder"
+msgstr "Magic powder"
+
+#: static/js/idle.js:1991
+msgid "games_idle_resource_common_loot"
+msgstr "Common loot"
+
+#: static/js/idle.js:1996
+msgid "games_idle_resource_dust"
+msgstr "Dust"
+
+#: static/js/idle.js:2001
+msgid "games_idle_resource_pebbles"
+msgstr "Pebbles"
+
+#: static/js/idle.js:2006
+msgid "games_idle_resource_embers"
+msgstr "Embers"
+
+#: static/js/idle.js:2011
+msgid "games_idle_resource_droplets"
+msgstr "Droplets"
+
+#: static/js/idle.js:2016
+msgid "games_idle_resource_waves"
+msgstr "Waves"
+
+#: static/js/idle.js:2021
+msgid "games_idle_resource_scraps"
+msgstr "Scraps"
+
+#: static/js/idle.js:2026
+msgid "games_idle_resource_sparks"
+msgstr "Sparks"
+
+#: static/js/idle.js:2031
+msgid "games_idle_resource_snowflakes"
+msgstr "Snowflakes"
+
+#: static/js/idle.js:2040
+msgid "games_idle_resource_relics"
+msgstr "Relics"
+
+#: static/js/idle.js:2045
+msgid "games_idle_resource_prestige"
+msgstr "Prestige"
+
+#: static/js/idle.js:2050
+msgid "games_idle_resource_magic_shards"
+msgstr "Magic shards"
+
+#: static/js/idle.js:2055
+msgid "games_idle_resource_uncommon_loot"
+msgstr "Uncommon loot"
+
+#: static/js/idle.js:2060
+msgid "games_idle_resource_dust_balls"
+msgstr "Dust balls"
+
+#: static/js/idle.js:2065
+msgid "games_idle_resource_rocks"
+msgstr "Rocks"
+
+#: static/js/idle.js:2070
+msgid "games_idle_resource_flames"
+msgstr "Flames"
+
+#: static/js/idle.js:2075
+msgid "games_idle_resource_drops"
+msgstr "Drops"
+
+#: static/js/idle.js:2080
+msgid "games_idle_resource_notes"
+msgstr "Notes"
+
+#: static/js/idle.js:2085
+msgid "games_idle_resource_nuggets"
+msgstr "Nuggets"
+
+#: static/js/idle.js:2090
+msgid "games_idle_resource_arcs"
+msgstr "Arcs"
+
+#: static/js/idle.js:2095
+msgid "games_idle_resource_mush"
+msgstr "Mush"
+
+#: static/js/idle.js:2140
 msgid "games_idle_building_puncher"
 msgstr "Puncher"
 
-#: static/js/idle.js:1600
-msgid "games_idle_upgrade_building_puncher_01"
-msgstr "Two hands"
+#: static/js/idle.js:2155
+msgid "games_idle_building_dancer"
+msgstr "Dancer"
 
-#: static/js/idle.js:1617
-msgid "games_idle_upgrade_building_puncher_02"
-msgstr "Big fists"
+#: static/js/idle.js:2177
+msgid "games_idle_building_knight"
+msgstr "Knight"
 
-#: static/js/idle.js:1634
-msgid "games_idle_upgrade_building_puncher_03"
-msgstr "Giant hands"
+#: static/js/idle.js:2199
+msgid "games_idle_building_king"
+msgstr "King"
 
-#: static/js/idle.js:1651
-msgid "games_idle_upgrade_building_puncher_04"
-msgstr "Boxing gloves"
+#: static/js/idle.js:2226
+msgid "games_idle_building_apprentice"
+msgstr "Apprentice"
 
-#: static/js/idle.js:1668
-msgid "games_idle_upgrade_building_puncher_05"
-msgstr "Spiny gloves"
+#: static/js/idle.js:2246
+msgid "games_idle_building_magician"
+msgstr "Magician"
 
-#: static/js/idle.js:1685
-msgid "games_idle_upgrade_building_puncher_06"
-msgstr "Double fists"
+#: static/js/idle.js:2266
+msgid "games_idle_building_wizard"
+msgstr "Wizard"
 
-#: static/js/idle.js:1702
-msgid "games_idle_upgrade_building_puncher_07"
-msgstr "More muscle"
+#: static/js/idle.js:2286
+msgid "games_idle_building_fairy"
+msgstr "Fairy"
 
-#: static/js/idle.js:1719
-msgid "games_idle_upgrade_building_puncher_08"
-msgstr "Big fingers"
+#: static/js/idle.js:2311
+msgid "games_idle_building_fan"
+msgstr "Fan"
 
-#: static/js/idle.js:1736
-msgid "games_idle_upgrade_building_puncher_09"
-msgstr "Cyber hands"
+#: static/js/idle.js:2331
+msgid "games_idle_building_wind"
+msgstr "Wind"
 
-#: static/js/idle.js:1753
-msgid "games_idle_upgrade_building_puncher_10"
-msgstr "Four arms"
+#: static/js/idle.js:2351
+msgid "games_idle_building_bird"
+msgstr "Bird"
+
+#: static/js/idle.js:2371
+msgid "games_idle_building_tornado"
+msgstr "Tornado"
+
+#: static/js/idle.js:2396
+msgid "games_idle_building_slingshot"
+msgstr "Slingshot"
+
+#: static/js/idle.js:5360
+msgid "games_idle_prestige_0"
+msgstr "Soft reset"
+
+#: static/js/idle.js:5363
+msgid "games_idle_prestige_0_confirm"
+msgstr ""
+"Are you sure you want to reset? You will lose all your progress since the"
+" last prestige"
+
+#: static/js/idle.js:5378
+msgid "games_idle_prestige_1"
+msgstr "Prestige"
+
+#: static/js/idle.js:5381
+msgid "games_idle_prestige_1_confirm"
+msgstr ""
+"Are you sure you want to prestige? You will lose all your progress since "
+"the last prestige but gain new resources"
+
+#: static/js/rpg.js:46
+msgid "games_rpg_themes_dark"
+msgstr "Dark mode"
+
+#: static/js/rpg.js:49
+msgid "games_rpg_themes_light"
+msgstr "Light mode"
+
+#: static/js/rpg.js:182
+msgid "games_rpg_action_move_player_left"
+msgstr "Move player to the left"
+
+#: static/js/rpg.js:190
+msgid "games_rpg_action_move_player_right"
+msgstr "Move player to the right"
+
+#: static/js/rpg.js:198
+msgid "games_rpg_action_move_player_down"
+msgstr "Move player down"
+
+#: static/js/rpg.js:206
+msgid "games_rpg_action_move_player_up"
+msgstr "Move player up"
+
+#: static/js/rpg.js:214
+msgid "games_rpg_action_move_cursor_inventory_left"
+msgstr "Move inventory cursor to the left"
+
+#: static/js/rpg.js:257
+msgid "games_rpg_action_move_cursor_inventory_right"
+msgstr "Move inventory cursor to the right"
+
+#: static/js/rpg.js:313
+msgid "games_rpg_action_move_cursor_inventory_down"
+msgstr "Move inventory cursor down"
+
+#: static/js/rpg.js:332
+msgid "games_rpg_action_move_cursor_inventory_up"
+msgstr "Move inventory cursor up"
+
+#: static/js/rpg.js:351
+msgid "games_rpg_action_move_cursor_status_down"
+msgstr "Move status cursor down"
+
+#: static/js/rpg.js:368
+msgid "games_rpg_action_move_cursor_status_up"
+msgstr "Move status cursor up"
+
+#: static/js/rpg.js:378
+msgid "games_rpg_action_use_inventory_selected"
+msgstr "Use selected item"
+
+#: static/js/rpg.js:389
+msgid "games_rpg_action_drop_inventory_selected"
+msgstr "Drop selected item"
+
+#: static/js/rpg.js:404
+msgid "games_rpg_action_toggle_equip_inventory_selected"
+msgstr "Equip/unequip selected item"
+
+#: static/js/rpg.js:416
+msgid "games_rpg_action_game_pause"
+msgstr "Pause"
+
+#: static/js/rpg.js:422
+msgid "games_rpg_action_game_resume"
+msgstr "Resume"
+
+#: static/js/rpg.js:428
+msgid "games_rpg_action_game_pause_toggle"
+msgstr "Toggle pause"
+
+#: static/js/rpg.js:434
+msgid "games_rpg_action_show_inventory"
+msgstr "Show inventory"
+
+#: static/js/rpg.js:442
+msgid "games_rpg_action_hide_inventory"
+msgstr "Hide inventory"
+
+#: static/js/rpg.js:448
+msgid "games_rpg_action_show_status"
+msgstr "Show status"
+
+#: static/js/rpg.js:456
+msgid "games_rpg_action_hide_status"
+msgstr "Hide status"
+
+#: static/js/rpg.js:506
+msgid "games_rpg_type_none"
+msgstr "None"
+
+#: static/js/rpg.js:514
+msgid "games_rpg_status_health"
+msgstr "Health"
+
+#: static/js/rpg.js:515
+msgid "games_rpg_status_health_max"
+msgstr "Max Health"
+
+#: static/js/rpg.js:516
+msgid "games_rpg_status_speed"
+msgstr "Speed"
+
+#: static/js/rpg.js:517
+msgid "games_rpg_status_range"
+msgstr "Range"
+
+#: static/js/rpg.js:518
+msgid "games_rpg_status_inventory"
+msgstr "Inventory"
+
+#: static/js/rpg.js:519
+msgid "games_rpg_status_defense"
+msgstr "%(type)s Defense"
+
+#: static/js/rpg.js:520
+msgid "games_rpg_status_damage"
+msgstr "%(type)s damage"
+
+#: static/js/rpg.js:528
+msgid "games_rpg_slot_head"
+msgstr "Head"
+
+#: static/js/rpg.js:529
+msgid "games_rpg_slot_face"
+msgstr "Face"
+
+#: static/js/rpg.js:530
+msgid "games_rpg_slot_neck"
+msgstr "Neck"
+
+#: static/js/rpg.js:531
+msgid "games_rpg_slot_chest"
+msgstr "Chest"
+
+#: static/js/rpg.js:532
+msgid "games_rpg_slot_arm"
+msgstr "Arm"
+
+#: static/js/rpg.js:533
+msgid "games_rpg_slot_hand"
+msgstr "Hand"
+
+#: static/js/rpg.js:534
+msgid "games_rpg_slot_leg"
+msgstr "Leg"
+
+#: static/js/rpg.js:535
+msgid "games_rpg_slot_foot"
+msgstr "Foot"
+
+#: static/js/rpg.js:1102 static/js/rpg.js:1166
+msgid "games_rpg_status_name"
+msgstr "Name"
+
+#: static/js/rpg.js:1102 static/js/rpg.js:1166
+msgid "games_rpg_status_name_unnamed"
+msgstr "Unnamed"
+
+#: static/js/rpg.js:1104
+msgid "games_rpg_status_description"
+msgstr "Description"
+
+#: static/js/rpg.js:1106
+msgid "games_rpg_status_on_use"
+msgstr "On use"
+
+#: static/js/rpg.js:1122
+msgid "games_rpg_status_passive"
+msgstr "Passive"
+
+#: static/js/rpg.js:1138
+msgid "games_rpg_status_equipped"
+msgstr "When equipped"
+
+#: static/js/rpg.js:1138
+msgid "games_rpg_status_equip_slot"
+msgstr "Equipment slot %(slot)s"
+
+#: static/js/rpg.js:1178
+msgid "defense"
+msgstr ""
+
+#: static/js/rpg.js:1185
+msgid "damage"
+msgstr ""
+
+#: static/js/rpg.js:1197
+msgid "games_rpg_status_items"
+msgstr "items"
+
+#: static/js/rpg.js:1197
+msgid "games_rpg_status_item"
+msgstr "item"
 
 #: templates/auth/change_password.html:2 templates/auth/login.html:21
 #: templates/auth/register.html:2 templates/auth/register.html:22
@@ -363,10 +783,6 @@ msgstr "Leave group"
 msgid "chat_send_message"
 msgstr "Send message"
 
-#: templates/chat/group_view.html:83
-msgid "chat_confirm_delete_message"
-msgstr "Are you sure you want to delete this message?"
-
 #: templates/errors/404.html:2
 msgid "error_404"
 msgstr "404 error"
@@ -378,32 +794,4 @@ msgstr "Options"
 #: templates/games/blockus.html:7
 msgid "blockus_game_keybinds"
 msgstr "Keybinds"
-
-#: templates/rpg/create.html:12
-msgid "rpg_character_name"
-msgstr ""
-
-#: templates/rpg/create.html:16
-msgid "rpg_character_race"
-msgstr ""
-
-#: templates/rpg/create.html:24
-msgid "rpg_character_class"
-msgstr ""
-
-#: templates/rpg/create.html:33
-msgid "rpg_character_create"
-msgstr ""
-
-#~ msgid "game_blockus_keybinds_group_playing"
-#~ msgstr "While playing"
-
-#~ msgid "game_blockus_keybinds_group_pause"
-#~ msgstr "While paused"
-
-#~ msgid "game_blockus_keybinds_group_gameover"
-#~ msgstr "After losing"
-
-#~ msgid "game_blockus_keybind_leave_blank_tip"
-#~ msgstr "Leave blank to remove"
 
