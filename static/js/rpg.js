@@ -210,15 +210,16 @@ if (typeof ngettext != 'function') {
                     // We're in the equipment section, so we reach for the nearest item
                     // Cursor is outside the inventory rows, reduce it by 1
                     index--;
+                    let position = Math.max(0, player.inventory.length - 1);
                     let prevs = Object.keys(player.equipment).sort((a,b) => b-a)
-                        .filter(n => n < cursors.inventory[1] && n >= Math.floor((player.inventory.length - 1) / items_per_row));
+                        .filter(n => n < cursors.inventory[1] && n >= Math.floor(position / items_per_row));
 
                     if (player.inventory.length - 1 <= index) {
                         if (prevs.length) {
                             cursors.inventory[1] = +prevs[0];
                         } else {
-                            cursors.inventory[0] = (player.inventory.length - 1) % items_per_row;
-                            cursors.inventory[1] = Math.floor((player.inventory.length - 1) / items_per_row);
+                            cursors.inventory[0] = position % items_per_row;
+                            cursors.inventory[1] = Math.floor(position / items_per_row);
                         }
                     } else {
                         cursors.inventory[0] = index % items_per_row;
@@ -1120,8 +1121,8 @@ if (typeof ngettext != 'function') {
                 CONTEXT.fillStyle = color;
                 let func = x != items_per_row || y in entity.equipment ? 'strokeRect' : 'fillRect';
                 CONTEXT[func](x_start, y_start, TILE_SIZE[0] * 2, TILE_SIZE[1] * 2);
-                if (y in EQUIP_SLOTS && EQUIP_SLOTS[y].image) {
-                    CONTEXT.drawImage(EQUIP_SLOTS[y].image);
+                if (x == items_per_row && y in EQUIP_SLOTS && EQUIP_SLOTS[y].image) {
+                    CONTEXT.drawImage(EQUIP_SLOTS[y].image, x_start, y_start, TILE_SIZE[0] * 2, TILE_SIZE[1] * 2);
                 }
             }
         }
