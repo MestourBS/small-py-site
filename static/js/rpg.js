@@ -557,8 +557,13 @@ if (typeof ngettext != 'function') {
         'item': function() {
             /** @type {Item[]} */
             let items = Tile.grid.filter(t => t instanceof Item && !t.owner);
+            // All the items have been grabbed, so we get them back
             if (!items.length) {
                 items = Entity.entities.filter(t => t != this).map(t => t.inventory[0]).flat();
+            }
+            // There's no item :(
+            if (!items.length) {
+                return null;
             }
             return Random.array_element(items);
         },
@@ -1287,6 +1292,7 @@ if (typeof ngettext != 'function') {
      * @param {number} top Distance from top edge
      */
     function canvas_tooltip(lines, left, top) {
+        //todo color support (might be difficult)
         let width = TILE_SIZE[0] * (lines.map(l => l.length).reduce((m, l) => Math.max(m, l), 0) + 2) * 2 / 3;
         let height = TILE_SIZE[1] * (lines.length + .5);
         if (left + width > TILE_SIZE[0] * DISPLAY_SIZE[0]) {
@@ -3695,6 +3701,7 @@ if (typeof ngettext != 'function') {
 
             if (this.#target == null && !this.#reset_target()) {
                 this.#target_never = true;
+                return null;
             }
 
             // Check if we've reached the target, and get a new one if so
