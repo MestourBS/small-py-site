@@ -626,7 +626,7 @@ msgstr "%(type)s Defense"
 
 #: static/js/rpg.js:520
 msgid "games_rpg_status_damage"
-msgstr "%(type)s damage"
+msgstr "%(type)s Damage"
 
 #: static/js/rpg.js:528
 msgid "games_rpg_slot_head"

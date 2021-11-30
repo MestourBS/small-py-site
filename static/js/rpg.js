@@ -6,18 +6,42 @@ if (typeof gettext != 'function') {
      */
     function gettext(text, variables) {}
 }
-if (typeof ngettext != 'function') {
-    /**
-     * @param {string} text Variables are inserted with `%(<name>)s`
-     * @param {string} text_plural Variables are inserted with `%(<name>)s`
-     * @param {number} n
-     * @param {{[k: string]: string|number}} variables
-     * @returns {string}
-     */
-    function ngettext(text, text_plural, n, variables) {}
-}
 
 //(() => {
+    /**
+     * todo list
+     *
+     *? Pathfinding: smarter that takes speed & size in account
+     *
+     *? Custom right-click menu, depends where clicked
+     *
+     * * canvas_write: use CONTEXT.measureText for width instead of a multiplier
+     *
+     * room:
+     *  * paths:
+     *      ? horizontal_vertical/vice versa but rounded corners
+     *      - without touching other rooms/hallways (if possible)
+     *      - diagonals only
+     *
+     *  * maps:
+     *      * grid: align spawn room
+     *      - big and vast
+     *      - no hallways, everything touches another room
+     *
+     *  * link: reduce hallways to a few nearby rooms
+     *  ? room decorating?
+     *
+     * entity:
+     *  * factions & intents
+     *  * skills
+     *  * attacking/interacting
+     *
+     * autonomous entity:
+     *  * auto equip
+     *  * auto use
+     *
+     * projectiles
+     */
     /**
      * Canvas of the game
      *
@@ -54,6 +78,10 @@ if (typeof ngettext != 'function') {
      * @type {[number, number]}
      */
     const TILE_SIZE = [20, 20];
+    /**
+     * For a font size `n`, text width is `n*w`;
+     */
+    const TEXT_WIDTH_MULTIPLIER = .6;
     /**
      * Amount of tiles displayed, as [width, height]
      *
@@ -719,7 +747,6 @@ if (typeof ngettext != 'function') {
 
             return null;
         },
-        //todo? even smarter taking speed into account
     };
     /**
      * Random generators
@@ -733,6 +760,7 @@ if (typeof ngettext != 'function') {
              * @param {number} height
              */
             shape: (width, height) => Random.array_element(Object.entries(Room.SHAPES).filter(s => s[1].cond(width, height)).map(s => s[0])),
+            map: () => Random.array_element(Object.values(Room.MAPS)),
         },
         AutonomousEntity: {
             targeting: () => Random.array_element(Object.entries(TARGETINGS).filter(([id]) => id != 'null').map(a => a[1])),
@@ -831,6 +859,18 @@ if (typeof ngettext != 'function') {
         },
         emoji_face: () => String.fromCharCode(55357, 56420 + Math.floor(Random.range(0, 36))),
     });
+    /**
+     * Regex for color matching in text writing
+     *
+     * @type {RegExp}
+     */
+    const COLOR_REGEX = /(?<!\\)\{color:(.+?)\}/ig;
+    /**
+     * Regex for escaped color matching
+     *
+     * @type {RegExp}
+     */
+    const COLOR_ESCAPE = /\\(\{color:.+?\})/g;
 
     /**
      * Current theme
@@ -955,8 +995,6 @@ if (typeof ngettext != 'function') {
      * @returns {boolean}
      */
     function number_between(number, min, max) {
-        if (isNaN(number) || isNaN(min) || isNaN(max)) return false;
-
         return (number - min) * (number - max) <= 0;
     }
     /**
@@ -1059,19 +1097,21 @@ if (typeof ngettext != 'function') {
                 break;
         }
 
-        show_player_mini_status();
+        show_mini_status(player);
     }
     /**
-     * Shows the player mini status at the bottom right
+     * Shows the mini status at the bottom right
+     *
+     * @param {Entity} entity
      */
-    function show_player_mini_status() {
-        let width = Math.min(Math.max(Math.ceil(player.health_max / 10), 10), DISPLAY_SIZE[0]) * TILE_SIZE[0];
+    function show_mini_status(entity) {
+        let width = Math.min(Math.max(Math.ceil(entity.health_max / 10), 10), DISPLAY_SIZE[0]) * TILE_SIZE[0];
         let height = TILE_SIZE[1];
         let left = (DISPLAY_SIZE[0] * TILE_SIZE[0]) - width;
         let top = (DISPLAY_SIZE[1] * TILE_SIZE[1]) - height;
 
         let text_position = left + width / 2;
-        let width_fill = Math.ceil(player.health / player.health_max * width) || 0;
+        let width_fill = Math.ceil(entity.health / entity.health_max * width) || 0;
         let width_empty = width - width_fill;
 
         CONTEXT.fillStyle = '#0f0';
@@ -1081,7 +1121,7 @@ if (typeof ngettext != 'function') {
         CONTEXT.font = `${TILE_SIZE[1]}px monospace`;
         CONTEXT.fillStyle = '#000';
         CONTEXT.textAlign = 'center';
-        CONTEXT.fillText(`${player.health}/${player.health_max}`, text_position, top + height * .8, width);
+        CONTEXT.fillText(`${entity.health}/${entity.health_max}`, text_position, top + height * .8, width);
     }
     /**
      * Shows the grid, the player and the entities
@@ -1189,7 +1229,15 @@ if (typeof ngettext != 'function') {
                 });
             }
             if (item.equip_slot != null) {
-                lines.push('---', gettext('games_rpg_status_equipped'), gettext('games_rpg_status_equip_slot', {slot: EQUIP_SLOTS[item.equip_slot].name}));
+                lines.push('---');
+
+                let title = gettext('games_rpg_status_equipped');
+                if (cursors.inventory[0] == items_per_row) title = `{color:#0a3}${title}{color:black}`;
+                lines.push(title);
+
+                let has_slot = item.equip_slot in entity.equipment;
+                lines.push(gettext('games_rpg_status_equip_slot', {slot: `{color:${has_slot?'green':'red'}}${EQUIP_SLOTS[item.equip_slot].name}{color:black}`}));
+
                 Object.entries(item.equipped).forEach(([attr, change]) => {
                     if (typeof change == 'number') {
                         attr = ATTRIBUTES[attr];
@@ -1226,6 +1274,8 @@ if (typeof ngettext != 'function') {
         }
         let health_line = ATTRIBUTES['health'] + `: ${entity.health}/${entity.health_max}`;
         if (entity.bonus_health_max) health_line += ` (${entity.base_health_max} +${entity.bonus_health_max})`;
+        if (entity.health / entity.health_max <= .1) health_line = `{color:red}${health_line}{color:black}`;
+        else if (entity.health / entity.health_max <= .5) health_line = `{color:orange}${health_line}{color:black}`;
         lines.push(health_line);
         Object.entries(entity.defense).forEach(([type, def]) => {
             let line = gettext(ATTRIBUTES['defense'], {type: TYPES[type]}) + `: ${def}`;
@@ -1261,7 +1311,7 @@ if (typeof ngettext != 'function') {
             if (top <= 0) continue;
 
             let line = lines[i];
-            CONTEXT.fillText(line, left, top);
+            canvas_write(line, left, top);
         }
 
         // Scroll arrows
@@ -1285,16 +1335,19 @@ if (typeof ngettext != 'function') {
         }
     }
     /**
-     * Writes a bunch of lines
+     * Writes a bunch of lines in a box
      *
-     * @param {string[]} lines Lines to write
+     * @param {string[]} lines Lines to write. Change color by writing `{color:<color>}`. Any amount of backslashes will disable colors
      * @param {number} left Distance from left edge
      * @param {number} top Distance from top edge
      */
     function canvas_tooltip(lines, left, top) {
-        //todo color support (might be difficult)
-        let width = TILE_SIZE[0] * (lines.map(l => l.length).reduce((m, l) => Math.max(m, l), 0) + 2) * 2 / 3;
+        if (!lines.length) return;
+
+        let max_line_length = lines.map(line => line.replace(COLOR_REGEX, '')).sort((a, b) => b.length - a.length)[0].length;
+        let width = TILE_SIZE[0] * (max_line_length + 2) * 2 / 3;
         let height = TILE_SIZE[1] * (lines.length + .5);
+        // Keep tooltip in the canvas (as much as possible)
         if (left + width > TILE_SIZE[0] * DISPLAY_SIZE[0]) {
             let overshot = left + width - TILE_SIZE[0] * DISPLAY_SIZE[0];
             left = Math.max(0, left - overshot);
@@ -1304,22 +1357,53 @@ if (typeof ngettext != 'function') {
             top = Math.max(0, top - overshot);
         }
 
+        // Draw tooltip box
         CONTEXT.fillStyle = '#ccc';
         CONTEXT.strokeStyle = '#000';
         CONTEXT.fillRect(left, top, width, height);
         CONTEXT.strokeRect(left, top, width, height);
 
+        canvas_write(lines, left, top);
+    }
+    /**
+     * Writes text, with colors if you want, on the canvas
+     *
+     * @param {string[]|string} lines Lines to write. Change color by writing `{color:<color>}`. Any amount of backslashes will disable colors
+     * @param {number} left Distance from left edge
+     * @param {number} top Distance from top edge
+     */
+    function canvas_write(lines, left, top) {
+        if (!Array.isArray(lines)) lines = [lines];
+        if (!lines.length) return;
+
+        // Set text vars
         CONTEXT.textAlign = 'left';
         CONTEXT.font = `${TILE_SIZE[1]}px monospace`;
         CONTEXT.fillStyle = '#000';
+        const base_x = left + TILE_SIZE[0];
 
+        // Draw text
         for (let i = 0; i < lines.length; i++) {
-            let y = top + (i + 1) * TILE_SIZE[1];
-            let x = left + TILE_SIZE[0];
+            const y = top + (i + 1) * TILE_SIZE[1];
             if (y <= 0) continue;
-
+            let x = base_x;
             let line = lines[i];
-            CONTEXT.fillText(line, x, y);
+
+            if (line.match(COLOR_REGEX)) {
+                // Iterate over the pieces
+                let color = false;
+                line.split(COLOR_REGEX).forEach(chunk => {
+                    // Half of the pieces are color setters, the rest is actual text
+                    if (color) CONTEXT.fillStyle = chunk;
+                    else {
+                        CONTEXT.fillText(chunk.replace(COLOR_ESCAPE, n => n.slice(1)), x, y);
+                        x += chunk.length * TEXT_WIDTH_MULTIPLIER * TILE_SIZE[0];
+                    }
+                    color = !color;
+                });
+            } else {
+                CONTEXT.fillText(line.replace(COLOR_ESCAPE, n => n.slice(1)), x, y);
+            }
         }
     }
 
@@ -1380,6 +1464,7 @@ if (typeof ngettext != 'function') {
      */
     function init() {
         let almost_paused = !document.hasFocus();
+        if (almost_paused) game_state = 'pause';
         document.addEventListener('keydown', keydown);
         document.addEventListener('blur', () => {
             if (game_state == 'playing') {
@@ -1771,7 +1856,7 @@ if (typeof ngettext != 'function') {
             },
             'rhombus': { // ◊
                 func: (grid, width, height, walls='#', floors='.', empty=' ') => {
-                    // Compute distance from axis
+                    // Compute distance from vertical axis
                     let ratio = width / height;
 
                     grid = grid.map((row, y) => {
@@ -1806,8 +1891,154 @@ if (typeof ngettext != 'function') {
                 },
                 cond: (width, height) => width >= 3 && height >= 3,
             },
-            //todo? triangle(s)
-            //todo? pentagram
+            'triangle_north': { // △
+                func: (grid, width, height, walls='#', floors='.', empty=' ') => {
+                    // Compute distance from axis
+                    let ratio = width / height / 2;
+
+                    grid = grid.map((row, y) => {
+                        let x_max = Math.ceil((height - y) * ratio);
+                        return row.map((_, x) => {
+                            if (x > width / 2) x = Math.ceil(Math.abs(width - x));
+                            if (x < x_max) return empty;
+                            if (x == x_max) return walls;
+                            return floors;
+                        });
+                    });
+
+                    return grid.map((row, y) => {
+                        return row.map((cell, x) => {
+                            if (cell != floors) return cell;
+
+                            /** @type {string[]} */
+                            let neighbours = [];
+                            if (y > 0) neighbours.push(grid[y-1][x]);
+                            else neighbours.push(empty);
+                            if (y < height - 1) neighbours.push(grid[y+1][x]);
+                            else neighbours.push(empty);
+                            if (x > 0) neighbours.push(grid[y][x-1]);
+                            else neighbours.push(empty);
+                            if (x < width - 1) neighbours.push(grid[y][x+1]);
+                            else neighbours.push(empty);
+
+                            if (neighbours.some(c => c == empty)) return walls;
+                            return cell;
+                        });
+                    });
+                },
+                cond: (width, height) => width >= 4 && height >= 4,
+            },
+            'triangle_south': { // ▽
+                func: (grid, width, height, walls='#', floors='.', empty=' ') => {
+                    // Compute distance from axis
+                    let ratio = width / height / 2;
+
+                    grid = grid.map((row, y) => {
+                        let x_max = Math.ceil(y * ratio);
+                        return row.map((_, x) => {
+                            if (x > width / 2) x = Math.ceil(Math.abs(width - x));
+                            if (x < x_max) return empty;
+                            if (x == x_max) return walls;
+                            return floors;
+                        });
+                    });
+
+                    return grid.map((row, y) => {
+                        return row.map((cell, x) => {
+                            if (cell != floors) return cell;
+
+                            /** @type {string[]} */
+                            let neighbours = [];
+                            if (y > 0) neighbours.push(grid[y-1][x]);
+                            else neighbours.push(empty);
+                            if (y < height - 1) neighbours.push(grid[y+1][x]);
+                            else neighbours.push(empty);
+                            if (x > 0) neighbours.push(grid[y][x-1]);
+                            else neighbours.push(empty);
+                            if (x < width - 1) neighbours.push(grid[y][x+1]);
+                            else neighbours.push(empty);
+
+                            if (neighbours.some(c => c == empty)) return walls;
+                            return cell;
+                        });
+                    });
+                },
+                cond: (width, height) => width >= 4 && height >= 4,
+            },
+            'triangle_east': { // ▷
+                func: (grid, width, height, walls='#', floors='.', empty=' ') => {
+                    // Compute distance from axis
+                    let ratio = height / width / 2;
+
+                    grid = grid.map((row, y) => {
+                        return row.map((_, x) => {
+                            let y_max = Math.ceil(x * ratio);
+                            if (y > width / 2) y = Math.ceil(Math.abs(height - y));
+                            if (y < y_max) return empty;
+                            if (y == y_max) return walls;
+                            return floors;
+                        });
+                    });
+
+                    return grid.map((row, y) => {
+                        return row.map((cell, x) => {
+                            if (cell != floors) return cell;
+
+                            /** @type {string[]} */
+                            let neighbours = [];
+                            if (y > 0) neighbours.push(grid[y-1][x]);
+                            else neighbours.push(empty);
+                            if (y < height - 1) neighbours.push(grid[y+1][x]);
+                            else neighbours.push(empty);
+                            if (x > 0) neighbours.push(grid[y][x-1]);
+                            else neighbours.push(empty);
+                            if (x < width - 1) neighbours.push(grid[y][x+1]);
+                            else neighbours.push(empty);
+
+                            if (neighbours.some(c => c == empty)) return walls;
+                            return cell;
+                        });
+                    });
+                },
+                cond: (width, height) => width >= 4 && height >= 4,
+            },
+            'triangle_west': { // ◁
+                func: (grid, width, height, walls='#', floors='.', empty=' ') => {
+                    // Compute distance from axis
+                    let ratio = height / width / 2;
+
+                    grid = grid.map((row, y) => {
+                        return row.map((_, x) => {
+                            let y_max = Math.ceil((width - x) * ratio);
+                            if (y > width / 2) y = Math.ceil(Math.abs(height - y));
+                            if (y < y_max) return empty;
+                            if (y == y_max) return walls;
+                            return floors;
+                        });
+                    });
+
+                    return grid.map((row, y) => {
+                        return row.map((cell, x) => {
+                            if (cell != floors) return cell;
+
+                            /** @type {string[]} */
+                            let neighbours = [];
+                            if (y > 0) neighbours.push(grid[y-1][x]);
+                            else neighbours.push(empty);
+                            if (y < height - 1) neighbours.push(grid[y+1][x]);
+                            else neighbours.push(empty);
+                            if (x > 0) neighbours.push(grid[y][x-1]);
+                            else neighbours.push(empty);
+                            if (x < width - 1) neighbours.push(grid[y][x+1]);
+                            else neighbours.push(empty);
+
+                            if (neighbours.some(c => c == empty)) return walls;
+                            return cell;
+                        });
+                    });
+                },
+                cond: (width, height) => width >= 4 && height >= 4,
+            },
         };
         /**
          * @type {{[k: string]: (start: [number, number], end: [number, number]) => [number, number][]}
@@ -1815,17 +2046,16 @@ if (typeof ngettext != 'function') {
         static PATHS = {
             // As direct as possible
             'straight': (start, end) => {
+                /** @type {[number, number][]} */
+                let coords = [];
                 let dist_x = start[0] - end[0];
                 let dist_y = start[1] - end[1];
                 let sign_x = Math.sign(dist_x);
                 let sign_y = Math.sign(dist_y);
                 let ratio = dist_y / dist_x;
-                /** @type {[number, number][]} */
-                let coords = [];
 
                 if (isNaN(ratio) || (!dist_x && !dist_y)) {
-                    let [x, y] = start;
-                    coords.push([x, y]);
+                    coords.push(start);
                 } else if (!isFinite(ratio)) {
                     let x = start[0];
                     let range = [
@@ -1860,22 +2090,22 @@ if (typeof ngettext != 'function') {
             },
             // Move horizontally first, then vertically
             'horizontal_vertical': (start, end) => {
+                /** @type {[number, number][]} */
+                let coords = [];
                 let dist_x = start[0] - end[0];
                 let dist_y = start[1] - end[1];
                 let sign_x = Math.sign(dist_x);
                 let sign_y = Math.sign(dist_y);
-                /** @type {[number, number][]} */
-                let coords = [];
 
                 if (sign_x) {
+                    let y = start[1];
                     for (let x = start[0]; number_between(x, start[0], end[0]); x -= sign_x) {
-                        let y = start[1];
                         coords.push([x, y]);
                     }
                 }
                 if (sign_y) {
+                    let x = end[0];
                     for (let y = start[1] - sign_y; number_between(y, start[1], end[1]); y -= sign_y) {
-                        let x = end[0];
                         coords.push([x, y]);
                     }
                 }
@@ -1908,7 +2138,91 @@ if (typeof ngettext != 'function') {
 
                 return coords;
             },
-            //todo without touching other rooms/hallways (if possible)
+        };
+        /**
+         * @type {{[k: string]: (room_amount?: number, spawn_player?: boolean) => Room<Tile>}}
+         */
+        static MAPS = {
+            'simple': (room_amount=null, spawn_player=true) => {
+                /** @type {Room<Tile>[]} */
+                let rooms = [];
+                if (spawn_player) {
+                    rooms.push(Room.make_spawn());
+                }
+
+                // Add rooms
+                room_amount ??= Math.ceil(Random.range(3, 20));
+
+                let all_coords = [[0, 0]];
+                let dist = 3 * room_amount;
+                for (let i = 0; i <= room_amount; i++) {
+                    // Allows making room nearer
+                    let coords = [...Random.array_element(all_coords)];
+                    coords[0] += Math.floor(Random.range(-dist, 1 + dist));
+                    coords[1] += Math.floor(Random.range(-dist, 1 + dist));
+                    all_coords.push(coords);
+                    rooms.push(Random.room().to_tiles(...coords, false));
+                }
+
+                let map = Room.link({rooms});
+                map.insert();
+
+                // Spawn player
+                if (spawn_player) {
+                    let target = Random.array_element(rooms[0].grid.filter(t => !t.solid));
+                    if (!target) target = Random.array_element(rooms[0].grid);
+                    let {x = 0, y = 0} = target;
+                    player.x = x;
+                    player.y = y;
+                }
+
+                return map;
+            },
+            'grid': (room_amount=null, spawn_player=true) => {
+                /** @type {Room<Tile>[]} */
+                let rooms = [];
+                let room_width = Math.ceil(Random.range(5, 25));
+                let room_height = Math.ceil(Random.range(5, 25));
+                if (spawn_player) {
+                    rooms.push(Room.make_spawn(room_width, room_height));
+                }
+
+                // Add rooms
+                room_amount ??= Math.ceil(Random.range(3, 20));
+                let grid_width = Math.ceil(room_amount ** .5);
+                let dist_x = Math.floor(Random.range(2, 3) * room_width);
+                let dist_y = Math.floor(Random.range(2, 3) * room_height);
+                let x_offset = Math.floor(Random.range(0, grid_width));
+                let y = -Math.floor(Random.range(0, Math.ceil(room_amount / grid_width)));
+
+                while (room_amount >= 0) {
+                    let top = y * dist_y;
+                    y++;
+
+                    for (let x = 0; x <= grid_width; x++) {
+                        if (room_amount < 0) break;
+                        let left = (x - x_offset) * dist_x;
+                        if (spawn_player && !top && !left) continue;
+
+                        rooms.push(Random.room({width: room_width, height: room_height}).to_tiles(left, top, false));
+                        room_amount--;
+                    }
+                }
+
+                let map = Room.link({rooms});
+                map.insert();
+
+                // Spawn player
+                if (spawn_player) {
+                    let target = Random.array_element(rooms[0].grid.filter(t => !t.solid));
+                    if (!target) target = Random.array_element(map.grid.filter(t => !t.solid));
+                    let {x = 0, y = 0} = target;
+                    player.x = x;
+                    player.y = y;
+                }
+
+                return map;
+            },
         };
 
         // Ascii stuff
@@ -1936,10 +2250,12 @@ if (typeof ngettext != 'function') {
         /**
          * Creates a spawn room
          *
+         * @param {number} [width]
+         * @param {number} [height]
          * @returns {Room<Tile>}
          */
-        static make_spawn() {
-            return Random.room({width: 20, height: 20, shape: 'donut_round'}).to_tiles(0, 0, false);
+        static make_spawn(width=20, height=20) {
+            return Random.room({width, height}).to_tiles(0, 0, false);
         };
 
         // Ascii & Tiles stuff
@@ -1986,6 +2302,7 @@ if (typeof ngettext != 'function') {
          */
         static link({rooms, walls=null, floors=null}) {
             rooms.forEach(r => r.to_tiles(null, null, false));
+            let abs = Math.abs;
 
             /** @type {Room<Tile>[]} */
             let separate_rooms = [];
@@ -2022,13 +2339,74 @@ if (typeof ngettext != 'function') {
                 }
             }
 
+            /** @type {number[]} */
+            let centers = separate_rooms.map(room => {
+                let gsx = [...room.grid].sort((a,b) => a.x-b.x);
+                let gsy = [...room.grid].sort((a,b) => a.y-b.y);
+                let min_x = gsx.shift().x;
+                let max_x = gsx.pop().x;
+                let min_y = gsy.shift().y;
+                let max_y = gsy.pop().y;
+                return [(min_x + max_x) / 2, (min_y + max_y) / 2];
+            });
             /** @type {[number, number][]} */
             let links = separate_rooms.map((_, index) => {
-                //todo reduce connections to only a few nearby rooms
-                let connections = 1 + Math.floor(Random.range(0, Math.ceil(rooms.length ** .5)));
-                let links = separate_rooms.map((_, i) => i).filter(i => i != index).map(i => [index, i].sort((a,b) => a-b));
-                links = Random.array_shuffle(links);
-                return links.splice(0, connections);
+                /**
+                 * Selected room indexes
+                 */
+                let rooms = {
+                    'up': -1,
+                    'down': -1,
+                    'left': -1,
+                    'right': -1,
+                    'up_left': -1,
+                    'up_right': -1,
+                    'down_left': -1,
+                    'down_right': -1,
+                };
+                let center = centers[index];
+
+                /**
+                 * Distance between this room and the room at `index`
+                 *
+                 * @type {{[k:number]: number}}
+                 */
+                let room_dists = {};
+                separate_rooms.forEach((_, i) => {
+                    if (i == index) return;
+
+                    let rcenter = centers[i];
+
+                    room_dists[i] = coords_distance(center, rcenter);
+
+                    let dist_x = center[0] - rcenter[0];
+                    let dist_y = center[1] - rcenter[1];
+                    if (!dist_x && !dist_y) return; // Same center, ignore it
+
+                    /** @type {'up'|'down'|'left'|'right'|'up_left'|'up_right'|'down_left'|'down_right'} */
+                    let target;
+                    if (abs(dist_x) * 3 < abs(dist_y)) {
+                        target = dist_y > 0 ? 'up' : 'down';
+                    } else if (abs(dist_y) * 3 < abs(dist_x)) {
+                        target = dist_x > 0 ? 'left' : 'right';
+                    } else {
+                        let dir = DIRECTION.fromDir([dist_x, dist_y]);
+                        if (dir[0] == dir[1]) {
+                            target = dir[0] < 0 ? 'down_left' : 'up_right';
+                        } else {
+                            target = dir[0] < 0 ? 'up_left' : 'down_right';
+                        }
+                    }
+
+                    let ind = rooms[target];
+                    if ((room_dists[ind] ?? Infinity) > room_dists[i]) {
+                        rooms[target] = i;
+                    }
+                });
+
+                let rindexes = Object.values(rooms).filter(n => n != -1);
+                let connections = 1 + Math.floor(Random.range(0, Math.min(rindexes.length, 3)));
+                return Random.array_shuffle(rindexes).map(i => [i, index]).splice(0, connections);
             }).flat();
             // Remove duplicates
             links = links.filter((link, index) => {
@@ -2169,36 +2547,7 @@ if (typeof ngettext != 'function') {
          * @param {boolean} [spawn_player]
          */
         static make_map(room_amount=null, spawn_player=true) {
-            /** @type {Room<Tile>[]} */
-            let rooms = [];
-            if (spawn_player) {
-                rooms.push(this.make_spawn());
-            }
-
-            room_amount ??= Math.ceil(Random.range(3, 20));
-
-            let all_coords = [[0, 0]];
-            let dist = 3 * room_amount;
-            for (let i = 0; i <= room_amount; i++) {
-                // Allows making room nearer
-                let coords = [...Random.array_element(all_coords)];
-                coords[0] += Math.floor(Random.range(-dist, 1 + dist));
-                coords[1] += Math.floor(Random.range(-dist, 1 + dist));
-                all_coords.push(coords);
-                rooms.push(Random.room().to_tiles(...coords, false));
-            }
-
-            let map = this.link({rooms});
-            map.insert();
-
-            // Spawn player
-            if (spawn_player) {
-                let target = Random.array_element(rooms[0].grid.filter(t => !t.solid));
-                if (!target) target = Random.array_element(rooms[0].grid);
-                let {x = 0, y = 0} = target;
-                player.x = x;
-                player.y = y;
-            }
+            let map = Random.Room.map()(room_amount, spawn_player);
 
             // Spawn items
             let map_floors = map.grid.filter(t => !t.solid);
@@ -2208,7 +2557,9 @@ if (typeof ngettext != 'function') {
                 let {x, y} = target;
                 Item.get_item(id, {x, y, z: 1}).insert();
             });
-            let count = Math.trunc(Random.range(1, 10));
+
+            // Spawn entities
+            let count = Math.floor(Random.range(1, 10));
             for (let i = 0; i < count; i++) {
                 let target = Random.array_element(map_floors);
                 let {x, y} = target;
@@ -2217,8 +2568,6 @@ if (typeof ngettext != 'function') {
                 new AutonomousEntity({x, y, z: 9, content: Random.emoji_face(), pathfinding, targeting});
             }
         }
-
-        //todo? room decorating
 
         /**
          * @param {Object} params
@@ -2411,6 +2760,17 @@ if (typeof ngettext != 'function') {
             return new Color(red, green, blue);
         }
         /**
+         * Converts an html color name into a Color object
+         *
+         * @param {string} name
+         */
+        static from_html_name(name) {
+            // Automatically converts color name to hex
+            let context = document.createElement('canvas').getContext('2d');
+            context.fillStyle = name;
+            return this.from_hex(context.fillStyle);
+        }
+        /**
          * Generates a random color
          *
          * @returns {Color}
@@ -2430,7 +2790,7 @@ if (typeof ngettext != 'function') {
         /** @type {number} */
         #blue;
         /** @type {string|false} */
-        #string;
+        #string = false;
 
         /**
          * @param {Color|string|number|{red: number, green: number, blue: number}} red
@@ -2455,6 +2815,7 @@ if (typeof ngettext != 'function') {
             return this.#string;
         }
         toJSON() { return this.toString(); }
+        valueOf() { return this.toString(); }
 
         get red() { return this.#red; }
         set red(red) {
@@ -2575,7 +2936,7 @@ if (typeof ngettext != 'function') {
         }
     }
     /**
-     * @template {Color|string|CanvasImageSource|(x: number, y: number, this: Tile) => void} T
+     * @template {Color|string|CanvasImageSource|(x: number, y: number, this: Tile<T>) => void} T
      */
     class Tile {
         /**
@@ -2647,6 +3008,7 @@ if (typeof ngettext != 'function') {
                 let converters = [
                     Color.from_hex,
                     Color.from_css_rgb,
+                    Color.from_html_name,
                 ];
                 for (let conv of converters) {
                     try {
@@ -2692,6 +3054,7 @@ if (typeof ngettext != 'function') {
             else return;
             this.#content = content;
         }
+        get can_interact() { return !!this.#interacted; }
 
         toJSON() {
             let json = {
@@ -2770,7 +3133,7 @@ if (typeof ngettext != 'function') {
         }
     }
     /**
-     * @template {Color|string|CanvasImageSource|(x: number, y: number, inventory?: 0|1|2, this: Item) => void} T
+     * @template {Color|string|CanvasImageSource|(x: number, y: number, inventory?: 0|1|2, this: Item<T>) => void} T
      */
     class Item extends Tile {
         /** @type {{[k: string]: Item}} */
@@ -3002,7 +3365,7 @@ if (typeof ngettext != 'function') {
         }
     }
     /**
-     * @template {Color|string|CanvasImageSource|(x: number, y: number, this: Entity) => void} T
+     * @template {Color|string|CanvasImageSource|(x: number, y: number, this: Entity<T>) => void} T
      */
     class Entity extends Tile {
         /** @type {Entity[]} */
@@ -3025,8 +3388,6 @@ if (typeof ngettext != 'function') {
         #inventory = [];
         /** @type {{[k: number]: Item|null}} */
         #equipment = {};
-        //todo factions & intents
-        //todo skills
 
         /**
          * @param {Object} params
@@ -3243,6 +3604,8 @@ if (typeof ngettext != 'function') {
          * @param {number} [multiplier] speed multiplier
          */
         move(direction, multiplier=1) {
+            if (this.health <= 0) return;
+
             let amounts = direction.map(n => n * multiplier * this.speed);
             direction = direction.map(Math.sign);
             let left = direction[0] == -1;
@@ -3297,7 +3660,7 @@ if (typeof ngettext != 'function') {
             }
 
             // Interact with tiles
-            Tile.grid.filter(t => number_between(t.x, ...x_range) && number_between(t.y, ...y_range)).forEach(t => t.interacted(this));
+            Tile.grid.filter(t => number_between(t.x, ...x_range) && number_between(t.y, ...y_range) && t.can_interact).forEach(t => t.interacted(this));
         }
         /**
          * Calculates the movement space available in all 4 cardinal directions
@@ -3649,10 +4012,9 @@ if (typeof ngettext != 'function') {
                 this.#inventory[inventory_index][1]++;
             }
         }
-        //todo attack/interact with entity
     }
     /**
-     * @template {Color|string|CanvasImageSource|(x: number, y: number, this: AutonomousEntity) => void} T
+     * @template {Color|string|CanvasImageSource|(x: number, y: number, this: AutonomousEntity<T>) => void} T
      */
     class AutonomousEntity extends Entity {
         /** @type {Tile|null} */
@@ -3757,6 +4119,9 @@ if (typeof ngettext != 'function') {
          * @param {number} [multiplier]
          */
         move(dir=null, multiplier=1) {
+            // Dead things can't move
+            if (this.health <= 0) return;
+
             dir ??= this.#pathfinding.call(this);
             if (dir && !dir.every(n => n == 0)) super.move(dir, multiplier);
         }
