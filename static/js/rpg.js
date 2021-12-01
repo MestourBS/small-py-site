@@ -9,13 +9,26 @@ if (typeof gettext != 'function') {
 
 //(() => {
     /**
-     * todo list
+     * TODO LIST
+     * =========
      *
-     *? Pathfinding: smarter that takes speed & size in account
+     * *split into modules because damn 5k lines is too much
      *
-     *? Custom right-click menu, depends where clicked
+     * ?Pathfinding: smarter that takes speed & size in account
      *
-     * * canvas_write: use CONTEXT.measureText for width instead of a multiplier
+     * ?Custom right-click menu, depends where clicked
+     *
+     * *options
+     *  - needs the ability to show/read input equivalents
+     *      - needs the ability to remember inputs
+     *
+     * *configurable keybinds
+     *  - needs a slight keybind revamp to allow default actions
+     *  - needs a slight action revamp to get key
+     *
+     * *custom theme
+     *  - needs a slight keybind revamp to allow default actions
+     *  - needs a slight action revamp to get key
      *
      * room:
      *  * paths:
@@ -28,7 +41,6 @@ if (typeof gettext != 'function') {
      *      - big and vast
      *      - no hallways, everything touches another room
      *
-     *  * link: reduce hallways to a few nearby rooms
      *  ? room decorating?
      *
      * entity:
@@ -42,6 +54,8 @@ if (typeof gettext != 'function') {
      *
      * projectiles
      */
+
+    // Elements
     /**
      * Canvas of the game
      *
@@ -54,6 +68,8 @@ if (typeof gettext != 'function') {
      * @type {CanvasRenderingContext2D}
      */
     const CONTEXT = CANVAS.getContext('2d');
+
+    // Display
     /**
      * Available themes
      *
@@ -67,21 +83,45 @@ if (typeof gettext != 'function') {
     const THEMES = {
         'dark': {
             name: gettext('games_rpg_themes_dark'),
+            // Text
+            text_font: 'monospace',
+            text_color: '#000',
+            text_item_amount_color: '#fff',
+            text_very_low_health_color: 'red',
+            text_low_health_color: 'orange',
+            text_item_equipped_color: '#0a3',
+            text_item_has_slot_color: 'green',
+            text_item_has_not_slot_color: 'red',
+            // Borders
+            border_tooltip_color: '#000',
+            border_inventory_cell_color: '#000',
+            border_equipment_cell_color: '#a77',
+            border_inventory_cursor_color: '#0ff',
+            // Backgrounds
+            background_tooltip_color: '#ccc',
+            background_inventory_color: '#ccc',
+            background_equipment_cell_locked_color: '#ff6',
+            background_entity_health_color: '#0f0',
+            background_entity_missing_health_color: '#f00',
         },
+        /*
         'light': {
             name: gettext('games_rpg_themes_light'),
         },
+        */
     };
+    /**
+     * Current theme
+     *
+     * @type {string}
+     */
+    let current_theme = Object.keys(THEMES)[0];
     /**
      * Tile size in [width, height]
      *
      * @type {[number, number]}
      */
     const TILE_SIZE = [20, 20];
-    /**
-     * For a font size `n`, text width is `n*w`;
-     */
-    const TEXT_WIDTH_MULTIPLIER = .6;
     /**
      * Amount of tiles displayed, as [width, height]
      *
@@ -94,6 +134,55 @@ if (typeof gettext != 'function') {
      * @type {string[]}
      */
     const UNITS = ['', 'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'];
+    /**
+     * ASCII symbols for ascii displays.
+     *
+     * @type {{
+     *  solids: string[],
+     *  nonsolids: string[],
+     * }}
+     */
+    const ASCII_SYMBOLS = {
+        solids: ['#', '■', '▮', '▬', '●', '◆', '◉', '1'],
+        nonsolids: ['.', '□', '▯', '▭', '○', '◇', '◎', '0'],
+    };
+    /**
+     * ASCII to tile content map
+     *
+     * @type {{[k: string]: string|Color|CanvasImageSource|((this: Entity) => void)}}
+     */
+    const ASCII_COLORS = {
+        '#': '#333',
+        '.': '#ccc',
+        '■': '#335',
+        '□': '#ccf',
+        '▮': '#533',
+        '▯': '#fcc',
+        '▬': '#353',
+        '▭': '#cfc',
+        '●': '#553',
+        '○': '#ffc',
+        '◆': '#535',
+        '◇': '#fcf',
+        '◉': '#355',
+        '◎': '#cff',
+        '1': '#555',
+        '0': '#eee',
+    };
+    /**
+     * Regex for color matching in text writing
+     *
+     * @type {RegExp}
+     */
+    const COLOR_REGEX = /(?<!\\)\{color:(.+?)\}/ig;
+    /**
+     * Regex for escaped color matching
+     *
+     * @type {RegExp}
+     */
+    const COLOR_ESCAPE = /\\(\{color:.+?\})/g;
+
+    // Game
     /**
      * Enum of directions, as [x, y]
      *
@@ -157,11 +246,11 @@ if (typeof gettext != 'function') {
      * - Others are other actions (pause, resume, inventory, etc.)
      *
      * @type {{
-     *  playing?: {[k: string]: string[]},
-     *  pause?: {[k: string]: string[]},
-     *  inventory?: {[k: string]: string[]},
-     *  status?: {[k: string]: string[]},
-     *  others: {[k: string]: string[]},
+     *  playing?: {[k: string]: (keyof ACTIONS)[]},
+     *  pause?: {[k: string]: (keyof ACTIONS)[]},
+     *  inventory?: {[k: string]: (keyof ACTIONS)[]},
+     *  status?: {[k: string]: (keyof ACTIONS)[]},
+     *  others: {[k: string]: (keyof ACTIONS)[]},
      * }}
      */
     const KEYBINDS = {
@@ -199,10 +288,7 @@ if (typeof gettext != 'function') {
         },
     };
     /**
-     * @type {{[k: string]: {
-     *  name: string,
-     *  func: () => void,
-     * }}}
+     * Existing actions
      */
     const ACTIONS = new Proxy(Object.freeze({
         'move_player_left': {
@@ -471,108 +557,7 @@ if (typeof gettext != 'function') {
         set: (obj, prop, val) => {},
     });
     /**
-     * ASCII symbols for ascii displays.
-     *
-     * @type {{
-     *  solids: string[],
-     *  nonsolids: string[],
-     * }}
-     */
-    const ASCII_SYMBOLS = {
-        solids: ['#', '■', '▮', '▬', '●', '◆', '◉', '1'],
-        nonsolids: ['.', '□', '▯', '▭', '○', '◇', '◎', '0'],
-    };
-    /**
-     * ASCII to tile content map
-     *
-     * @type {{[k: string]: string|Color|CanvasImageSource|((this: Entity) => void)}}
-     */
-    const ASCII_COLORS = {
-        '#': '#333',
-        '.': '#ccc',
-        '■': '#335',
-        '□': '#ccf',
-        '▮': '#533',
-        '▯': '#fcc',
-        '▬': '#353',
-        '▭': '#cfc',
-        '●': '#553',
-        '○': '#ffc',
-        '◆': '#535',
-        '◇': '#fcf',
-        '◉': '#355',
-        '◎': '#cff',
-        '1': '#555',
-        '0': '#eee',
-    };
-    /**
-     * Existing damage/defense types
-     *
-     * @type {{[k: string]: string}}
-     */
-    const TYPES = {
-        'none': gettext('games_rpg_type_none'),
-    };
-    /**
-     * Existing entity attributes
-     *
-     * @type {{[k: string]: string}}
-     */
-    const ATTRIBUTES = {
-        'health': gettext('games_rpg_status_health'),
-        'health_max': gettext('games_rpg_status_health_max'),
-        'speed': gettext('games_rpg_status_speed'),
-        'range': gettext('games_rpg_status_range'),
-        'inventory': gettext('games_rpg_status_inventory'),
-        'defense': gettext('games_rpg_status_defense', {type: '%(type)s'}),
-        'damage': gettext('games_rpg_status_damage', {type: '%(type)s'}),
-    };
-    /**
-     * Existing entity equipment slots
-     *
-     * @type {{[k: number]: {
-     *  name: string,
-     *  image?: CanvasImageSource,
-     * }}}
-     */
-    const EQUIP_SLOTS = {
-        0: {
-            name: gettext('games_rpg_slot_head'),
-            image: null,
-        },
-        1: {
-            name: gettext('games_rpg_slot_face'),
-            image: null,
-        },
-        2: {
-            name: gettext('games_rpg_slot_neck'),
-            image: null,
-        },
-        3: {
-            name: gettext('games_rpg_slot_chest'),
-            image: null,
-        },
-        4: {
-            name: gettext('games_rpg_slot_arm'),
-            image: null,
-        },
-        5: {
-            name: gettext('games_rpg_slot_hand'),
-            image: null,
-        },
-        6: {
-            name: gettext('games_rpg_slot_leg'),
-            image: null,
-        },
-        7: {
-            name: gettext('games_rpg_slot_foot'),
-            image: null,
-        },
-    };
-    /**
      * List of functions for targeting
-     *
-     * @type {{[k: string]: (this: AutonomousEntity) => Tile|null}}
      */
     const TARGETINGS = {
         'null': () => null,
@@ -601,12 +586,11 @@ if (typeof gettext != 'function') {
     };
     /**
      * List of functions for pathfinding
-     *
-     * @type {{[k: string]: (this: AutonomousEntity) => DIRECTION|null}}
      */
     const PATHFINDINGS = {
+        /** @type {(this: AutonomousEntity) => null} */
         'null': () => null,
-        /** @this {AutonomousEntity} */
+        /** @type {(this: AutonomousEntity) => readonly [number, number]} */
         'direct': function() {
             if (!this.target) return null;
 
@@ -654,7 +638,7 @@ if (typeof gettext != 'function') {
                 return dir_horizontal;
             }
         },
-        /** @this {AutonomousEntity} */
+        /** @type {(this: AutonomousEntity) => readonly [number, number]} */
         'smart': function() {
             if (!this.target) return null;
 
@@ -749,10 +733,189 @@ if (typeof gettext != 'function') {
         },
     };
     /**
+     * Current game state
+     *
+     * @type {'playing'|'inventory'|'pause'|'status'}
+     */
+    let game_state = 'playing';
+    /**
+     * Current player character
+     *
+     * Affects player movement, display and more
+     *
+     * @type {Entity}
+     */
+    let player;
+    /**
+     * Last time the loop was called
+     *
+     * @type {number}
+     */
+    let loop_last;
+    /**
+     * Whether the loop processing is active
+     *
+     * @type {boolean}
+     */
+    let loop_process = true;
+    /**
+     * Whether keybind checking is strict or not
+     *
+     * If strict, alt+ctrl+key will never trigger alt+key and so on
+     *
+     * @type {boolean}
+     */
+    let strict_keys = true;
+    /**
+     * Current cursors for different screens, as [x, y]
+     *
+     * @type {{
+     *  inventory: [number, number],
+     *  status: [number, number],
+     * }}
+     */
+    let cursors = {
+        inventory: [0, 0],
+        status: [0, 0],
+    };
+    /**
+     * Whether the status shows as much as possible or not
+     */
+    let debug_status = false;
+
+    // Translations
+    /**
+     * Existing damage/defense types
+     *
+     * @type {{[k: string]: string}}
+     */
+    const TYPES = {
+        'none': gettext('games_rpg_type_none'),
+    };
+    /**
+     * Existing entity attributes
+     *
+     * @type {{[k: string]: string}}
+     */
+    const ATTRIBUTES = {
+        'health': gettext('games_rpg_status_health'),
+        'health_max': gettext('games_rpg_status_health_max'),
+        'speed': gettext('games_rpg_status_speed'),
+        'range': gettext('games_rpg_status_range'),
+        'inventory': gettext('games_rpg_status_inventory'),
+        'defense': gettext('games_rpg_status_defense', {type: '%(type)s'}),
+        'damage': gettext('games_rpg_status_damage', {type: '%(type)s'}),
+    };
+    /**
+     * Existing entity equipment slots
+     *
+     * @type {{[k: number]: {
+     *  name: string,
+     *  image?: CanvasImageSource,
+     * }}}
+     */
+    const EQUIP_SLOTS = {
+        0: {
+            name: gettext('games_rpg_slot_head'),
+            image: null,
+        },
+        1: {
+            name: gettext('games_rpg_slot_face'),
+            image: null,
+        },
+        2: {
+            name: gettext('games_rpg_slot_neck'),
+            image: null,
+        },
+        3: {
+            name: gettext('games_rpg_slot_chest'),
+            image: null,
+        },
+        4: {
+            name: gettext('games_rpg_slot_arm'),
+            image: null,
+        },
+        5: {
+            name: gettext('games_rpg_slot_hand'),
+            image: null,
+        },
+        6: {
+            name: gettext('games_rpg_slot_leg'),
+            image: null,
+        },
+        7: {
+            name: gettext('games_rpg_slot_foot'),
+            image: null,
+        },
+    };
+    /**
+     * Theme names
+     *
+     * @type {{[k: string]: string}}
+     */
+    const THEME_ENTRIES = {
+        // Text
+        text_font: gettext('games_rpg_theme_text_font'),
+        text_color: gettext('games_rpg_theme_text_color'),
+        text_item_amount_color: gettext('games_rpg_theme_text_item_amount_color'),
+        text_very_low_health_color: gettext('games_rpg_theme_text_very_low_health_color'),
+        text_low_health_color: gettext('games_rpg_theme_text_low_health_color'),
+        text_item_equipped_color: gettext('games_rpg_theme_text_item_equipped_color'),
+        text_item_has_slot_color: gettext('games_rpg_theme_text_item_has_slot_color'),
+        text_item_has_not_slot_color: gettext('games_rpg_theme_text_item_has_not_slot_color'),
+        // Borders
+        border_tooltip_color: gettext('games_rpg_theme_border_tooltip_color'),
+        border_inventory_cell_color: gettext('games_rpg_theme_border_inventory_cell_color'),
+        border_equipment_cell_color: gettext('games_rpg_theme_border_equipment_cell_color'),
+        border_inventory_cursor_color: gettext('games_rpg_theme_border_inventory_cursor_color'),
+        // Backgrounds
+        background_tooltip_color: gettext('games_rpg_theme_background_tooltip_color'),
+        background_inventory_color: gettext('games_rpg_theme_background_inventory_color'),
+        background_equipment_cell_locked_color: gettext('games_rpg_theme_background_equipment_cell_locked_color'),
+        background_entity_health_color: gettext('games_rpg_theme_background_entity_health_color'),
+        background_entity_missing_health_color: gettext('games_rpg_theme_background_entity_missing_health_color'),
+    };
+
+    // Objects
+    /**
      * Random generators
      */
     const Random = Object.freeze({
         Room: {
+            /**
+             * Generates a random room
+             *
+             * @param {Object} params
+             * @param {number} [params.min_width]
+             * @param {number} [params.max_width]
+             * @param {number} [params.min_height]
+             * @param {number} [params.max_height]
+             * @param {number} [params.width]
+             * @param {number} [params.height]
+             * @param {string} [params.walls]
+             * @param {string} [params.floors]
+             * @param {keyof Room.SHAPES} [params.shape]
+             * @returns {Room<string[]>}
+             */
+            room: ({min_width=7, max_width=null, min_height=7, max_height=null, height=null, width=null, walls=null, floors=null, shape=null}={}) => {
+                if (width === null) {
+                    max_width ??= min_width + 10;
+                    width = Math.floor(Random.range(min_width, max_width));
+                }
+                if (height === null) {
+                    max_height ??= min_height + 10;
+                    height = Math.floor(Random.range(min_height, max_height));
+                }
+
+                walls ??= Random.Room.wall();
+                floors ??= Random.Room.floor();
+                shape ??= Random.Room.shape(width, height);
+                let empty = ' ';
+
+                let room = Room.make_ascii({height, width, shape, walls, floors, empty});
+
+                return room;
+            },
             wall: () => Random.array_element(ASCII_SYMBOLS.solids),
             floor: () => Random.array_element(ASCII_SYMBOLS.nonsolids),
             /**
@@ -760,10 +923,13 @@ if (typeof gettext != 'function') {
              * @param {number} height
              */
             shape: (width, height) => Random.array_element(Object.entries(Room.SHAPES).filter(s => s[1].cond(width, height)).map(s => s[0])),
+            /** @returns {(room_amount?: any, spawn_player?: boolean) => Room<Tile<any>>} */
             map: () => Random.array_element(Object.values(Room.MAPS)),
         },
         AutonomousEntity: {
+            /** @returns {(this: AutonomousEntity) => Tile} */
             targeting: () => Random.array_element(Object.entries(TARGETINGS).filter(([id]) => id != 'null').map(a => a[1])),
+            /** @returns {(this: AutonomousEntity) => readonly [number, number]} */
             pathfinding: () => Random.array_element(Object.entries(PATHFINDINGS).filter(([id]) => id != 'null').map(a => a[1])),
         },
 
@@ -811,41 +977,9 @@ if (typeof gettext != 'function') {
             return array;
         },
         /**
-         * Generates a random room
-         *
-         * @param {Object} params
-         * @param {number} [params.min_width]
-         * @param {number} [params.max_width]
-         * @param {number} [params.min_height]
-         * @param {number} [params.max_height]
-         * @param {number} [params.width]
-         * @param {number} [params.height]
-         * @param {string} [params.walls]
-         * @param {string} [params.floors]
-         * @param {string} [params.shape]
-         * @returns {Room<string[]>}
-         */
-        room: ({min_width=7, max_width=null, min_height=7, max_height=null, height=null, width=null, walls=null, floors=null, shape=null}={}) => {
-            if (width === null) {
-                max_width ??= min_width + 10;
-                width = Math.floor(Random.range(min_width, max_width));
-            }
-            if (height === null) {
-                max_height ??= min_height + 10;
-                height = Math.floor(Random.range(min_height, max_height));
-            }
-
-            walls ??= Random.Room.wall();
-            floors ??= Random.Room.floor();
-            shape ??= Random.Room.shape(width, height);
-            let empty = ' ';
-
-            let room = Room.make_ascii({height, width, shape, walls, floors, empty});
-
-            return room;
-        },
-        /**
          * Random number between min and max
+         *
+         * Min is included, not max
          *
          * The number is **not** rounded
          *
@@ -857,75 +991,108 @@ if (typeof gettext != 'function') {
             if (min > max) [min, max] = [max, min];
             return min + Math.random() * (max - min);
         },
-        emoji_face: () => String.fromCharCode(55357, 56420 + Math.floor(Random.range(0, 36))),
-    });
-    /**
-     * Regex for color matching in text writing
-     *
-     * @type {RegExp}
-     */
-    const COLOR_REGEX = /(?<!\\)\{color:(.+?)\}/ig;
-    /**
-     * Regex for escaped color matching
-     *
-     * @type {RegExp}
-     */
-    const COLOR_ESCAPE = /\\(\{color:.+?\})/g;
+        /**
+         * Gets a random face emoji
+         *
+         * @see https://unicode.org/emoji/charts/full-emoji-list.html
+         *
+         * @returns {string}
+         */
+        emoji_person: () => {
+            /**
+             * String.fromCodePoint
+             */
+            /** @type {([number, number]|number)[][]} ([min codepoint, max codepoint]|codepoint)[][] min and max are inclusive */
+            const emoji_ranges = [
+                //#region Emojis
+                [[0x2639, 0x263A], 0xFE0F],
+                [[0x1F600, 0x1F637]],
+                [[0x1F641, 0x1F644]],
+                [[0x1F910, 0x1F915]],
+                [0x1F917],
+                [[0x1F970, 0x1F976]],
+                [[0x1F978, 0x1F97A]],
+                [[0x1F920, 0x1F925]],
+                [[0x1F927, 0x1F92F]],
+                [0x1F9D0],
+                //#endregion Emojis
 
-    /**
-     * Current theme
-     *
-     * @type {string}
-     */
-    let theme = Object.keys(THEMES)[0];
-    /**
-     * Current game state
-     *
-     * @type {'playing'|'inventory'|'pause'|'status'}
-     */
-    let game_state = 'playing';
-    /**
-     * Player character
-     *
-     * @type {Entity}
-     */
-    let player;
-    /**
-     * Last time the loop was called
-     *
-     * @type {number}
-     */
-    let loop_last;
-    /**
-     * Whether the loop processing is active
-     *
-     * @type {boolean}
-     */
-    let loop_process = true;
-    /**
-     * Whether keybind checking is strict or not
-     *
-     * If strict, alt+ctrl+key will never trigger alt+key
-     *
-     * @type {boolean}
-     */
-    let strict_keys = true;
-    /**
-     * Currently selected items, as [x, y]
-     *
-     * @type {{
-     *  inventory: [number, number],
-     *  status: [number, number],
-     * }}
-     */
-    let cursors = {
-        inventory: [0, 0],
-        status: [0, 0],
-    };
-    /**
-     * Whether the status shows as much as possible or not
-     */
-    let debug_status = false;
+                //#region People, yellow color
+                [0x1F385, 0xFE0F],
+                [[0x1F3C2, 0x1F3C4], 0xFE0F],
+                [[0x1F466, 0x1F469], 0xFE0F],
+                [0x1F3C7, 0xFE0F],
+                [[0x1F3CA, 0x1F3CC], 0xFE0F],
+                [[0x1F46B, 0x1F46E], 0xFE0F],
+                [[0x1F470, 0x1F478], 0xFE0F],
+                [0x1F47C, 0xFE0F],
+                [[0x1F481, 0x1F483], 0xFE0F],
+                [[0x1F486, 0x1F487], 0xFE0F],
+                [0x1F48F, 0xFE0F],
+                [0x1F491, 0xFE0F],
+                [[0x1F574, 0x1F575], 0xFE0F],
+                [0x1F57A, 0xFE0F],
+                [[0x1F645, 0x1F647], 0xFE0F],
+                [0x1F64B, 0xFE0F],
+                [[0x1F64D, 0x1F64E], 0xFE0F],
+                [0x1F6A3, 0xFE0F],
+                [[0x1F6B4, 0x1F6B6], 0xFE0F],
+                [0x1F6C0, 0xFE0F],
+                [0x1F926, 0xFE0F],
+                [[0x1F934, 0x1F939], 0xFE0F],
+                [[0x1F93D, 0x1F93E], 0xFE0F],
+                [0x1F977, 0xFE0F],
+                [[0x1F9B8, 0x1F9B9], 0xFE0F],
+                [[0x1F9CD, 0x1F9CF], 0xFE0F],
+                [[0x1F9D1, 0x1F9DF], 0xFE0F],
+                //#endregion People, yellow color
+
+                //#region Colored people
+                [0x1F385, [0x1F3FB, 0x1F3FF]],
+                [[0x1F3C2, 0x1F3C4], [0x1F3FB, 0x1F3FF]],
+                [[0x1F3CA, 0x1F3CC], [0x1F3FB, 0x1F3FF]],
+                [0x1F3C7, [0x1F3FB, 0x1F3FF]],
+                [[0x1F466, 0x1F469], [0x1F3FB, 0x1F3FF]],
+                [[0x1F46B, 0x1F46E], [0x1F3FB, 0x1F3FF]],
+                [[0x1F470, 0x1F478], [0x1F3FB, 0x1F3FF]],
+                [0x1F47C, [0x1F3FB, 0x1F3FF]],
+                [[0x1F481, 0x1F483], [0x1F3FB, 0x1F3FF]],
+                [[0x1F486, 0x1F487], [0x1F3FB, 0x1F3FF]],
+                [0x1F48F, [0x1F3FB, 0x1F3FF]],
+                [0x1F491, [0x1F3FB, 0x1F3FF]],
+                [[0x1F574, 0x1F575], [0x1F3FB, 0x1F3FF]],
+                [0x1F57A, [0x1F3FB, 0x1F3FF]],
+                [[0x1F645, 0x1F647], [0x1F3FB, 0x1F3FF]],
+                [0x1F64B, [0x1F3FB, 0x1F3FF]],
+                [[0x1F64D, 0x1F64E], [0x1F3FB, 0x1F3FF]],
+                [0x1F6A3, [0x1F3FB, 0x1F3FF]],
+                [[0x1F6B4, 0x1F6B6], [0x1F3FB, 0x1F3FF]],
+                [0x1F6C0, [0x1F3FB, 0x1F3FF]],
+                [0x1F926, [0x1F3FB, 0x1F3FF]],
+                [[0x1F934, 0x1F939], [0x1F3FB, 0x1F3FF]],
+                [[0x1F93D, 0x1F93E], [0x1F3FB, 0x1F3FF]],
+                [0x1F977, [0x1F3FB, 0x1F3FF]],
+                [[0x1F9B8, 0x1F9B9], [0x1F3FB, 0x1F3FF]],
+                [[0x1F9CD, 0x1F9CF], [0x1F3FB, 0x1F3FF]],
+                [[0x1F9D1, 0x1F9DF], [0x1F3FB, 0x1F3FF]],
+                //#endregion Colored people
+            ];
+            /** @param {(number|[number, number])[]} range */
+            const get_weight = range => {
+                return range.map(r => Array.isArray(r) ? r[1] - r[0] + 1 : 1).reduce((s, n) => s + n, 0);
+            };
+            const total_weight = 412;
+            let target_weight = Math.floor(Random.range(0, total_weight + 1));
+            let i = -1;
+            while (target_weight >= 0) {
+                i++;
+                let range = emoji_ranges[i];
+                target_weight -= get_weight(range);
+            }
+            let range = emoji_ranges[i].map(r => Array.isArray(r) ? Math.floor(Random.range(r[0], r[1]+1)) : r);
+            return String.fromCodePoint(...range);
+        },
+    });
     /**
      * Cache for checking whether a coordinate can be walked
      *
@@ -1114,12 +1281,12 @@ if (typeof gettext != 'function') {
         let width_fill = Math.ceil(entity.health / entity.health_max * width) || 0;
         let width_empty = width - width_fill;
 
-        CONTEXT.fillStyle = '#0f0';
+        CONTEXT.fillStyle = get_theme_value('background_entity_health_color');
         CONTEXT.fillRect(left, top, width_fill, height);
-        CONTEXT.fillStyle = '#f00';
+        CONTEXT.fillStyle = get_theme_value('background_entity_missing_health_color');
         CONTEXT.fillRect(left + width_fill, top, width_empty, height);
-        CONTEXT.font = `${TILE_SIZE[1]}px monospace`;
-        CONTEXT.fillStyle = '#000';
+        CONTEXT.font = `${TILE_SIZE[1]}px ${get_theme_value('text_font')}`;
+        CONTEXT.fillStyle = get_theme_value('text_color');
         CONTEXT.textAlign = 'center';
         CONTEXT.fillText(`${entity.health}/${entity.health_max}`, text_position, top + height * .8, width);
     }
@@ -1142,7 +1309,7 @@ if (typeof gettext != 'function') {
      */
     function show_inventory(entity) {
         // Draw inventory background
-        CONTEXT.fillStyle = '#ccc';
+        CONTEXT.fillStyle = get_theme_value('background_inventory_color');
         CONTEXT.fillRect(0, 0, TILE_SIZE[0] * DISPLAY_SIZE[0], TILE_SIZE[1] * DISPLAY_SIZE[1]);
         let items_per_row = inventory_items_per_row();
         let item_rows = Math.max(Math.floor(DISPLAY_SIZE[1] / 3) - 1, 1);
@@ -1153,12 +1320,12 @@ if (typeof gettext != 'function') {
                 let x_start = x * 3 * TILE_SIZE[0] + offset_x;
                 let y_start = y * 3 * TILE_SIZE[1] + offset_y;
 
-                let color = '#000';
+                let color = get_theme_value('border_inventory_cell_color');
                 if (x == items_per_row) {
-                    color = '#a77';
+                    color = get_theme_value('border_equipment_cell_color');
 
                     if (y in entity.equipment) {
-                        color = '#ff6';
+                        color = get_theme_value('background_equipment_cell_locked_color');
                     }
                 }
 
@@ -1179,7 +1346,7 @@ if (typeof gettext != 'function') {
         let offset_y = TILE_SIZE[1];
         let x_start = cursors.inventory[0] * 3 * TILE_SIZE[0] + offset_x;
         let y_start = cursors.inventory[1] * 3 * TILE_SIZE[1] + offset_y;
-        CONTEXT.strokeStyle = '#0ff';
+        CONTEXT.strokeStyle = get_theme_value('border_inventory_cursor_color');
         CONTEXT.strokeRect(x_start, y_start, TILE_SIZE[0] * 2, TILE_SIZE[1] * 2);
 
         // Prepare tooltip
@@ -1232,11 +1399,14 @@ if (typeof gettext != 'function') {
                 lines.push('---');
 
                 let title = gettext('games_rpg_status_equipped');
-                if (cursors.inventory[0] == items_per_row) title = `{color:#0a3}${title}{color:black}`;
+                if (cursors.inventory[0] == items_per_row)
+                    title = `{color:${get_theme_value('text_item_equipped_color')}}${title}{color:${get_theme_value('text_color')}}`;
                 lines.push(title);
 
-                let has_slot = item.equip_slot in entity.equipment;
-                lines.push(gettext('games_rpg_status_equip_slot', {slot: `{color:${has_slot?'green':'red'}}${EQUIP_SLOTS[item.equip_slot].name}{color:black}`}));
+                let has_slot = item.equip_slot in entity.equipment ? 'text_item_has_slot_color' : 'text_item_has_not_slot_color';
+                lines.push(gettext('games_rpg_status_equip_slot', {
+                    slot: `{color:${get_theme_value(has_slot)}}${EQUIP_SLOTS[item.equip_slot].name}{color:${get_theme_value('text_color')}}`
+                }));
 
                 Object.entries(item.equipped).forEach(([attr, change]) => {
                     if (typeof change == 'number') {
@@ -1272,11 +1442,16 @@ if (typeof gettext != 'function') {
                 lines.push(`target: at ${entity.target.x}, ${entity.target.y}`);
             }
         }
+
         let health_line = ATTRIBUTES['health'] + `: ${entity.health}/${entity.health_max}`;
-        if (entity.bonus_health_max) health_line += ` (${entity.base_health_max} +${entity.bonus_health_max})`;
-        if (entity.health / entity.health_max <= .1) health_line = `{color:red}${health_line}{color:black}`;
-        else if (entity.health / entity.health_max <= .5) health_line = `{color:orange}${health_line}{color:black}`;
+        if (entity.bonus_health_max)
+            health_line += ` (${entity.base_health_max} +${entity.bonus_health_max})`;
+        if (entity.health / entity.health_max <= .1)
+            health_line = `{color:${get_theme_value('text_very_low_health_color')}}${health_line}{color:${get_theme_value('text_color')}}`;
+        else if (entity.health / entity.health_max <= .5)
+            health_line = `{color:${get_theme_value('text_low_health_color')}}${health_line}{color:${get_theme_value('text_color')}}`;
         lines.push(health_line);
+
         Object.entries(entity.defense).forEach(([type, def]) => {
             let line = gettext(ATTRIBUTES['defense'], {type: TYPES[type]}) + `: ${def}`;
             if (type in entity.bonus_defense) {
@@ -1291,6 +1466,7 @@ if (typeof gettext != 'function') {
             }
             lines.push(line);
         });
+
         let speed_line = `${ATTRIBUTES['speed']}: ${entity.speed}`;
         if (entity.bonus_speed) speed_line += ` (${entity.base_speed} +${entity.bonus_speed})`;
         let range_line = `${ATTRIBUTES['range']}: ${entity.range}`;
@@ -1304,7 +1480,7 @@ if (typeof gettext != 'function') {
         let left = 2 * TILE_SIZE[0];
         let base_top = (2 - cursors.status[1]) * TILE_SIZE[1];
         CONTEXT.textAlign = 'left';
-        CONTEXT.font = `${TILE_SIZE[1]}px monospace`;
+        CONTEXT.font = `${TILE_SIZE[1]}px ${get_theme_value('text_font')}`;
         CONTEXT.fillStyle = '#000';
         for (let i = 0; i < lines.length; i++) {
             let top = base_top + (i + 1) * TILE_SIZE[1];
@@ -1319,7 +1495,7 @@ if (typeof gettext != 'function') {
         let can_scroll_down = lines.length + 4 > DISPLAY_SIZE[1];
         if (can_scroll_up) {
             CONTEXT.textAlign = 'right';
-            CONTEXT.font = `${TILE_SIZE[1] * 3}px monospace`;
+            CONTEXT.font = `${TILE_SIZE[1] * 3}px ${get_theme_value('text_font')}`;
             let left = (DISPLAY_SIZE[0] - .5) * TILE_SIZE[0];
             let top = 3 * TILE_SIZE[1];
 
@@ -1327,7 +1503,7 @@ if (typeof gettext != 'function') {
         }
         if (can_scroll_down) {
             CONTEXT.textAlign = 'right';
-            CONTEXT.font = `${TILE_SIZE[1] * 3}px monospace`;
+            CONTEXT.font = `${TILE_SIZE[1] * 3}px ${get_theme_value('text_font')}`;
             let left = (DISPLAY_SIZE[0] - .5) * TILE_SIZE[0];
             let top = TILE_SIZE[1] * (DISPLAY_SIZE[1] - 2);
 
@@ -1344,8 +1520,11 @@ if (typeof gettext != 'function') {
     function canvas_tooltip(lines, left, top) {
         if (!lines.length) return;
 
-        let max_line_length = lines.map(line => line.replace(COLOR_REGEX, '')).sort((a, b) => b.length - a.length)[0].length;
-        let width = TILE_SIZE[0] * (max_line_length + 2) * 2 / 3;
+        CONTEXT.font = `${TILE_SIZE[1]}px ${get_theme_value('text_font')}`;
+        let width = lines.map(line => {
+            line = line.replace(COLOR_REGEX, '');
+            return CONTEXT.measureText(line).width;
+        }).sort((a, b) => b - a)[0] + TILE_SIZE[0] * 2;
         let height = TILE_SIZE[1] * (lines.length + .5);
         // Keep tooltip in the canvas (as much as possible)
         if (left + width > TILE_SIZE[0] * DISPLAY_SIZE[0]) {
@@ -1358,8 +1537,8 @@ if (typeof gettext != 'function') {
         }
 
         // Draw tooltip box
-        CONTEXT.fillStyle = '#ccc';
-        CONTEXT.strokeStyle = '#000';
+        CONTEXT.fillStyle = get_theme_value('background_tooltip_color');
+        CONTEXT.strokeStyle = get_theme_value('border_tooltip_color');
         CONTEXT.fillRect(left, top, width, height);
         CONTEXT.strokeRect(left, top, width, height);
 
@@ -1378,8 +1557,8 @@ if (typeof gettext != 'function') {
 
         // Set text vars
         CONTEXT.textAlign = 'left';
-        CONTEXT.font = `${TILE_SIZE[1]}px monospace`;
-        CONTEXT.fillStyle = '#000';
+        CONTEXT.font = `${TILE_SIZE[1]}px ${get_theme_value('text_font')}`;
+        CONTEXT.fillStyle = get_theme_value('text_color');
         const base_x = left + TILE_SIZE[0];
 
         // Draw text
@@ -1397,7 +1576,7 @@ if (typeof gettext != 'function') {
                     if (color) CONTEXT.fillStyle = chunk;
                     else {
                         CONTEXT.fillText(chunk.replace(COLOR_ESCAPE, n => n.slice(1)), x, y);
-                        x += chunk.length * TEXT_WIDTH_MULTIPLIER * TILE_SIZE[0];
+                        x += CONTEXT.measureText(chunk).width;
                     }
                     color = !color;
                 });
@@ -1485,7 +1664,7 @@ if (typeof gettext != 'function') {
         player = new Entity({x: 0, y: 0, z: 10, content: function(x, y) {
             CONTEXT.textAlign = 'center';
             CONTEXT.fillStyle = '#f00';
-            CONTEXT.font = `${TILE_SIZE[1]}px monospace`;
+            CONTEXT.font = `${TILE_SIZE[1]}px ${get_theme_value('text_font')}`;
             let x_start = (x - (player.x - DISPLAY_SIZE[0] / 2) + .5) * TILE_SIZE[0];
             let y_start = (y - (player.y - DISPLAY_SIZE[1] / 2) + .8) * TILE_SIZE[1];
 
@@ -1560,6 +1739,18 @@ if (typeof gettext != 'function') {
      */
     function inventory_items_per_row() {
         return Math.max(Math.floor(DISPLAY_SIZE[0] / 3) - 2, 1);
+    }
+    /**
+     * Returns the value of the key in the current theme
+     *
+     * @param {string} key
+     */
+    function get_theme_value(key) {
+        let _theme = Object.assign({}, THEMES[current_theme], THEMES['dark']);
+
+        if (!(key in _theme)) throw new RangeError(`${key} not found in current theme`);
+
+        return _theme[key];
     }
     /**
      * Creates the items for the player
@@ -1662,12 +1853,6 @@ if (typeof gettext != 'function') {
      * @template {(string[]|Tile)} T
      */
     class Room {
-        /**
-         * @type {{[k: string]: {
-         *  func: (grid: string[][], width: number, height: number, walls?: string, floors?: string, empty?: string) => string[][],
-         *  cond: (width: number, height: number) => boolean,
-         * }}}
-         */
         static SHAPES = {
             'square': {
                 func: (grid, width, height, walls='#', floors='.', empty=' ') => {
@@ -2040,9 +2225,6 @@ if (typeof gettext != 'function') {
                 cond: (width, height) => width >= 4 && height >= 4,
             },
         };
-        /**
-         * @type {{[k: string]: (start: [number, number], end: [number, number]) => [number, number][]}
-         */
         static PATHS = {
             // As direct as possible
             'straight': (start, end) => {
@@ -2139,9 +2321,6 @@ if (typeof gettext != 'function') {
                 return coords;
             },
         };
-        /**
-         * @type {{[k: string]: (room_amount?: number, spawn_player?: boolean) => Room<Tile>}}
-         */
         static MAPS = {
             'simple': (room_amount=null, spawn_player=true) => {
                 /** @type {Room<Tile>[]} */
@@ -2161,7 +2340,7 @@ if (typeof gettext != 'function') {
                     coords[0] += Math.floor(Random.range(-dist, 1 + dist));
                     coords[1] += Math.floor(Random.range(-dist, 1 + dist));
                     all_coords.push(coords);
-                    rooms.push(Random.room().to_tiles(...coords, false));
+                    rooms.push(Random.Room.room().to_tiles(...coords, false));
                 }
 
                 let map = Room.link({rooms});
@@ -2204,7 +2383,7 @@ if (typeof gettext != 'function') {
                         let left = (x - x_offset) * dist_x;
                         if (spawn_player && !top && !left) continue;
 
-                        rooms.push(Random.room({width: room_width, height: room_height}).to_tiles(left, top, false));
+                        rooms.push(Random.Room.room({width: room_width, height: room_height}).to_tiles(left, top, false));
                         room_amount--;
                     }
                 }
@@ -2255,7 +2434,7 @@ if (typeof gettext != 'function') {
          * @returns {Room<Tile>}
          */
         static make_spawn(width=20, height=20) {
-            return Random.room({width, height}).to_tiles(0, 0, false);
+            return Random.Room.room({width, height}).to_tiles(0, 0, false);
         };
 
         // Ascii & Tiles stuff
@@ -2565,7 +2744,7 @@ if (typeof gettext != 'function') {
                 let {x, y} = target;
                 let pathfinding = Random.AutonomousEntity.pathfinding();
                 let targeting = Random.AutonomousEntity.targeting();
-                new AutonomousEntity({x, y, z: 9, content: Random.emoji_face(), pathfinding, targeting});
+                new AutonomousEntity({x, y, z: 9, content: Random.emoji_person(), pathfinding, targeting});
             }
         }
 
@@ -3092,7 +3271,7 @@ if (typeof gettext != 'function') {
                 content.call(this, this.x, this.y);
             } else if (typeof content == 'string') {
                 CONTEXT.fillStyle = '#000';
-                CONTEXT.font = `${TILE_SIZE[1]}px monospace`;
+                CONTEXT.font = `${TILE_SIZE[1]}px ${get_theme_value('text_font')}`;
                 x_start += TILE_SIZE[0] / 2;
                 y_start += TILE_SIZE[1] - 5;
 
@@ -3338,7 +3517,7 @@ if (typeof gettext != 'function') {
             } else if (typeof content == 'string') {
                 CONTEXT.textAlign = 'center';
                 CONTEXT.fillStyle = '#000';
-                CONTEXT.font = `${TILE_SIZE[1] * 2}px monospace`;
+                CONTEXT.font = `${TILE_SIZE[1] * 2}px ${get_theme_value('text_font')}`;
                 let x = x_start + TILE_SIZE[0];
                 let y = y_start + TILE_SIZE[1] * 1.75;
 
@@ -3354,8 +3533,8 @@ if (typeof gettext != 'function') {
 
             if (amount != 1) {
                 CONTEXT.textAlign = 'right';
-                CONTEXT.fillStyle = '#fff';
-                CONTEXT.font = `${TILE_SIZE[1]}px sans-serif`;
+                CONTEXT.fillStyle = get_theme_value('text_item_amount_color');
+                CONTEXT.font = `${TILE_SIZE[1]}px ${get_theme_value('text_font')}`;
                 let x = x_start + TILE_SIZE[0] * 2;
                 let y = y_start + TILE_SIZE[1] * 2;
 
@@ -4137,11 +4316,14 @@ if (typeof gettext != 'function') {
      * @template T
      */
     class MinHeap {
+        /** @type {(value: T) => number} */
+        #selector;
+
         /** @param {(value: T) => number} selector */
         constructor(selector) {
             /** @type {T[]} */
             this.items = [];
-            this.selector = selector;
+            this.#selector = selector;
         }
 
         seek() { return this.items[0]; }
@@ -4152,7 +4334,7 @@ if (typeof gettext != 'function') {
             let root = Math.floor((i + 1) / 2 - 1);
             this.items.push(item);
 
-            while (i > 0 && this.selector(this.items[root]) > this.selector(this.items[i])) {
+            while (i > 0 && this.#selector(this.items[root]) > this.#selector(this.items[i])) {
                 [this.items[i], this.items[root]] = [this.items[root], this.items[i]];
                 i = root;
                 root = Math.floor((i + 1) / 2 - 1);
@@ -4167,8 +4349,8 @@ if (typeof gettext != 'function') {
             let branch = (i + 1) * 2;
 
             while(true) {
-                let lowest = this.selector(this.items[branch]) < this.selector(this.items[branch - 1]) ? branch : branch - 1;
-                if (this.selector(this.items[i]) > this.selector(this.items[lowest])) {
+                let lowest = this.#selector(this.items[branch]) < this.#selector(this.items[branch - 1]) ? branch : branch - 1;
+                if (this.#selector(this.items[i]) > this.#selector(this.items[lowest])) {
                     [this.items[i], this.items[lowest]] = [this.items[lowest], this.items[i]];
                     i = lowest;
                     branch = (i + 1) * 2;
@@ -4184,8 +4366,8 @@ if (typeof gettext != 'function') {
             let branch = (i + 1) * 2;
 
             while(true) {
-                let lowest = this.selector(this.items[branch]) < this.selector(this.items[branch - 1]) ? branch : branch - 1;
-                if (this.selector(this.items[i]) > this.selector(this.items[lowest])) {
+                let lowest = this.#selector(this.items[branch]) < this.#selector(this.items[branch - 1]) ? branch : branch - 1;
+                if (this.#selector(this.items[i]) > this.#selector(this.items[lowest])) {
                     [this.items[i], this.items[lowest]] = [this.items[lowest], this.items[i]];
                     i = lowest;
                     branch = (i + 1) * 2;

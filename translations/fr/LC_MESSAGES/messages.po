@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-11-25 11:21+0100\n"
+"POT-Creation-Date: 2021-11-30 14:56+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -509,199 +509,263 @@ msgstr ""
 "progrès depuis votre dernier prestige, mais vous allez gagner des "
 "nouvelle ressources"
 
-#: static/js/rpg.js:46
+#: static/js/rpg.js:73
 msgid "games_rpg_themes_dark"
 msgstr "Mode sombre"
 
-#: static/js/rpg.js:49
-msgid "games_rpg_themes_light"
-msgstr "Mode lumineux"
-
-#: static/js/rpg.js:182
+#: static/js/rpg.js:290
 msgid "games_rpg_action_move_player_left"
 msgstr "Déplacer le joueur à gauche"
 
-#: static/js/rpg.js:190
+#: static/js/rpg.js:296
 msgid "games_rpg_action_move_player_right"
 msgstr "Déplacer le joueur à droite"
 
-#: static/js/rpg.js:198
+#: static/js/rpg.js:302
 msgid "games_rpg_action_move_player_down"
 msgstr "Déplacer le joueur en bas"
 
-#: static/js/rpg.js:206
+#: static/js/rpg.js:308
 msgid "games_rpg_action_move_player_up"
 msgstr "Déplacer le joueur en haut"
 
-#: static/js/rpg.js:214
+#: static/js/rpg.js:314
 msgid "games_rpg_action_move_cursor_inventory_left"
 msgstr "Déplacer le curseur de l'inventaire à gauche"
 
-#: static/js/rpg.js:257
+#: static/js/rpg.js:358
 msgid "games_rpg_action_move_cursor_inventory_right"
 msgstr "Déplacer le curseur de l'inventaire à droite"
 
-#: static/js/rpg.js:313
+#: static/js/rpg.js:414
 msgid "games_rpg_action_move_cursor_inventory_down"
 msgstr "Déplacer le curseur de l'inventaire en bas"
 
-#: static/js/rpg.js:332
+#: static/js/rpg.js:433
 msgid "games_rpg_action_move_cursor_inventory_up"
 msgstr "Déplacer le curseur de l'inventaire en haut"
 
-#: static/js/rpg.js:351
+#: static/js/rpg.js:452
 msgid "games_rpg_action_move_cursor_status_down"
 msgstr "Déplacer le curseur du status en bas"
 
-#: static/js/rpg.js:368
+#: static/js/rpg.js:469
 msgid "games_rpg_action_move_cursor_status_up"
 msgstr "Déplacer le curseur du status en haut"
 
-#: static/js/rpg.js:378
+#: static/js/rpg.js:479
 msgid "games_rpg_action_use_inventory_selected"
 msgstr "Utiliser l'objet sélectionné"
 
-#: static/js/rpg.js:389
+#: static/js/rpg.js:490
 msgid "games_rpg_action_drop_inventory_selected"
 msgstr "Lacher l'objet sélectionné"
 
-#: static/js/rpg.js:404
+#: static/js/rpg.js:505
 msgid "games_rpg_action_toggle_equip_inventory_selected"
 msgstr "Equipper l'objet sélectionné"
 
-#: static/js/rpg.js:416
+#: static/js/rpg.js:517
 msgid "games_rpg_action_game_pause"
 msgstr "Mettre sur pause"
 
-#: static/js/rpg.js:422
+#: static/js/rpg.js:523
 msgid "games_rpg_action_game_resume"
 msgstr "Continuer"
 
-#: static/js/rpg.js:428
+#: static/js/rpg.js:529
 msgid "games_rpg_action_game_pause_toggle"
 msgstr "Activer/désactiver le mode pause"
 
-#: static/js/rpg.js:434
+#: static/js/rpg.js:535
 msgid "games_rpg_action_show_inventory"
 msgstr "Voir l'inventaire"
 
-#: static/js/rpg.js:442
+#: static/js/rpg.js:543
 msgid "games_rpg_action_hide_inventory"
 msgstr "Cacher l'inventaire"
 
-#: static/js/rpg.js:448
+#: static/js/rpg.js:549
 msgid "games_rpg_action_show_status"
 msgstr "Voir le status"
 
-#: static/js/rpg.js:456
+#: static/js/rpg.js:557
 msgid "games_rpg_action_hide_status"
 msgstr "Cacher le status"
 
-#: static/js/rpg.js:506
+#: static/js/rpg.js:816
 msgid "games_rpg_type_none"
 msgstr "Aucun"
 
-#: static/js/rpg.js:514
+#: static/js/rpg.js:824
 msgid "games_rpg_status_health"
 msgstr "Vie"
 
-#: static/js/rpg.js:515
+#: static/js/rpg.js:825
 msgid "games_rpg_status_health_max"
 msgstr "Vie Max"
 
-#: static/js/rpg.js:516
+#: static/js/rpg.js:826
 msgid "games_rpg_status_speed"
 msgstr "Vitesse"
 
-#: static/js/rpg.js:517
+#: static/js/rpg.js:827
 msgid "games_rpg_status_range"
 msgstr "Portée"
 
-#: static/js/rpg.js:518
+#: static/js/rpg.js:828
 msgid "games_rpg_status_inventory"
 msgstr "Inventaire"
 
-#: static/js/rpg.js:519
+#: static/js/rpg.js:829
 msgid "games_rpg_status_defense"
 msgstr "Défense %(type)s"
 
-#: static/js/rpg.js:520
+#: static/js/rpg.js:830
 msgid "games_rpg_status_damage"
 msgstr "Dégats %(type)s"
 
-#: static/js/rpg.js:528
+#: static/js/rpg.js:842
 msgid "games_rpg_slot_head"
 msgstr "Tête"
 
-#: static/js/rpg.js:529
+#: static/js/rpg.js:846
 msgid "games_rpg_slot_face"
 msgstr "Visage"
 
-#: static/js/rpg.js:530
+#: static/js/rpg.js:850
 msgid "games_rpg_slot_neck"
 msgstr "Cou"
 
-#: static/js/rpg.js:531
+#: static/js/rpg.js:854
 msgid "games_rpg_slot_chest"
 msgstr "Torse"
 
-#: static/js/rpg.js:532
+#: static/js/rpg.js:858
 msgid "games_rpg_slot_arm"
 msgstr "Bras"
 
-#: static/js/rpg.js:533
+#: static/js/rpg.js:862
 msgid "games_rpg_slot_hand"
 msgstr "Main"
 
-#: static/js/rpg.js:534
+#: static/js/rpg.js:866
 msgid "games_rpg_slot_leg"
 msgstr "Jambe"
 
-#: static/js/rpg.js:535
+#: static/js/rpg.js:870
 msgid "games_rpg_slot_foot"
 msgstr "Pied"
 
-#: static/js/rpg.js:1102 static/js/rpg.js:1166
+#: static/js/rpg.js:882
+msgid "games_rpg_theme_text_font"
+msgstr "Police du texte"
+
+#: static/js/rpg.js:883
+msgid "games_rpg_theme_text_color"
+msgstr "Couleur du text"
+
+#: static/js/rpg.js:884
+msgid "games_rpg_theme_text_item_amount_color"
+msgstr "Couleur du nombre d'objet"
+
+#: static/js/rpg.js:885
+msgid "games_rpg_theme_text_very_low_health_color"
+msgstr "Couleur vie très basse"
+
+#: static/js/rpg.js:886
+msgid "games_rpg_theme_text_low_health_color"
+msgstr "Couleur vie basse"
+
+#: static/js/rpg.js:887
+msgid "games_rpg_theme_text_item_equipped_color"
+msgstr "Couleur quand équippé"
+
+#: static/js/rpg.js:888
+msgid "games_rpg_theme_text_item_has_slot_color"
+msgstr "Couleur quand il est possible d'équipper"
+
+#: static/js/rpg.js:889
+msgid "games_rpg_theme_text_item_has_not_slot_color"
+msgstr "Couleur quand il n'est pas possible d'équipper"
+
+#: static/js/rpg.js:892
+msgid "games_rpg_theme_border_tooltip_color"
+msgstr "Couleur de la bordure de l'info-bulle"
+
+#: static/js/rpg.js:893
+msgid "games_rpg_theme_border_inventory_cell_color"
+msgstr "Couleur de la bordure des cases d'inventaire"
+
+#: static/js/rpg.js:894
+msgid "games_rpg_theme_border_equipment_cell_color"
+msgstr "Couleur de la bordure des cases d'équipement"
+
+#: static/js/rpg.js:895
+msgid "games_rpg_theme_border_inventory_cursor_color"
+msgstr "Couleur du curseur de l'inventaire"
+
+#: static/js/rpg.js:898
+msgid "games_rpg_theme_background_tooltip_color"
+msgstr "Couleur de fond de l'info-bulle"
+
+#: static/js/rpg.js:899
+msgid "games_rpg_theme_background_inventory_color"
+msgstr "Couleur de fond de l'inventaire"
+
+#: static/js/rpg.js:900
+msgid "games_rpg_theme_background_equipment_cell_locked_color"
+msgstr "Couleur de fond des cases d'équipement non disponibles"
+
+#: static/js/rpg.js:901
+msgid "games_rpg_theme_background_entity_health_color"
+msgstr "Couleur de fond de vie"
+
+#: static/js/rpg.js:902
+msgid "games_rpg_theme_background_entity_missing_health_color"
+msgstr "Couleur de fond de vie manquante"
+
+#: static/js/rpg.js:1293 static/js/rpg.js:1368
 msgid "games_rpg_status_name"
 msgstr "Nom"
 
-#: static/js/rpg.js:1102 static/js/rpg.js:1166
+#: static/js/rpg.js:1293 static/js/rpg.js:1368
 msgid "games_rpg_status_name_unnamed"
 msgstr "Sans nom"
 
-#: static/js/rpg.js:1104
+#: static/js/rpg.js:1295
 msgid "games_rpg_status_description"
 msgstr "Description"
 
-#: static/js/rpg.js:1106
+#: static/js/rpg.js:1297
 msgid "games_rpg_status_on_use"
 msgstr "Sur utilisation"
 
-#: static/js/rpg.js:1122
+#: static/js/rpg.js:1313
 msgid "games_rpg_status_passive"
 msgstr "Passif"
 
-#: static/js/rpg.js:1138
+#: static/js/rpg.js:1331
 msgid "games_rpg_status_equipped"
 msgstr "Quand équipé"
 
-#: static/js/rpg.js:1138
+#: static/js/rpg.js:1337
 msgid "games_rpg_status_equip_slot"
 msgstr "Equipé sur %(slot)s"
 
-#: static/js/rpg.js:1178
+#: static/js/rpg.js:1387
 msgid "defense"
 msgstr ""
 
-#: static/js/rpg.js:1185
+#: static/js/rpg.js:1394
 msgid "damage"
 msgstr ""
 
-#: static/js/rpg.js:1197
+#: static/js/rpg.js:1407
 msgid "games_rpg_status_items"
 msgstr "objets"
 
-#: static/js/rpg.js:1197
+#: static/js/rpg.js:1407
 msgid "games_rpg_status_item"
 msgstr "objet"
 
