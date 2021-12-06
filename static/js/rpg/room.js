@@ -12,12 +12,11 @@ import globals from './globals.js';
  *
  * room:
  *  * paths:
- *      ? horizontal_vertical/vice versa but rounded corners
+ *      ? curved
  *      - without touching other rooms/hallways (if possible)
  *      - diagonals only
  *
  *  * maps:
- *      - big and vast
  *      - no hallways, everything touches another room
  *
  *  ? room decorating?
@@ -436,7 +435,12 @@ export class Room {
         },
     };
     static PATHS = {
-        // As direct as possible
+        /**
+         * As direct as possible
+         *
+         * @param {[number, number]} start
+         * @param {[number, number]} end
+         */
         'straight': (start, end) => {
             /** @type {[number, number][]} */
             let coords = [];
@@ -454,7 +458,7 @@ export class Room {
                     Math.min(start[1], end[1]) - 1,
                     Math.max(start[1], end[1]) + 1,
                 ];
-                for (let y = start[1] - 1; number_between(y, ...range); y -= sign_y) {
+                for (let y = start[1] + sign_y; number_between(y, ...range); y -= sign_y) {
                     coords.push([x, y]);
                 }
             } else if (Math.abs(ratio) <= 1) {
@@ -462,7 +466,7 @@ export class Room {
                     Math.min(start[0], end[0]) - 1,
                     Math.max(start[0], end[0]) + 1,
                 ];
-                for (let x = start[0] - 1; number_between(x, ...range); x -= sign_x) {
+                for (let x = start[0] + sign_x; number_between(x, ...range); x -= sign_x) {
                     let y = Math.round((x - start[0]) * ratio) + start[1];
                     coords.push([x, y]);
                 }
@@ -472,7 +476,7 @@ export class Room {
                     Math.min(start[1], end[1]) - 1,
                     Math.max(start[1], end[1]) + 1,
                 ];
-                for (let y = start[1] - 1; number_between(y, ...range); y -= sign_y) {
+                for (let y = start[1] + sign_y; number_between(y, ...range); y -= sign_y) {
                     let x = Math.round((y - start[1]) * ratio) + start[0];
                     coords.push([x, y]);
                 }
@@ -480,7 +484,12 @@ export class Room {
 
             return coords;
         },
-        // Move horizontally first, then vertically
+        /**
+         * Move horizontally first, then vertically
+         *
+         * @param {[number, number]} start
+         * @param {[number, number]} end
+         */
         'horizontal_vertical': (start, end) => {
             /** @type {[number, number][]} */
             let coords = [];
@@ -505,7 +514,12 @@ export class Room {
 
             return coords;
         },
-        // Move vertically first, then horizontally
+        /**
+         * Move vertically first, then horizontally
+         *
+         * @param {[number, number]} start
+         * @param {[number, number]} end
+         */
         'vertical_horizontal': (start, end) => {
             let dist_x = start[0] - end[0];
             let dist_y = start[1] - end[1];
@@ -612,6 +626,55 @@ export class Room {
 
             return map;
         },
+        'huge': (room_amount=null, spawn_player=true) => {
+            /** @type {Room<Tile>[]} */
+            let rooms = [];
+            let width = Math.ceil(Random.range(10, 50));
+            let height = Math.ceil(Random.range(10, 50));
+            if (spawn_player) {
+                rooms.push(Room.make_spawn(width, height));
+            }
+
+            // Add rooms
+            room_amount ??= Math.ceil(Random.range(3, 20));
+
+            let rx = rooms.map(r => r.grid.map(t => t.x)).flat();
+            let ry = rooms.map(r => r.grid.map(t => t.y)).flat();
+            let corners = {
+                min_x: Math.min(...rx, 0),
+                max_x: Math.max(...rx, 0),
+                min_y: Math.min(...ry, 0),
+                max_y: Math.min(...ry, 0),
+            };
+            let dist = 5 * room_amount; //? what if 10 tho
+            for (let i = 0; i <= room_amount; i++) {
+                let x = Math.floor(Random.range(corners.min_x - dist, corners.max_x + dist));
+                let y = Math.floor(Random.range(corners.min_y - dist, corners.max_y + dist));
+                let room = Random.Room.room({width, height}).to_tiles(x, y, false);
+                rooms.push(room);
+
+                let rx = room.grid.map(t => t.x);
+                let ry = room.grid.map(t => t.y);
+                corners.min_x = Math.min(corners.min_x, ...rx);
+                corners.max_x = Math.max(corners.max_x, ...rx);
+                corners.min_y = Math.min(corners.min_y, ...ry);
+                corners.max_y = Math.max(corners.max_y, ...ry);
+            }
+
+            let map = Room.link({rooms});
+            map.insert();
+
+            // Spawn player
+            if (spawn_player) {
+                let target = Random.array_element(rooms[0].grid.filter(t => !t.solid));
+                if (!target) target = Random.array_element(rooms[0].grid);
+                let {x = 0, y = 0} = target;
+                globals.player.x = x;
+                globals.player.y = y;
+            }
+
+            return map;
+        },
     };
 
     // Ascii stuff
@@ -687,9 +750,10 @@ export class Room {
      * @param {Room[]} params.rooms
      * @param {string} [params.walls]
      * @param {string} [params.floors]
+     * @param {string[]} [params.hallways]
      * @returns {Room<Tile>}
      */
-    static link({rooms, walls=null, floors=null}) {
+    static link({rooms, walls=null, floors=null, hallways=[]}) {
         rooms.forEach(r => r.to_tiles(null, null, false));
         let abs = Math.abs;
 
@@ -732,9 +796,9 @@ export class Room {
         let centers = separate_rooms.map(room => {
             let gsx = [...room.grid].sort((a,b) => a.x-b.x);
             let gsy = [...room.grid].sort((a,b) => a.y-b.y);
-            let min_x = gsx.shift().x;
+            let min_x = gsx[0].x;
             let max_x = gsx.pop().x;
-            let min_y = gsy.shift().y;
+            let min_y = gsy[0].y;
             let max_y = gsy.pop().y;
             return [(min_x + max_x) / 2, (min_y + max_y) / 2];
         });
@@ -795,7 +859,7 @@ export class Room {
 
             let rindexes = Object.values(rooms).filter(n => n != -1);
             let connections = 1 + Math.floor(Random.range(0, Math.min(rindexes.length, 3)));
-            return Random.array_shuffle(rindexes).map(i => [i, index]).splice(0, connections);
+            return Random.array_shuffle(rindexes).map(i => [i, index].sort((a,b)=>a-b)).splice(0, connections);
         }).flat();
         // Remove duplicates
         links = links.filter((link, index) => {
@@ -803,7 +867,7 @@ export class Room {
             return [index, -1].includes(i);
         });
         // Connect rooms
-        links.forEach(link => {
+        links.forEach((link, i) => {
             // Get only walls to connect
             let [index_from, index_to] = link;
             let room_from = separate_rooms[index_from].grid.filter(function(tile) {
@@ -866,7 +930,13 @@ export class Room {
             let start = [tile_from.x, tile_from.y];
             let end = [tile_to.x, tile_to.y];
 
-            let path = Random.array_element(Object.values(this.PATHS));
+            /** @type {(start: [number, number], end: [number, number]) => [number, number][]} */
+            let path;
+            if (i in hallways && hallways[i] in this.PATHS) {
+                path = this.PATHS[hallways[i]];
+            } else {
+                path = Random.Room.path();
+            }
             let coords = path(start, end);
             let hall_floors = floors ?? ascii_colors[Random.array_element(ascii_symbols.nonsolids)];
             let hallway_radius = Math.ceil(Random.range(1, 2));
@@ -1074,5 +1144,3 @@ export class Room {
         return this;
     }
 }
-
-//? static functions to module functions

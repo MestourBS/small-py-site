@@ -50,6 +50,8 @@ export const Random = Object.freeze({
         shape: (width, height) => Random.array_element(Object.entries(Room.SHAPES).filter(s => s[1].cond(width, height)).map(s => s[0])),
         /** @returns {(room_amount?: any, spawn_player?: boolean) => Room<Tile<any>>} */
         map: () => Random.array_element(Object.values(Room.MAPS)),
+        /** @returns {(start: [number, number], end: [number, number]) => [number, number][]} */
+        path: () => Random.array_element(Object.values(Room.PATHS)),
     },
     AutonomousEntity: {
         /** @returns {(this: AutonomousEntity) => Tile} */
@@ -209,7 +211,7 @@ export const Random = Object.freeze({
         const total_weight = 412;
         let target_weight = Math.floor(Random.range(0, total_weight + 1));
         let i = -1;
-        while (target_weight >= 0) {
+        while (target_weight >= 0 && i < emoji_ranges.length) {
             i++;
             let range = emoji_ranges[i];
             target_weight -= get_weight(range);

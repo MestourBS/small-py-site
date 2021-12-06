@@ -8,15 +8,6 @@ import globals from './globals.js';
  * Includes various tools for direction calculating, which return Direction when possible
  *
  * @enum {readonly [number, number]}
- * @type {{
- *  right: readonly [number, number],
- *  up: readonly [number, number],
- *  left: readonly [number, number],
- *  down: readonly [number, number],
- *  fromDir: ([r, d]: [number, number]) => readonly [number, number],
- *  opposite: ([r, d]: [number, number]) => readonly [number, number],
- *  perpendicular: ([r, d]: [number, number]) => (readonly [number, number])[],
- * }}
  */
 export const Direction = Object.freeze({
     'right': Object.freeze([1, 0]),
@@ -27,12 +18,12 @@ export const Direction = Object.freeze({
     /** @type {([r,d]: [number, number]) => readonly [number, number]} */
     fromDir([r, d]) {
         let res = [Math.sign(r), Math.sign(d)];
-        return Object.freeze(this.to_dir(res));
+        return this.to_dir(res);
     },
     /** @type {([r,d]: [number, number]) => readonly [number, number]} */
     opposite([r, d]) {
         let opposite = [Math.sign(r) * -1, Math.sign(d) * -1];
-        return Object.freeze(opposite);
+        return this.to_dir(opposite);
     },
     /** @type {([r,d]: [number, number]) => (readonly [number, number])[]} [clockwise, counterclockwise] from [0, 0] */
     perpendicular([r, d]) {
@@ -49,7 +40,7 @@ export const Direction = Object.freeze({
 
             if (r == dir[0] && d == dir[1]) return dir;
         }
-        return [r,d];
+        return Object.freeze([r,d]);
     },
 });
 
