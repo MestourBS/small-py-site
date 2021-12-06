@@ -8,7 +8,7 @@ import globals from './globals.js';
  *
  * @type {HTMLCanvasElement}
  */
-const canvas = document.getElementById('blockus_game');
+const canvas = document.getElementById('rpg_game');
 /**
  * For drawing on the canvas
  *
