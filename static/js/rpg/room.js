@@ -5,6 +5,7 @@ import { AutonomousEntity } from './entity.js';
 import { Direction, surrounding_square, coords_distance } from './coords.js';
 import Random from './random.js';
 import globals from './globals.js';
+/** @typedef {import('./color.js').Color} Color */
 
 /**
  * TODO LIST
@@ -359,6 +360,7 @@ export class Room {
             },
             cond: (width, height) => width >= 4 && height >= 4,
         },
+        //! fix lines up/down (alternating)
         'triangle_east': { // ▷
             func: (grid, width, height, walls='#', floors='.', empty=' ') => {
                 // Compute distance from axis
@@ -396,6 +398,7 @@ export class Room {
             },
             cond: (width, height) => width >= 4 && height >= 4,
         },
+        //! fix lines up/down (alternating)
         'triangle_west': { // ◁
             func: (grid, width, height, walls='#', floors='.', empty=' ') => {
                 // Compute distance from axis

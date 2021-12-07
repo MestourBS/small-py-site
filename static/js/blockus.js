@@ -1,4 +1,6 @@
 (() => {
+    //todo why are blocks separating on rounding
+
     /**
      * Canvas of the game
      *

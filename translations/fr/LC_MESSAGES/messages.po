@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-11-30 14:56+0100\n"
+"POT-Creation-Date: 2021-12-07 11:49+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -63,140 +63,140 @@ msgstr "Erreur: Pas de nom dde groupe"
 msgid "chat_unknown_user"
 msgstr "Utilisateur inconnu"
 
-#: static/js/blockus.js:53
+#: static/js/blockus.js:56
 msgid "game_blockus_theme_name_dark"
 msgstr "Mode sombre"
 
-#: static/js/blockus.js:74
+#: static/js/blockus.js:77
 msgid "game_blockus_theme_name_light"
 msgstr "Mode lumineux"
 
-#: static/js/blockus.js:117
+#: static/js/blockus.js:120
 msgid "game_blockus_shape_square"
 msgstr "Carré"
 
-#: static/js/blockus.js:134 static/js/idle.js:23
+#: static/js/blockus.js:137 static/js/idle.js:23
 msgid "game_blockus_unit_none"
 msgstr "Raccourci scientific"
 
-#: static/js/blockus.js:138 static/js/idle.js:27
+#: static/js/blockus.js:141 static/js/idle.js:27
 msgid "game_blockus_unit_si"
 msgstr "Raccourci SI"
 
-#: static/js/blockus.js:144 static/js/idle.js:33
+#: static/js/blockus.js:147 static/js/idle.js:33
 msgid "game_blockus_unit_numeral"
 msgstr "Raccourci numérique"
 
-#: static/js/blockus.js:228
+#: static/js/blockus.js:231
 msgid "game_blockus_action_move_shape_right"
 msgstr "Déplacer la forme à droite"
 
-#: static/js/blockus.js:236
+#: static/js/blockus.js:239
 msgid "game_blockus_action_move_shape_left"
 msgstr "Déplacer la forme à gauche"
 
-#: static/js/blockus.js:240
+#: static/js/blockus.js:243
 msgid "game_blockus_action_move_shape_down"
 msgstr "Déplacer la forme en bas"
 
-#: static/js/blockus.js:247
+#: static/js/blockus.js:250
 msgid "game_blockus_action_game_state_pause"
 msgstr "Mettre sur pause"
 
-#: static/js/blockus.js:254
+#: static/js/blockus.js:257
 msgid "game_blockus_action_game_state_playing"
 msgstr "Continuer"
 
-#: static/js/blockus.js:261
+#: static/js/blockus.js:264
 msgid "game_blockus_action_rotate_shape_clockwise"
 msgstr "Tourner la forme dans le sens des aiguilles"
 
-#: static/js/blockus.js:268
+#: static/js/blockus.js:271
 msgid "game_blockus_action_rotate_shape_counter_clockwise"
 msgstr "Tourner la forme dans le sens contraire des aiguilles"
 
-#: static/js/blockus.js:271
+#: static/js/blockus.js:274
 msgid "game_blockus_reset_confirm"
 msgstr "Remettre le blockus à zéro?"
 
-#: static/js/blockus.js:272
+#: static/js/blockus.js:275
 msgid "game_blockus_action_reset_game"
 msgstr "Remettre à zéro"
 
-#: static/js/blockus.js:859
+#: static/js/blockus.js:862
 msgid "game_blockus_option_theme"
 msgstr "Jeu de couleur"
 
-#: static/js/blockus.js:885
+#: static/js/blockus.js:888
 msgid "game_blockus_option_block_width"
 msgstr "Largeur d'un bloc"
 
-#: static/js/blockus.js:891 static/js/blockus.js:914 static/js/blockus.js:1031
-#: static/js/blockus.js:1054
+#: static/js/blockus.js:894 static/js/blockus.js:917 static/js/blockus.js:1034
+#: static/js/blockus.js:1057
 msgid "game_blockus_warn_option_reset"
 msgstr "Changer cette option va remettre votre jeu à zéro. Continuer?"
 
-#: static/js/blockus.js:908
+#: static/js/blockus.js:911
 msgid "game_blockus_option_block_height"
 msgstr "Hauteur d'un bloc"
 
-#: static/js/blockus.js:931
+#: static/js/blockus.js:934
 msgid "game_blockus_option_shape"
 msgstr "Forme d'un bloc"
 
-#: static/js/blockus.js:957
+#: static/js/blockus.js:960
 msgid "game_blockus_option_unit"
 msgstr "Raccourci de score"
 
-#: static/js/blockus.js:983
+#: static/js/blockus.js:986
 msgid "game_blockus_option_block_size_min"
 msgstr "Mimimum de blocs dans une forme"
 
-#: static/js/blockus.js:1004
+#: static/js/blockus.js:1007
 msgid "game_blockus_option_block_size_max"
 msgstr "Maximum de blocs dans une forme"
 
-#: static/js/blockus.js:1025
+#: static/js/blockus.js:1028
 msgid "game_blockus_option_board_width"
 msgstr "Largeur du jeu"
 
-#: static/js/blockus.js:1048
+#: static/js/blockus.js:1051
 msgid "game_blockus_option_board_height"
 msgstr "Hauteur du jeu"
 
-#: static/js/blockus.js:1071
+#: static/js/blockus.js:1074
 msgid "game_blockus_option_trim_score"
 msgstr "Enlever les zéros qui suivent le score"
 
-#: static/js/blockus.js:1093
+#: static/js/blockus.js:1096
 msgid "game_blockus_option_rainbow_shapes"
 msgstr "Couleurs de formes aléatoires"
 
-#: static/js/blockus.js:1115
+#: static/js/blockus.js:1118
 msgid "game_blockus_option_rainbow_blocks"
 msgstr "Couleurs de blocs aléatoires"
 
-#: static/js/blockus.js:1137
+#: static/js/blockus.js:1140
 msgid "game_blockus_option_painbow_mode"
 msgstr "Couleurs changent à chaque rafraichissement"
 
-#: static/js/blockus.js:1159
+#: static/js/blockus.js:1162
 msgid "game_blockus_option_diagonals"
 msgstr "Formes avec des diagonales"
 
-#: static/js/blockus.js:1406
+#: static/js/blockus.js:1409
 msgid "game_blockus_keybinds_group_playing"
 msgstr "En jeu"
 
-#: static/js/blockus.js:1407
+#: static/js/blockus.js:1410
 msgid "game_blockus_keybinds_group_pause"
 msgstr "Sur pause"
 
-#: static/js/blockus.js:1408
+#: static/js/blockus.js:1411
 msgid "game_blockus_keybinds_group_gameover"
 msgstr "Après une défaite"
 
-#: static/js/blockus.js:1422
+#: static/js/blockus.js:1425
 msgid "game_blockus_keybind_leave_blank_tip"
 msgstr "Laissez vide pour supprimer"
 
@@ -509,265 +509,321 @@ msgstr ""
 "progrès depuis votre dernier prestige, mais vous allez gagner des "
 "nouvelle ressources"
 
-#: static/js/rpg.js:73
-msgid "games_rpg_themes_dark"
-msgstr "Mode sombre"
-
-#: static/js/rpg.js:290
+#: static/js/rpg/actions.js:86
 msgid "games_rpg_action_move_player_left"
 msgstr "Déplacer le joueur à gauche"
 
-#: static/js/rpg.js:296
+#: static/js/rpg/actions.js:92
 msgid "games_rpg_action_move_player_right"
 msgstr "Déplacer le joueur à droite"
 
-#: static/js/rpg.js:302
+#: static/js/rpg/actions.js:98
 msgid "games_rpg_action_move_player_down"
 msgstr "Déplacer le joueur en bas"
 
-#: static/js/rpg.js:308
+#: static/js/rpg/actions.js:104
 msgid "games_rpg_action_move_player_up"
 msgstr "Déplacer le joueur en haut"
 
-#: static/js/rpg.js:314
+#: static/js/rpg/actions.js:110
 msgid "games_rpg_action_move_cursor_inventory_left"
 msgstr "Déplacer le curseur de l'inventaire à gauche"
 
-#: static/js/rpg.js:358
+#: static/js/rpg/actions.js:154
 msgid "games_rpg_action_move_cursor_inventory_right"
 msgstr "Déplacer le curseur de l'inventaire à droite"
 
-#: static/js/rpg.js:414
+#: static/js/rpg/actions.js:210
 msgid "games_rpg_action_move_cursor_inventory_down"
 msgstr "Déplacer le curseur de l'inventaire en bas"
 
-#: static/js/rpg.js:433
+#: static/js/rpg/actions.js:229
 msgid "games_rpg_action_move_cursor_inventory_up"
 msgstr "Déplacer le curseur de l'inventaire en haut"
 
-#: static/js/rpg.js:452
+#: static/js/rpg/actions.js:248
 msgid "games_rpg_action_move_cursor_status_down"
 msgstr "Déplacer le curseur du status en bas"
 
-#: static/js/rpg.js:469
+#: static/js/rpg/actions.js:265
 msgid "games_rpg_action_move_cursor_status_up"
 msgstr "Déplacer le curseur du status en haut"
 
-#: static/js/rpg.js:479
+#: static/js/rpg/actions.js:275
 msgid "games_rpg_action_use_inventory_selected"
 msgstr "Utiliser l'objet sélectionné"
 
-#: static/js/rpg.js:490
+#: static/js/rpg/actions.js:286
 msgid "games_rpg_action_drop_inventory_selected"
 msgstr "Lacher l'objet sélectionné"
 
-#: static/js/rpg.js:505
+#: static/js/rpg/actions.js:302
 msgid "games_rpg_action_toggle_equip_inventory_selected"
 msgstr "Equipper l'objet sélectionné"
 
-#: static/js/rpg.js:517
+#: static/js/rpg/actions.js:315
 msgid "games_rpg_action_game_pause"
 msgstr "Mettre sur pause"
 
-#: static/js/rpg.js:523
+#: static/js/rpg/actions.js:321
 msgid "games_rpg_action_game_resume"
 msgstr "Continuer"
 
-#: static/js/rpg.js:529
+#: static/js/rpg/actions.js:327
 msgid "games_rpg_action_game_pause_toggle"
 msgstr "Activer/désactiver le mode pause"
 
-#: static/js/rpg.js:535
+#: static/js/rpg/actions.js:333
 msgid "games_rpg_action_show_inventory"
 msgstr "Voir l'inventaire"
 
-#: static/js/rpg.js:543
+#: static/js/rpg/actions.js:341
 msgid "games_rpg_action_hide_inventory"
 msgstr "Cacher l'inventaire"
 
-#: static/js/rpg.js:549
+#: static/js/rpg/actions.js:347
 msgid "games_rpg_action_show_status"
 msgstr "Voir le status"
 
-#: static/js/rpg.js:557
+#: static/js/rpg/actions.js:355
 msgid "games_rpg_action_hide_status"
 msgstr "Cacher le status"
 
-#: static/js/rpg.js:816
+#: static/js/rpg/actions.js:361
+msgid "games_rpg_action_open_context_menu"
+msgstr "Ouvrir le menu contextuel"
+
+#: static/js/rpg/actions.js:527
+msgid "games_rpg_item_has_passive"
+msgstr "A des effets passifs"
+
+#: static/js/rpg/actions.js:528
+msgid "games_rpg_item_can_use"
+msgstr "Peut être utilisé"
+
+#: static/js/rpg/actions.js:529
+msgid "games_rpg_item_can_equip"
+msgstr "Peut être équippé"
+
+#: static/js/rpg/canvas.js:37
 msgid "games_rpg_type_none"
 msgstr "Aucun"
 
-#: static/js/rpg.js:824
+#: static/js/rpg/canvas.js:45
 msgid "games_rpg_status_health"
 msgstr "Vie"
 
-#: static/js/rpg.js:825
+#: static/js/rpg/canvas.js:46
 msgid "games_rpg_status_health_max"
 msgstr "Vie Max"
 
-#: static/js/rpg.js:826
+#: static/js/rpg/canvas.js:47
 msgid "games_rpg_status_speed"
 msgstr "Vitesse"
 
-#: static/js/rpg.js:827
+#: static/js/rpg/canvas.js:48
 msgid "games_rpg_status_range"
 msgstr "Portée"
 
-#: static/js/rpg.js:828
+#: static/js/rpg/canvas.js:49
 msgid "games_rpg_status_inventory"
 msgstr "Inventaire"
 
-#: static/js/rpg.js:829
+#: static/js/rpg/canvas.js:50
 msgid "games_rpg_status_defense"
 msgstr "Défense %(type)s"
 
-#: static/js/rpg.js:830
+#: static/js/rpg/canvas.js:51
 msgid "games_rpg_status_damage"
 msgstr "Dégats %(type)s"
 
-#: static/js/rpg.js:842
+#: static/js/rpg/canvas.js:63
 msgid "games_rpg_slot_head"
 msgstr "Tête"
 
-#: static/js/rpg.js:846
+#: static/js/rpg/canvas.js:67
 msgid "games_rpg_slot_face"
 msgstr "Visage"
 
-#: static/js/rpg.js:850
+#: static/js/rpg/canvas.js:71
 msgid "games_rpg_slot_neck"
 msgstr "Cou"
 
-#: static/js/rpg.js:854
+#: static/js/rpg/canvas.js:75
 msgid "games_rpg_slot_chest"
 msgstr "Torse"
 
-#: static/js/rpg.js:858
+#: static/js/rpg/canvas.js:79
 msgid "games_rpg_slot_arm"
 msgstr "Bras"
 
-#: static/js/rpg.js:862
+#: static/js/rpg/canvas.js:83
 msgid "games_rpg_slot_hand"
 msgstr "Main"
 
-#: static/js/rpg.js:866
+#: static/js/rpg/canvas.js:87
 msgid "games_rpg_slot_leg"
 msgstr "Jambe"
 
-#: static/js/rpg.js:870
+#: static/js/rpg/canvas.js:91
 msgid "games_rpg_slot_foot"
 msgstr "Pied"
 
-#: static/js/rpg.js:882
-msgid "games_rpg_theme_text_font"
-msgstr "Police du texte"
-
-#: static/js/rpg.js:883
-msgid "games_rpg_theme_text_color"
-msgstr "Couleur du text"
-
-#: static/js/rpg.js:884
-msgid "games_rpg_theme_text_item_amount_color"
-msgstr "Couleur du nombre d'objet"
-
-#: static/js/rpg.js:885
-msgid "games_rpg_theme_text_very_low_health_color"
-msgstr "Couleur vie très basse"
-
-#: static/js/rpg.js:886
-msgid "games_rpg_theme_text_low_health_color"
-msgstr "Couleur vie basse"
-
-#: static/js/rpg.js:887
-msgid "games_rpg_theme_text_item_equipped_color"
-msgstr "Couleur quand équippé"
-
-#: static/js/rpg.js:888
-msgid "games_rpg_theme_text_item_has_slot_color"
-msgstr "Couleur quand il est possible d'équipper"
-
-#: static/js/rpg.js:889
-msgid "games_rpg_theme_text_item_has_not_slot_color"
-msgstr "Couleur quand il n'est pas possible d'équipper"
-
-#: static/js/rpg.js:892
-msgid "games_rpg_theme_border_tooltip_color"
-msgstr "Couleur de la bordure de l'info-bulle"
-
-#: static/js/rpg.js:893
-msgid "games_rpg_theme_border_inventory_cell_color"
-msgstr "Couleur de la bordure des cases d'inventaire"
-
-#: static/js/rpg.js:894
-msgid "games_rpg_theme_border_equipment_cell_color"
-msgstr "Couleur de la bordure des cases d'équipement"
-
-#: static/js/rpg.js:895
-msgid "games_rpg_theme_border_inventory_cursor_color"
-msgstr "Couleur du curseur de l'inventaire"
-
-#: static/js/rpg.js:898
-msgid "games_rpg_theme_background_tooltip_color"
-msgstr "Couleur de fond de l'info-bulle"
-
-#: static/js/rpg.js:899
-msgid "games_rpg_theme_background_inventory_color"
-msgstr "Couleur de fond de l'inventaire"
-
-#: static/js/rpg.js:900
-msgid "games_rpg_theme_background_equipment_cell_locked_color"
-msgstr "Couleur de fond des cases d'équipement non disponibles"
-
-#: static/js/rpg.js:901
-msgid "games_rpg_theme_background_entity_health_color"
-msgstr "Couleur de fond de vie"
-
-#: static/js/rpg.js:902
-msgid "games_rpg_theme_background_entity_missing_health_color"
-msgstr "Couleur de fond de vie manquante"
-
-#: static/js/rpg.js:1293 static/js/rpg.js:1368
+#: static/js/rpg/canvas.js:236 static/js/rpg/canvas.js:311
 msgid "games_rpg_status_name"
 msgstr "Nom"
 
-#: static/js/rpg.js:1293 static/js/rpg.js:1368
+#: static/js/rpg/canvas.js:236 static/js/rpg/canvas.js:311
 msgid "games_rpg_status_name_unnamed"
 msgstr "Sans nom"
 
-#: static/js/rpg.js:1295
+#: static/js/rpg/canvas.js:238
 msgid "games_rpg_status_description"
 msgstr "Description"
 
-#: static/js/rpg.js:1297
+#: static/js/rpg/canvas.js:240
 msgid "games_rpg_status_on_use"
 msgstr "Sur utilisation"
 
-#: static/js/rpg.js:1313
+#: static/js/rpg/canvas.js:256
 msgid "games_rpg_status_passive"
 msgstr "Passif"
 
-#: static/js/rpg.js:1331
+#: static/js/rpg/canvas.js:274
 msgid "games_rpg_status_equipped"
 msgstr "Quand équipé"
 
-#: static/js/rpg.js:1337
+#: static/js/rpg/canvas.js:280
 msgid "games_rpg_status_equip_slot"
 msgstr "Equipé sur %(slot)s"
 
-#: static/js/rpg.js:1387
+#: static/js/rpg/canvas.js:330
 msgid "defense"
 msgstr ""
 
-#: static/js/rpg.js:1394
+#: static/js/rpg/canvas.js:337
 msgid "damage"
 msgstr ""
 
-#: static/js/rpg.js:1407
+#: static/js/rpg/canvas.js:350
 msgid "games_rpg_status_items"
 msgstr "objets"
 
-#: static/js/rpg.js:1407
+#: static/js/rpg/canvas.js:350
 msgid "games_rpg_status_item"
 msgstr "objet"
+
+#: static/js/rpg/display.js:27
+msgid "games_rpg_themes_dark"
+msgstr "Mode sombre"
+
+#: static/js/rpg/display.js:68
+msgid "games_rpg_theme_text_font"
+msgstr "Police du texte"
+
+#: static/js/rpg/display.js:69
+msgid "games_rpg_theme_text_color"
+msgstr "Couleur du text"
+
+#: static/js/rpg/display.js:70
+msgid "games_rpg_theme_text_item_amount_color"
+msgstr "Couleur du nombre d'objet"
+
+#: static/js/rpg/display.js:71
+msgid "games_rpg_theme_text_very_low_health_color"
+msgstr "Couleur vie très basse"
+
+#: static/js/rpg/display.js:72
+msgid "games_rpg_theme_text_low_health_color"
+msgstr "Couleur vie basse"
+
+#: static/js/rpg/display.js:73
+msgid "games_rpg_theme_text_item_equipped_color"
+msgstr "Couleur quand équippé"
+
+#: static/js/rpg/display.js:74
+msgid "games_rpg_theme_text_item_has_slot_color"
+msgstr "Couleur quand il est possible d'équipper"
+
+#: static/js/rpg/display.js:75
+msgid "games_rpg_theme_text_item_has_not_slot_color"
+msgstr "Couleur quand il n'est pas possible d'équipper"
+
+#: static/js/rpg/display.js:78
+msgid "games_rpg_theme_border_tooltip_color"
+msgstr "Couleur de la bordure de l'info-bulle"
+
+#: static/js/rpg/display.js:79
+msgid "games_rpg_theme_border_inventory_cell_color"
+msgstr "Couleur de la bordure des cases d'inventaire"
+
+#: static/js/rpg/display.js:80
+msgid "games_rpg_theme_border_equipment_cell_color"
+msgstr "Couleur de la bordure des cases d'équipement"
+
+#: static/js/rpg/display.js:81
+msgid "games_rpg_theme_border_inventory_cursor_color"
+msgstr "Couleur du curseur de l'inventaire"
+
+#: static/js/rpg/display.js:84
+msgid "games_rpg_theme_background_tooltip_color"
+msgstr "Couleur de fond de l'info-bulle"
+
+#: static/js/rpg/display.js:85
+msgid "games_rpg_theme_background_inventory_color"
+msgstr "Couleur de fond de l'inventaire"
+
+#: static/js/rpg/display.js:86
+msgid "games_rpg_theme_background_equipment_cell_locked_color"
+msgstr "Couleur de fond des cases d'équipement non disponibles"
+
+#: static/js/rpg/display.js:87
+msgid "games_rpg_theme_background_entity_health_color"
+msgstr "Couleur de fond de vie"
+
+#: static/js/rpg/display.js:88
+msgid "games_rpg_theme_background_entity_missing_health_color"
+msgstr "Couleur de fond de vie manquante"
+
+#: static/js/rpg/item.js:276
+msgid "games_rpg_items_no"
+msgstr "Non"
+
+#: static/js/rpg/item.js:284
+msgid "games_rpg_items_yes"
+msgstr "Oui"
+
+#: static/js/rpg/item.js:295
+msgid "games_rpg_items_cake"
+msgstr "Gateau"
+
+#: static/js/rpg/item.js:300
+msgid "games_rpg_items_bricks"
+msgstr "Briques"
+
+#: static/js/rpg/item.js:309
+msgid "games_rpg_items_sparks"
+msgstr "Etincelles"
+
+#: static/js/rpg/item.js:318
+msgid "games_rpg_items_flag"
+msgstr "Drapeau"
+
+#: static/js/rpg/item.js:327
+msgid "games_rpg_items_gift"
+msgstr "Cadeau"
+
+#: static/js/rpg/item.js:332
+msgid "games_rpg_items_clover"
+msgstr "Trèfle"
+
+#: static/js/rpg/item.js:337
+msgid "games_rpg_items_fire"
+msgstr "Feu"
+
+#: static/js/rpg/item.js:342
+msgid "games_rpg_items_cash"
+msgstr "Argent"
 
 #: templates/auth/change_password.html:2 templates/auth/login.html:21
 #: templates/auth/register.html:2 templates/auth/register.html:22

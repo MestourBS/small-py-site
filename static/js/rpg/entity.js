@@ -4,9 +4,10 @@ import { MinHeap } from './minheap.js';
 import { number_between } from './primitives.js';
 import { inventory_items_per_row } from './display.js';
 import { Direction, surrounding_square, coords_distance, can_walk } from './coords.js';
-import Color from './color.js';
 import Random from './random.js';
 import globals from './globals.js';
+/** @typedef {import('./room.js').Room} Room */
+/** @typedef {import('./color.js').Color} Color */
 
 /**
  * TODO LIST
@@ -204,7 +205,7 @@ export const pathfindings = {
 };
 
 /**
- * @template {Color|string|CanvasImageSource|(x: number, y: number, this: Entity<T>) => void} T
+ * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, this: Entity<T>) => void} T
  */
 export class Entity extends Tile {
     /** @type {Entity[]} */
@@ -852,7 +853,7 @@ export class Entity extends Tile {
     }
 }
 /**
- * @template {Color|string|CanvasImageSource|(x: number, y: number, this: AutonomousEntity<T>) => void} T
+ * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, this: AutonomousEntity<T>) => void} T
  */
 export class AutonomousEntity extends Entity {
     /** @type {Tile|null} */

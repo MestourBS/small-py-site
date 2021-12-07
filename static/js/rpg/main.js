@@ -3,13 +3,12 @@
 // This means that entity.js will import tile.js, which will prevent it from loading entity.js
 import { Entity, AutonomousEntity } from './entity.js';
 import { Room } from './room.js';
-import { context } from './canvas.js';
-import { keydown } from './keybinds.js';
+import { tile_size } from './display.js';
 import { create_items } from './item.js';
 import { get_theme_value } from './display.js';
-import { tile_size, display_size } from './display.js';
 import { canvas_reset, canvas_refresh } from './canvas.js';
 import globals from './globals.js';
+import './actions.js';
 
 /**
  * TODO LIST
@@ -44,34 +43,21 @@ let loop_last;
  * Starts the game
  */
 function init() {
-    let almost_paused = !document.hasFocus();
-    if (almost_paused) globals.game_state = 'pause';
-    document.addEventListener('keydown', keydown);
-    document.addEventListener('blur', () => {
-        if (globals.game_state == 'playing') {
-            almost_paused = true;
-            globals.game_state = 'pause';
-        }
-    });
-    document.addEventListener('focus', () => {
-        if (almost_paused) {
-            almost_paused = false;
-            globals.game_state = 'playing';
-        }
-    });
     create_items();
 
     loop_last = Date.now();
     canvas_reset();
-    globals.player = new Entity({x: 0, y: 0, z: 10, content: function(x, y) {
+    /** @param {number} x @param {number} y @param {CanvasRenderingContext2D} context */
+    const draw_player = (x,y,context) => {
         context.textAlign = 'center';
         context.fillStyle = '#f00';
         context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
-        let x_start = (x - (globals.player.x - display_size[0] / 2) + .5) * tile_size[0];
-        let y_start = (y - (globals.player.y - display_size[1] / 2) + .8) * tile_size[1];
+        x += tile_size[0] / 2;
+        y += tile_size[1] - 5;
 
-        context.fillText('☺', x_start, y_start);
-    }, health: 10, speed: 2, equip_slots: [0, 3, 5]});
+        context.fillText('☺', x, y);
+    };
+    globals.player = new Entity({x: 0, y: 0, z: 10, content: draw_player, health: 10, speed: 2, equip_slots: [0, 3, 5]});
 
     Room.make_map();
 

@@ -18,7 +18,7 @@ export function number_between(number, min, max) {
  * Checks if an object is an instance of any class given
  *
  * @param {any} obj
- * @param {...() => any} classes
+ * @param {...function(new: any)} classes
  * @returns {boolean}
  */
 export function isinstance(obj, ...classes) {

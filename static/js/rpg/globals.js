@@ -1,3 +1,5 @@
+/** @typedef {import('./entity.js').Entity} Entity */
+
 export const globals = {
     /**
      * Current game state

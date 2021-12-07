@@ -1,11 +1,11 @@
-import { context } from './canvas.js';
+import { context as canvas_context } from './canvas.js';
 import { isinstance } from './primitives.js';
 import { tile_size, display_size, get_theme_value } from './display.js';
 import Color from './color.js';
 import globals from './globals.js';
 
 /**
- * @template {Color|string|CanvasImageSource|(x: number, y: number, this: Tile<T>) => void} T
+ * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, this: Tile<T>) => void} T
  */
 export class Tile {
     /**
@@ -148,14 +148,22 @@ export class Tile {
         return this.x >= x_low && this.x <= x_high && this.y >= y_low && this.y <= y_high;
     }
 
-    draw() {
-        let x_start = (this.x - (globals.player.x - display_size[0] / 2)) * tile_size[0];
-        let y_start = (this.y - (globals.player.y - display_size[1] / 2)) * tile_size[1];
+    /**
+     * @param {number} [x]
+     * @param {number} [y]
+     * @param {CanvasRenderingContext2D} [context]
+     */
+    draw(x = null, y = null, context = null) {
+        context ??= canvas_context;
+
+        let x_start = x ?? (this.x - (globals.player.x - display_size[0] / 2)) * tile_size[0];
+        let y_start = y ?? (this.y - (globals.player.y - display_size[1] / 2)) * tile_size[1];
         let content = this.#content;
 
         if (typeof content == 'function') {
-            content.call(this, this.x, this.y);
+            content.call(this, x ?? x_start, y ?? y_start, context);
         } else if (typeof content == 'string') {
+            context.textAlign = 'center';
             context.fillStyle = '#000';
             context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
             x_start += tile_size[0] / 2;

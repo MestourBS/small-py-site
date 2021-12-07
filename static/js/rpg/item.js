@@ -1,13 +1,13 @@
 import { Tile } from './tile.js';
 import { Entity } from './entity.js';
-import { context } from './canvas.js';
+import { context as canvas_context } from './canvas.js';
 import { number_between, isinstance } from './primitives.js';
 import { get_theme_value, tile_size, inventory_items_per_row } from './display.js';
 import Color from './color.js';
 import Random from './random.js';
 
 /**
- * @template {Color|string|CanvasImageSource|(x: number, y: number, inventory?: 0|1|2, this: Item<T>) => void} T
+ * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, inventory?: 0|1|2, this: Item<T>) => void} T
  */
 export class Item extends Tile {
     /** @type {{[k: string]: Item}} */
@@ -199,8 +199,11 @@ export class Item extends Tile {
     }
     /**
      * @param {number} [amount]
+     * @param {CanvasRenderingContext2D} [context]
      */
-    draw_inventory(amount=1) {
+    draw_inventory(amount=1, context = null) {
+        context ??= canvas_context;
+
         let offset_x = tile_size[0];
         let offset_y = tile_size[1];
         let x_start = this.x * 3 * tile_size[0] + offset_x;
@@ -211,7 +214,7 @@ export class Item extends Tile {
         if (typeof content == 'function') {
             let inventory = +!!this.owner;
             if (this.owner && this.owner.equipment[this.equip_slot] == this) inventory++;
-            content.call(this, this.x, this.y, inventory);
+            content.call(this, this.x, this.y, context, inventory);
         } else if (typeof content == 'string') {
             context.textAlign = 'center';
             context.fillStyle = '#000';
@@ -267,6 +270,7 @@ export function create_items() {
             passive: {
                 speed: .25,
             },
+            name: gettext('games_rpg_items_no'),
         },
         {
             content: '✔',
@@ -274,6 +278,7 @@ export function create_items() {
             on_use: {
                 health: 1,
             },
+            name: gettext('games_rpg_items_yes'),
         },
         {
             content: '🎂',
@@ -284,10 +289,12 @@ export function create_items() {
             passive: {
                 health_max: 1,
             },
+            name: gettext('games_rpg_items_cake'),
         },
         {
             content: '🧱',
             id: 'bricks',
+            name: gettext('games_rpg_items_bricks'),
         },
         {
             content: '✨',
@@ -296,6 +303,7 @@ export function create_items() {
             equipped: {
                 speed: 10,
             },
+            name: gettext('games_rpg_items_sparks'),
         },
         {
             content: '🏁',
@@ -304,6 +312,7 @@ export function create_items() {
             equipped: {
                 health_max: 1,
             },
+            name: gettext('games_rpg_items_flag'),
         },
         {
             content: '🎁',
@@ -312,18 +321,22 @@ export function create_items() {
             equipped: {
                 speed: 1,
             },
+            name: gettext('games_rpg_items_gift'),
         },
         {
             content: '☘',
             id: 'clover',
+            name: gettext('games_rpg_items_clover'),
         },
         {
             content: '🔥',
             id: 'fire',
+            name: gettext('games_rpg_items_fire'),
         },
         {
             content: '💲',
             id: 'cash',
+            name: gettext('games_rpg_items_cash'),
         },
     ];
 
