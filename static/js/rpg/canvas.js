@@ -1,4 +1,5 @@
 import { Tile } from './tile.js';
+import { number_between } from './primitives.js';
 import { AutonomousEntity } from './entity.js';
 import { tile_size, display_size, get_theme_value, inventory_items_per_row } from './display.js';
 import globals from './globals.js';
@@ -92,6 +93,16 @@ const equip_slots = {
         image: null,
     },
 };
+/**
+ * Cache of splits
+ *
+ * As {`font` => `line` => `lines`}
+ *
+ * @type {{[k: string]: {
+ *  [k: string]: string[],
+ * }}}
+ */
+const pre_split = {};
 
 /**
  * Empties the canvas display
@@ -419,8 +430,11 @@ function canvas_tooltip(lines, left, top) {
  * @param {string[]|string} lines Lines to write. Change color by writing `{color:<color>}`. Any amount of backslashes will disable colors
  * @param {number} left Distance from left edge
  * @param {number} top Distance from top edge
+ * @param {Object} pad
+ * @param {number} [pad.min_left] Minimum distance from the left edge of the canvas
+ * @param {number} [pad.min_right] Minimum distance from the right edge of the canvas
  */
-function canvas_write(lines, left, top) {
+export function canvas_write(lines, left, top, {min_left = 10, min_right = 10}={}) {
     if (!Array.isArray(lines)) lines = [lines];
     if (!lines.length) return;
 
@@ -428,6 +442,88 @@ function canvas_write(lines, left, top) {
     context.textAlign = 'left';
     context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
     context.fillStyle = get_theme_value('text_color');
+
+    // Split lines that are too long
+    let longest_line = Math.max(...lines.map(l => context.measureText(l.replace(regex_color, '')).width));
+    const canvas_width = tile_size[0] * display_size[0];
+    const padding = min_left + min_right;
+    if (left + longest_line + padding > canvas_width) {
+        // Move left to the lowest possible, or 0
+        if (longest_line + padding <= canvas_width) {
+            left = canvas_width - longest_line;
+        } else {
+            left = min_left;
+            if (!(context.font in pre_split)) pre_split[context.font] = {};
+            let own_splits = pre_split[context.font];
+
+            lines = lines.map(line => {
+                let colors_matches = [...line.matchAll(regex_color)];
+                /** @type {[number, string][]} [index, fullcolor][] */
+                let colors = [];
+                colors_matches.forEach(match => {
+                    let less = colors.map(c => c[1].length).reduce((s, n) => s + n, 0);
+                    let index = match.index - less;
+                    colors.push([index, match[0]]);
+                });
+
+                line = line.replace(regex_color, '');
+                if (line in own_splits) return own_splits[line];
+
+                let length = context.measureText(line).width;
+                let slices = [];
+
+                if (length + padding <= canvas_width) {
+                    slices = [line];
+                } else {
+                    let baseline = line;
+
+                    // Split into words
+                    let avg_char_width = length / line.length;
+                    while (context.measureText(line).width + padding > canvas_width) {
+                        // Approximate target character
+                        let len = (canvas_width - padding) / avg_char_width;
+                        const regex_not_word = /[^\w]/g;
+
+                        while (context.measureText(line.slice(0, len)).width + padding < canvas_width) len++;
+                        while (context.measureText(line.slice(0, len)).width + padding > canvas_width) len--;
+
+                        // Get previous non-alphanumeric
+                        let slice = line.slice(0, len);
+                        let separators = Array.from(new Set(slice.match(regex_not_word)));
+                        if (separators.length) {
+                            len = Math.max(separators.map(s => slice.lastIndexOf(s)));
+                            slice = line.slice(0, len);
+                            //len++; //todo depend on whether separator is whitespace
+                        } // Else we just cut at the edge (so slice)
+
+                        line = line.slice(len);
+
+                        slices.push(slice);
+                    }
+
+                    slices.push(line);
+
+                    own_splits[baseline] = slices;
+                }
+                // Put the colors back in the line(s)
+                slices = slices.map((slice, index, slices) => {
+                    let index_start = slices.filter((_, i) => i < index).map(s => s.length).reduce((n, a) => n + a, 0);
+                    let index_end = index_start + slice.length;
+
+                    /** @type {[number, string][]} */
+                    let slice_colors = colors.filter(c => number_between(c[0], index_start, index_end)).map(c => [...c]).sort((a,b) => b[0]-a[0]);
+                    slice_colors.forEach(([i, color]) => {
+                        slice = slice.slice(0, i) + color + slice.slice(i);
+                    });
+
+                    return slice;
+                });
+
+                return slices;
+            }).flat();
+        }
+    }
+
     const base_x = left + tile_size[0];
 
     // Draw text
