@@ -1,6 +1,4 @@
 (() => {
-    //todo why are blocks separating on rounding
-
     /**
      * Canvas of the game
      *
@@ -1926,6 +1924,15 @@
             this.#blocks.forEach(b => b.move(dir, 1, force));
             this.#center[0] = this.#center[0] + dir[1];
             this.#center[1] = this.#center[1] + dir[0];
+
+            // Prevent rounding errors from separating/compacting the shape
+            let x_rounds = this.#blocks.map(b => Math.sign(Math.round(b.x) - b.x));
+            if (Math.max(...x_rounds) - Math.min(...x_rounds) > 1) {
+                let go_left = Math.sign(x_rounds.reduce((a,b) => a+b, 0) + .1) == -1;
+                this.#blocks.forEach(b => {
+                    b.x += (go_left ? -1 : 1) * .1;
+                });
+            }
         }
         /**
          * Checks if the shape can rotate in a given direction
