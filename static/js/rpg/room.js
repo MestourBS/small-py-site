@@ -360,18 +360,15 @@ export class Room {
             },
             cond: (width, height) => width >= 4 && height >= 4,
         },
-        //! fix lines up/down (alternating)
         'triangle_east': { // ▷
             func: (grid, width, height, walls='#', floors='.', empty=' ') => {
-                // Compute distance from axis
-                let ratio = height / width / 2;
-
                 grid = grid.map((row, y) => {
+                    let x_max = y / ((height - 1) / 2);
+                    if (x_max > 1) x_max = 2 - x_max;
+                    x_max = Math.ceil(x_max * width);
                     return row.map((_, x) => {
-                        let y_max = Math.ceil(x * ratio);
-                        if (y > width / 2) y = Math.ceil(Math.abs(height - y));
-                        if (y < y_max) return empty;
-                        if (y == y_max) return walls;
+                        if (x > x_max) return empty;
+                        if (x == x_max) return walls;
                         return floors;
                     });
                 });
@@ -398,18 +395,16 @@ export class Room {
             },
             cond: (width, height) => width >= 4 && height >= 4,
         },
-        //! fix lines up/down (alternating)
         'triangle_west': { // ◁
             func: (grid, width, height, walls='#', floors='.', empty=' ') => {
                 // Compute distance from axis
-                let ratio = height / width / 2;
-
                 grid = grid.map((row, y) => {
+                    let x_max = y / ((height - 1) / 2);
+                    if (x_max > 1) x_max = 2 - x_max;
+                    x_max = Math.ceil(width - x_max * width);
                     return row.map((_, x) => {
-                        let y_max = Math.ceil((width - x) * ratio);
-                        if (y > width / 2) y = Math.ceil(Math.abs(height - y));
-                        if (y < y_max) return empty;
-                        if (y == y_max) return walls;
+                        if (x < x_max) return empty;
+                        if (x == x_max) return walls;
                         return floors;
                     });
                 });
@@ -559,15 +554,17 @@ export class Room {
             // Add rooms
             room_amount ??= Math.ceil(Random.range(3, 20));
 
-            let all_coords = [[0, 0]];
-            let dist = 3 * room_amount;
-            for (let i = 0; i <= room_amount; i++) {
-                // Allows making room nearer
-                let coords = [...Random.array_element(all_coords)];
-                coords[0] += Math.floor(Random.range(-dist, 1 + dist));
-                coords[1] += Math.floor(Random.range(-dist, 1 + dist));
-                all_coords.push(coords);
-                rooms.push(Random.Room.room().to_tiles(...coords, false));
+            if (room_amount > 0) {
+                let all_coords = [[0, 0]];
+                let dist = 3 * room_amount;
+                for (let i = 0; i <= room_amount; i++) {
+                    // Allows making room nearer
+                    let coords = [...Random.array_element(all_coords)];
+                    coords[0] += Math.floor(Random.range(-dist, 1 + dist));
+                    coords[1] += Math.floor(Random.range(-dist, 1 + dist));
+                    all_coords.push(coords);
+                    rooms.push(Random.Room.room().to_tiles(...coords, false));
+                }
             }
 
             let map = Room.link({rooms});
@@ -595,23 +592,26 @@ export class Room {
 
             // Add rooms
             room_amount ??= Math.ceil(Random.range(3, 20));
-            let grid_width = Math.ceil(room_amount ** .5);
-            let dist_x = Math.floor(Random.range(2, 3) * room_width);
-            let dist_y = Math.floor(Random.range(2, 3) * room_height);
-            let x_offset = Math.floor(Random.range(0, grid_width));
-            let y = -Math.floor(Random.range(0, Math.ceil(room_amount / grid_width)));
 
-            while (room_amount >= 0) {
-                let top = y * dist_y;
-                y++;
+            if (room_amount > 0) {
+                let grid_width = Math.ceil(room_amount ** .5);
+                let dist_x = Math.floor(Random.range(2, 3) * room_width);
+                let dist_y = Math.floor(Random.range(2, 3) * room_height);
+                let x_offset = Math.floor(Random.range(0, grid_width));
+                let y = -Math.floor(Random.range(0, Math.ceil(room_amount / grid_width)));
 
-                for (let x = 0; x <= grid_width; x++) {
-                    if (room_amount < 0) break;
-                    let left = (x - x_offset) * dist_x;
-                    if (spawn_player && !top && !left) continue;
+                while (room_amount >= 0) {
+                    let top = y * dist_y;
+                    y++;
 
-                    rooms.push(Random.Room.room({width: room_width, height: room_height}).to_tiles(left, top, false));
-                    room_amount--;
+                    for (let x = 0; x <= grid_width; x++) {
+                        if (room_amount < 0) break;
+                        let left = (x - x_offset) * dist_x;
+                        if (spawn_player && !top && !left) continue;
+
+                        rooms.push(Random.Room.room({width: room_width, height: room_height}).to_tiles(left, top, false));
+                        room_amount--;
+                    }
                 }
             }
 
@@ -641,27 +641,29 @@ export class Room {
             // Add rooms
             room_amount ??= Math.ceil(Random.range(3, 20));
 
-            let rx = rooms.map(r => r.grid.map(t => t.x)).flat();
-            let ry = rooms.map(r => r.grid.map(t => t.y)).flat();
-            let corners = {
-                min_x: Math.min(...rx, 0),
-                max_x: Math.max(...rx, 0),
-                min_y: Math.min(...ry, 0),
-                max_y: Math.min(...ry, 0),
-            };
-            let dist = 5 * room_amount; //? what if 10 tho
-            for (let i = 0; i <= room_amount; i++) {
-                let x = Math.floor(Random.range(corners.min_x - dist, corners.max_x + dist));
-                let y = Math.floor(Random.range(corners.min_y - dist, corners.max_y + dist));
-                let room = Random.Room.room({width, height}).to_tiles(x, y, false);
-                rooms.push(room);
+            if (room_amount > 0) {
+                let rx = rooms.map(r => r.grid.map(t => t.x)).flat();
+                let ry = rooms.map(r => r.grid.map(t => t.y)).flat();
+                let corners = {
+                    min_x: Math.min(...rx, 0),
+                    max_x: Math.max(...rx, 0),
+                    min_y: Math.min(...ry, 0),
+                    max_y: Math.min(...ry, 0),
+                };
+                let dist = 5 * room_amount; //? what if 10 tho
+                for (let i = 0; i <= room_amount; i++) {
+                    let x = Math.floor(Random.range(corners.min_x - dist, corners.max_x + dist));
+                    let y = Math.floor(Random.range(corners.min_y - dist, corners.max_y + dist));
+                    let room = Random.Room.room({width, height}).to_tiles(x, y, false);
+                    rooms.push(room);
 
-                let rx = room.grid.map(t => t.x);
-                let ry = room.grid.map(t => t.y);
-                corners.min_x = Math.min(corners.min_x, ...rx);
-                corners.max_x = Math.max(corners.max_x, ...rx);
-                corners.min_y = Math.min(corners.min_y, ...ry);
-                corners.max_y = Math.max(corners.max_y, ...ry);
+                    let rx = room.grid.map(t => t.x);
+                    let ry = room.grid.map(t => t.y);
+                    corners.min_x = Math.min(corners.min_x, ...rx);
+                    corners.max_x = Math.max(corners.max_x, ...rx);
+                    corners.min_y = Math.min(corners.min_y, ...ry);
+                    corners.max_y = Math.max(corners.max_y, ...ry);
+                }
             }
 
             let map = Room.link({rooms});
@@ -759,6 +761,8 @@ export class Room {
     static link({rooms, walls=null, floors=null, hallways=[]}) {
         rooms.forEach(r => r.to_tiles(null, null, false));
         let abs = Math.abs;
+        if (rooms.length < 1) return null;
+        if (rooms.length == 1) return rooms[0];
 
         /** @type {Room<Tile>[]} */
         let separate_rooms = [];
