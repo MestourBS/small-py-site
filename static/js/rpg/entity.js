@@ -858,7 +858,10 @@ export class Entity extends Tile {
 export class AutonomousEntity extends Entity {
     /** @type {Tile|null} */
     #target;
+    /** Whether the targeting never returns a target */
     #target_never = false;
+    /** Whether the pathfinding never returns a direction nor a path */
+    #path_never = false;
     /** @type {(this: AutonomousEntity<T>) => Tile|null} */
     #targeting;
     /** @type {(this: AutonomousEntity<T>) => Direction|null} */
@@ -941,6 +944,7 @@ export class AutonomousEntity extends Entity {
         if (typeof pathfinding == 'function') {
             this.#pathfinding = pathfinding;
             this.path = null;
+            this.#path_never = false;
         }
     }
 
@@ -950,6 +954,7 @@ export class AutonomousEntity extends Entity {
         if (target) {
             this.#target = target;
             this.path = null;
+            this.#path_never = false;
         }
         return !!target;
     }
@@ -959,10 +964,12 @@ export class AutonomousEntity extends Entity {
      */
     move(dir=null, multiplier=1) {
         // Dead things can't move
-        if (this.health <= 0) return;
+        if (this.health <= 0 || this.#path_never) return;
 
         dir ??= this.#pathfinding.call(this);
-        if (dir && !dir.every(n => n == 0)) super.move(dir, multiplier);
+        if (dir == null && this.path == null) {
+            this.#path_never = true;
+        } else if (dir && !dir.every(n => n == 0)) super.move(dir, multiplier);
     }
 }
 /**
