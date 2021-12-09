@@ -9,11 +9,7 @@ export class Color {
         if (!hex.match(/^#?(?:[\da-f]{3,4}){1,2}$/)) throw new TypeError(`${hex} is not a valid hex color`);
         if (hex.startsWith('#')) hex = hex.slice(1);
 
-        if (hex.length <= 4) {
-            let h = '';
-            for (let i = 0; i < hex.length; i++) h += hex[i].repeat(2);
-            hex = h;
-        }
+        if (hex.length <= 4) hex = hex.split('').map(s => s.repeat(2)).join('');
 
         let rgb = [0, 0, 0];
         for (let i = 0; i < 3; i++) rgb[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
@@ -61,9 +57,12 @@ export class Color {
      * @param {{red: number, green: number, blue: number}} color
      */
     static from_object(color) {
-        if (!('red' in color)) throw new TypeError(`${color.toString} has no red property`);
-        if (!('green' in color)) throw new TypeError(`${color.toString} has no green property`);
-        if (!('blue' in color)) throw new TypeError(`${color.toString} has no blue property`);
+        if (!('red' in color)) throw new TypeError(`${color} has no red property`);
+        if (!('green' in color)) throw new TypeError(`${color} has no green property`);
+        if (!('blue' in color)) throw new TypeError(`${color} has no blue property`);
+        if (isNaN(color.red)) throw new TypeError(`${color.red} is NaN`);
+        if (isNaN(color.green)) throw new TypeError(`${color.green} is NaN`);
+        if (isNaN(color.blue)) throw new TypeError(`${color.blue} is NaN`);
 
         let {red, green, blue} = color;
 
@@ -250,5 +249,3 @@ export class Color {
     }
 }
 export default Color;
-
-//? static functions as module functions

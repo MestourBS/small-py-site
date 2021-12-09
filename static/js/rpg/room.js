@@ -20,6 +20,9 @@ import globals from './globals.js';
  *  * maps:
  *      - no hallways, everything touches another room
  *
+ *  * merge:
+ *      - shove it all in a single array and remove dupes
+ *
  *  ? room decorating?
  */
 
@@ -28,7 +31,7 @@ import globals from './globals.js';
  *
  * @type {{[k: string]: string|Color|CanvasImageSource|((this: Entity) => void)}}
  */
-const ascii_colors = {
+const ascii_contents = {
     '#': '#333',
     '.': '#ccc',
     '■': '#335',
@@ -629,8 +632,9 @@ export class Room {
 
             return map;
         },
-        'huge': (room_amount=null, spawn_player=true) => {
-            /** @type {Room<Tile>[]} */
+        //#region huge map
+        /*'huge': (room_amount=null, spawn_player=true) => {
+            //** @type {Room<Tile>[]} /
             let rooms = [];
             let width = Math.ceil(Random.range(10, 50));
             let height = Math.ceil(Random.range(10, 50));
@@ -679,7 +683,8 @@ export class Room {
             }
 
             return map;
-        },
+        },*/
+        //#endregion huge map
     };
 
     // Ascii stuff
@@ -759,9 +764,10 @@ export class Room {
      * @returns {Room<Tile>}
      */
     static link({rooms, walls=null, floors=null, hallways=[]}) {
+        if (rooms.length < 1) return null;
+
         rooms.forEach(r => r.to_tiles(null, null, false));
         let abs = Math.abs;
-        if (rooms.length < 1) return null;
         if (rooms.length == 1) return rooms[0];
 
         /** @type {Room<Tile>[]} */
@@ -945,7 +951,7 @@ export class Room {
                 path = Random.Room.path();
             }
             let coords = path(start, end);
-            let hall_floors = floors ?? ascii_colors[Random.array_element(ascii_symbols.nonsolids)];
+            let hall_floors = floors ?? ascii_contents[Random.array_element(ascii_symbols.nonsolids)];
             let hallway_radius = Math.ceil(Random.range(1, 2));
             /** @type {Tile[]} */
             let grid = [];
@@ -958,7 +964,7 @@ export class Room {
             });
 
             // Convert edges into walls
-            let hall_walls = walls ?? ascii_colors[Random.array_element(ascii_symbols.solids)];
+            let hall_walls = walls ?? ascii_contents[Random.array_element(ascii_symbols.solids)];
             grid.forEach(/**@this {Tile[]}*/function(tile) {
                 /** @type {Tile?[]} */
                 let neighbours = [
@@ -1121,11 +1127,11 @@ export class Room {
                 y += offset_y;
                 row.forEach((cell, x) => {
                     // Invalid cell, ignore
-                    if (!Object.values(ascii_symbols).flat().includes(cell)) return;
+                    if (!(cell in ascii_contents)) return;
 
                     /** @type {string} */
                     let solid = ascii_symbols.solids.includes(cell);
-                    let content = ascii_colors[cell];
+                    let content = ascii_contents[cell];
                     x += offset_x;
 
                     let tile = new Tile({x, y, z:0, content, solid, insert});
@@ -1146,7 +1152,7 @@ export class Room {
     insert() {
         this.to_tiles();
 
-        this.grid.filter(t => t instanceof Tile).forEach(/**@param {Tile} t*/t => t.insert());
+        this.grid.forEach(t => t.insert());
 
         return this;
     }

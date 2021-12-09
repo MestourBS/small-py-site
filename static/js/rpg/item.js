@@ -22,8 +22,7 @@ export class Item extends Tile {
      */
     static get_item(item_id, overrides={}) {
         if (item_id in this.#items) {
-            let item = this.#items[item_id];
-            return item.copy(overrides);
+            return this.#items[item_id].copy(overrides);
         }
         return null;
     }
@@ -44,7 +43,6 @@ export class Item extends Tile {
             for (let i = 0; i < amount; i++) {
                 ids.push(Random.array_element(Object.keys(this.#items)));
             }
-
         }
         return ids;
     };

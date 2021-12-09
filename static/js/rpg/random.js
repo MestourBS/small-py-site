@@ -23,29 +23,21 @@ export const Random = Object.freeze({
          * @returns {Room<string[]>}
          */
         room: ({min_width=7, max_width=null, min_height=7, max_height=null, height=null, width=null, walls=null, floors=null, shape=null}={}) => {
-            if (width === null) {
-                max_width ??= min_width + 10;
-                width = Math.floor(Random.range(min_width, max_width));
-            }
-            if (height === null) {
-                max_height ??= min_height + 10;
-                height = Math.floor(Random.range(min_height, max_height));
-            }
-
+            width ??= Math.floor(Random.range(min_width, max_width ?? (min_width + 10)));
+            height ??= Math.floor(Random.range(min_height, max_height ?? (min_height + 10)));
             walls ??= Random.Room.wall();
             floors ??= Random.Room.floor();
             shape ??= Random.Room.shape(width, height);
             let empty = ' ';
 
-            let room = Room.make_ascii({height, width, shape, walls, floors, empty});
-
-            return room;
+            return Room.make_ascii({height, width, shape, walls, floors, empty});
         },
         wall: () => Random.array_element(ascii_symbols.solids),
         floor: () => Random.array_element(ascii_symbols.nonsolids),
         /**
          * @param {number} width
          * @param {number} height
+         * @returns {keyof Room.SHAPES}
          */
         shape: (width, height) => Random.array_element(Object.entries(Room.SHAPES).filter(s => s[1].cond(width, height)).map(s => s[0])),
         /** @returns {(room_amount?: any, spawn_player?: boolean) => Room<Tile<any>>} */
@@ -63,9 +55,9 @@ export const Random = Object.freeze({
     /**
      * Generates a random color
      *
-     * @type {() => Color}
+     * @returns {Color}
      */
-    get color() { return Color.from_random },
+    color: Color.from_random,
     /**
      * Gets a random element from the array
      *
@@ -97,7 +89,6 @@ export const Random = Object.freeze({
         while (current_index > 0) {
             random_index = Math.floor(Random.range(0, array.length));
             current_index--;
-
             [array[current_index], array[random_index]] = [array[random_index], array[current_index]];
         }
 

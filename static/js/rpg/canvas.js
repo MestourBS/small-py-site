@@ -3,6 +3,7 @@ import { number_between } from './primitives.js';
 import { AutonomousEntity } from './entity.js';
 import { tile_size, display_size, get_theme_value, inventory_items_per_row } from './display.js';
 import globals from './globals.js';
+/** @typedef {import('./entity.js').Entity} Entity */
 
 /**
  * Canvas of the game
@@ -112,13 +113,19 @@ export function canvas_reset() {
     let height = tile_size[1] * display_size[1];
 
     if (canvas.width != width || canvas.height != height) {
-        canvas.style.width = `${tile_size[0] * display_size[0]}px`;
-        canvas.width = tile_size[0] * display_size[0];
-        canvas.style.height = `${tile_size[1] * display_size[1]}px`;
-        canvas.height = tile_size[1] * display_size[1];
+        canvas.style.width = `${width}px`;
+        canvas.width = width;
+        canvas.style.height = `${height}px`;
+        canvas.height = height;
     } else {
         let c = context.fillStyle;
-        context.fillStyle = globals.game_state == 'pause' ? '#000' : '#fff';
+        let color = {
+            'pause': '#000',
+            'playing': '#fff',
+            'status': '#fff',
+            get 'inventory'() { return get_theme_value('background_inventory_color'); },
+        }[globals.game_state];
+        context.fillStyle = color;
         context.fillRect(0, 0, width, height);
         context.fillStyle = c;
     }
@@ -165,10 +172,8 @@ function show_mini_status(entity) {
     context.fillRect(left, top, width_fill, height);
     context.fillStyle = get_theme_value('background_entity_missing_health_color');
     context.fillRect(left + width_fill, top, width_empty, height);
-    context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
-    context.fillStyle = get_theme_value('text_color');
-    context.textAlign = 'center';
-    context.fillText(`${entity.health}/${entity.health_max}`, text_position, top + height * .8, width);
+    // For some reason, the target position has to be moved
+    canvas_write(`${entity.health}/${entity.health_max}`, text_position - tile_size[0], top - tile_size[1] * .2, {text_align: 'center'});
 }
 /**
  * Shows the grid, the player and the entities
@@ -189,8 +194,6 @@ function show_game() {
  */
 function show_inventory(entity) {
     // Draw inventory background
-    context.fillStyle = get_theme_value('background_inventory_color');
-    context.fillRect(0, 0, tile_size[0] * display_size[0], tile_size[1] * display_size[1]);
     let items_per_row = inventory_items_per_row();
     let item_rows = Math.max(Math.floor(display_size[1] / 3) - 1, 1);
     for (let y = 0; y < item_rows; y++) {
@@ -209,23 +212,22 @@ function show_inventory(entity) {
                 }
             }
 
-            context.strokeStyle = color;
-            context.fillStyle = color;
-            let func = x != items_per_row || y in entity.equipment ? 'strokeRect' : 'fillRect';
-            context[func](x_start, y_start, tile_size[0] * 2, tile_size[1] * 2);
+            context.strokeStyle = context.fillStyle = color;
+            let func = x != items_per_row || y in entity.equipment ? context.strokeRect : context.fillRect;
+            func(x_start, y_start, tile_size[0] * 2, tile_size[1] * 2);
             if (x == items_per_row && y in equip_slots && equip_slots[y].image) {
                 context.drawImage(equip_slots[y].image, x_start, y_start, tile_size[0] * 2, tile_size[1] * 2);
             }
         }
     }
+
     // Draw items
     entity.inventory.forEach(([i,a]) => i.draw_inventory(a));
-    Object.values(entity.equipment).forEach(i => {if (i) i.draw_inventory(1);});
+    Object.values(entity.equipment).filter(i => i != null).forEach(i => i.draw_inventory(1));
+
     // Draw cursor
-    let offset_x = tile_size[0];
-    let offset_y = tile_size[1];
-    let x_start = globals.cursors.inventory[0] * 3 * tile_size[0] + offset_x;
-    let y_start = globals.cursors.inventory[1] * 3 * tile_size[1] + offset_y;
+    let x_start = (globals.cursors.inventory[0] * 3 + 1) * tile_size[0];
+    let y_start = (globals.cursors.inventory[1] * 3 + 1) * tile_size[1];
     context.strokeStyle = get_theme_value('border_inventory_cursor_color');
     context.strokeRect(x_start, y_start, tile_size[0] * 2, tile_size[1] * 2);
 
@@ -320,16 +322,16 @@ function show_status(entity) {
         lines.push(`x: ${entity.x}`, `y: ${entity.y}`, `z: ${entity.z}`, `solid: ${entity.solid}`);
         if (entity instanceof AutonomousEntity) {
             lines.push(`target: at ${entity.target.x}, ${entity.target.y}`);
+
+            if (entity.path) {
+                lines.push(`path: ${entity.path.map(c => `[${c.join(', ')}]`).join(', ')}`);
+            }
         }
     }
 
     let health_line = attributes_names['health'] + `: ${entity.health}/${entity.health_max}`;
     if (entity.bonus_health_max)
         health_line += ` (${entity.base_health_max} +${entity.bonus_health_max})`;
-    if (entity.health / entity.health_max <= .1)
-        health_line = `{color:${get_theme_value('text_very_low_health_color')}}${health_line}{color:${get_theme_value('text_color')}}`;
-    else if (entity.health / entity.health_max <= .5)
-        health_line = `{color:${get_theme_value('text_low_health_color')}}${health_line}{color:${get_theme_value('text_color')}}`;
     lines.push(health_line);
 
     Object.entries(entity.defense).forEach(([type, def]) => {
@@ -430,16 +432,17 @@ function canvas_tooltip(lines, left, top) {
  * @param {string[]|string} lines Lines to write. Change color by writing `{color:<color>}`. Any amount of backslashes will disable colors
  * @param {number} left Distance from left edge
  * @param {number} top Distance from top edge
- * @param {Object} pad
- * @param {number} [pad.min_left] Minimum distance from the left edge of the canvas
- * @param {number} [pad.min_right] Minimum distance from the right edge of the canvas
+ * @param {Object} context_options
+ * @param {number} [context_options.min_left] Minimum distance from the left edge of the canvas
+ * @param {number} [context_options.min_right] Minimum distance from the right edge of the canvas
+ * @param {CanvasTextAlign} [context_options.text_align]
  */
-export function canvas_write(lines, left, top, {min_left = 10, min_right = 10}={}) {
+export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, text_align = 'left'}={}) {
     if (!Array.isArray(lines)) lines = [lines];
     if (!lines.length) return;
 
     // Set text vars
-    context.textAlign = 'left';
+    context.textAlign = text_align;
     context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
     context.fillStyle = get_theme_value('text_color');
 

@@ -35,10 +35,10 @@ import globals from './globals.js';
  * - Others are other actions (pause, resume, inventory, etc.)
  *
  * @type {{
- *  playing?: {[k: string]: (keyof actions)[]},
- *  pause?: {[k: string]: (keyof actions)[]},
- *  inventory?: {[k: string]: (keyof actions)[]},
- *  status?: {[k: string]: (keyof actions)[]},
+ *  playing: {[k: string]: (keyof actions)[]},
+ *  pause: {[k: string]: (keyof actions)[]},
+ *  inventory: {[k: string]: (keyof actions)[]},
+ *  status: {[k: string]: (keyof actions)[]},
  *  others: {[k: string]: (keyof actions)[]},
  * }}
  */
@@ -55,6 +55,7 @@ const keybinds = {
         'i': ['show_inventory'],
         'o': ['show_status'],
     },
+    pause: {},
     inventory: {
         'a': ['move_cursor_inventory_left'],
         'd': ['move_cursor_inventory_right'],
@@ -347,12 +348,12 @@ const actions = new Proxy(Object.freeze({
     'open_context_menu': {
         name: gettext('games_rpg_action_open_context_menu'),
         func: () => {
-            let x_in = number_between(mouse_position[0], canvas.offsetLeft, canvas.offsetLeft + canvas.offsetWidth);
-            let y_in = number_between(mouse_position[1], canvas.offsetTop, canvas.offsetTop + canvas.offsetHeight);
+            let x_in = number_between(mouse_position[0], 0, canvas.offsetWidth);
+            let y_in = number_between(mouse_position[1], 0, canvas.offsetHeight);
             if (!x_in || !y_in) return;
 
-            let x = mouse_position[0] - canvas.offsetLeft;
-            let y = mouse_position[1] - canvas.offsetTop;
+            let x = mouse_position[0];
+            let y = mouse_position[1];
 
             contextmenu(x, y);
         },
@@ -362,9 +363,9 @@ const actions = new Proxy(Object.freeze({
     set: (obj, prop, val) => {},
 });
 
-let almost_paused = !document.hasFocus();
+let blur_pause = !document.hasFocus();
 /**
- * Current mouse position, global
+ * Current mouse position on the document
  *
  * @type {[number, number]}
  */
@@ -377,9 +378,19 @@ let mouse_position = [0, 0];
  * @param {KeyboardEvent} e
  */
 export function keydown(e) {
-    let to_check = [keybinds.others];
-    if (globals.game_state in keybinds) to_check.push(keybinds[globals.game_state]);
-    to_check.reverse();
+    if (e.metaKey) return;
+
+    //let to_check = [keybinds[globals.game_state], keybinds.others];
+    /** @type {{[k: string]: keyof actions}} */
+    let to_check = {};
+    Object.entries(keybinds[globals.game_state]).forEach(([key, act]) => {
+        if (!(key in to_check)) to_check[key] = [];
+        to_check[key].push(...act);
+    });
+    Object.entries(keybinds.others).forEach(([key, act]) => {
+        if (!(key in to_check)) to_check[key] = [];
+        to_check[key].push(...act);
+    });
 
     // Get the key
     let key = e.key.toLowerCase();
@@ -394,24 +405,20 @@ export function keydown(e) {
         if (e.shiftKey) keys.push(...keys.map(k => `shift+${k}`));
         if (e.ctrlKey) keys.push(...keys.map(k => `ctrl+${k}`));
         if (e.altKey) keys.push(...keys.map(k => `alt+${k}`));
-        keys.sort((a, b) => {
-            if (a.length == b.length) return a < b;
-            return b.length - a.length;
-        });
-        key = keys.find(k => to_check.some(kb => k in kb)) ?? key;
+        keys.sort((a, b) => b.length - a.length || a < b);
+        key = keys.find(k => k in to_check) ?? key;
     }
 
     /** @type {string[]} */
-    let key_actions = [];
-    to_check.forEach(kb => {
-        if (key in kb) key_actions.push(...kb[key]);
-    });
-    if (key_actions.length) e.preventDefault();
-    key_actions.forEach(a => {
-        actions[a].func();
-    });
+    let key_actions = to_check[key];
+    if (key_actions?.length) {
+        e.preventDefault();
+        key_actions.forEach(a => actions[a].func());
+    }
 }
 /**
+ * Performs a click on a target tile
+ *
  * @param {number} x x position where the click was on the canvas
  * @param {number} y y position where the click was on the canvas
  */
@@ -438,12 +445,18 @@ function click(x, y) {
 
         globals.cursors.inventory[0] = target_x;
         globals.cursors.inventory[1] = target_y;
-    } else if (globals.game_state == 'status') {
-        //todo determine if clicked on an arrow
     }
 }
+/**
+ * Performs a right-click and shows a context menu on a target tile
+ *
+ * @param {number} x x position where the click was on the canvas
+ * @param {number} y y position where the click was on the canvas
+ */
 function contextmenu(x, y) {
     const player = globals.player;
+    let content;
+
     if (globals.game_state == 'playing') {
         //todo disable when clicking on the mini status
         let target_x = Math.floor(x / tile_size[0] + player.x - display_size[0] / 2);
@@ -454,7 +467,7 @@ function contextmenu(x, y) {
         if (!targets.length) return;
 
         // Show options
-        let content = document.createElement('table');
+        content = document.createElement('table');
         content.style.cursor = 'default';
         targets.forEach(t => {
             // Make the context row contents
@@ -484,9 +497,8 @@ function contextmenu(x, y) {
                 has_options ||= Object.keys(t.passive).length || Object.keys(t.on_use).length || t.equip_slot != null;
             }
             // Good enough
-            cell_options.innerHTML = has_options ? '▶' : '&nbsp;';
+            cell_options.innerHTML = has_options ? '▶' : '';
 
-            //todo add options for the row
             let options_shown = false;
             cell_options.addEventListener('click', e => {
                 if (t.constructor == Tile) return;
@@ -500,7 +512,7 @@ function contextmenu(x, y) {
                         if (Object.keys(t.passive).length) options.push(gettext('games_rpg_item_has_passive'));
                         if (Object.keys(t.on_use).length) options.push(gettext('games_rpg_item_can_use'));
                         if (t.equip_slot != null) options.push(gettext('games_rpg_item_can_equip'));
-                    } //todo entities actions?
+                    }
                     if (!options.length) return;
                     cell_options.textContent = '▼';
                     options = options.map(o => {
@@ -509,9 +521,9 @@ function contextmenu(x, y) {
                         let cells = [
                             document.createElement('td'),
                             document.createElement('td'),
-                            document.createElement('td'),
                         ];
                         cells[1].innerText = o;
+                        cells[1].colSpan = 2;
                         cells.forEach(c => row.appendChild(c));
                         return row;
                     }).reverse();
@@ -521,11 +533,7 @@ function contextmenu(x, y) {
                     });
                 }
             });
-
-            //todo effect on clicks
         });
-
-        show_context_menu(x + tile_size[0] * .5, y + tile_size[1] * 2, content);
     } else if (globals.game_state == 'inventory') {
         let target_x = Math.floor(x / tile_size[0]);
         let target_y = Math.floor(y / tile_size[1]);
@@ -560,9 +568,9 @@ function contextmenu(x, y) {
         if (Object.keys(target.on_use).length && !is_equipped) options.push('use_inventory_selected');
         if (target.equip_slot != null) options.push('toggle_equip_inventory_selected');
 
-        let content = document.createElement('table');
+        content = document.createElement('table');
         content.style.cursor = 'cursor';
-        options = options.map(/** @param {keyof actions} o */o => {
+        options = options.map(o => {
             let row = document.createElement('tr');
             let cell = document.createElement('td');
             row.style.cursor = 'pointer';
@@ -576,9 +584,8 @@ function contextmenu(x, y) {
 
             content.appendChild(row);
         });
-
-        show_context_menu(x + tile_size[0] * .5, y + tile_size[1] * 2, content);
     }
+    show_context_menu(x + tile_size[0] * .5, y + tile_size[1] * 2, content);
 }
 /**
  * Shows the context menu with some content
@@ -589,6 +596,8 @@ function contextmenu(x, y) {
  * @param {boolean} [empty=true] Whether to empty the previous content
  */
 function show_context_menu(left, top, content, empty = true) {
+    if (!content) return;
+
     let context_menu = document.getElementById('fake_context_menu');
     if (!context_menu) {
         context_menu = document.createElement('table');
@@ -602,11 +611,7 @@ function show_context_menu(left, top, content, empty = true) {
     context_menu.style.top = `${top}px`;
     context_menu.style.display = 'block';
 
-    if (empty) {
-        while (context_menu.firstChild) {
-            context_menu.removeChild(context_menu.firstChild);
-        }
-    }
+    if (empty) context_menu.textContent = '';
 
     context_menu.appendChild(content);
 }
@@ -621,32 +626,28 @@ function hide_context_menu(empty = true) {
 
     context_menu.style.display = 'none';
 
-    if (empty) {
-        while (context_menu.firstChild) {
-            context_menu.removeChild(context_menu.firstChild);
-        }
-    }
+    if (empty) context_menu.textContent = '';
 }
 
-if (almost_paused) globals.game_state = 'pause';
+if (blur_pause) globals.game_state = 'pause';
 document.addEventListener('keydown', keydown);
 document.addEventListener('blur', () => {
     hide_context_menu();
 
     if (globals.game_state == 'playing') {
-        almost_paused = true;
+        blur_pause = true;
         globals.game_state = 'pause';
     }
 });
 document.addEventListener('focus', () => {
-    if (almost_paused) {
-        almost_paused = false;
+    if (blur_pause) {
+        blur_pause = false;
         globals.game_state = 'playing';
     }
 });
 document.addEventListener('mousemove', e => {
-    mouse_position[0] = e.x;
-    mouse_position[1] = e.y;
+    mouse_position[0] = e.x - canvas.offsetLeft;
+    mouse_position[1] = e.y - canvas.offsetTop;
 });
 canvas.addEventListener('click', e => {
     hide_context_menu();

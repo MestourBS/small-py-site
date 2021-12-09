@@ -3,6 +3,7 @@ import { isinstance } from './primitives.js';
 import { tile_size, display_size, get_theme_value } from './display.js';
 import Color from './color.js';
 import globals from './globals.js';
+/** @typedef {import('./entity.js').Entity} Entity */
 
 /**
  * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, this: Tile<T>) => void} T
@@ -21,6 +22,7 @@ export class Tile {
     static #player_x;
     static #player_y;
 
+    /** @type {Tile[]} */
     static get visible_grid() {
         if (this.#player_x != globals.player.x || this.#player_y != globals.player.y) {
             this.#visible_grid = false;
@@ -32,6 +34,7 @@ export class Tile {
         }
         return this.#visible_grid;
     }
+    /** @param {Tile[]|false} value */
     static set visible_grid(value) {
         if (value === false) {
             this.#visible_grid = false;

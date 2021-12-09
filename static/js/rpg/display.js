@@ -81,6 +81,9 @@ const theme_entries = {
     background_entity_health_color: gettext('games_rpg_theme_background_entity_health_color'),
     background_entity_missing_health_color: gettext('games_rpg_theme_background_entity_missing_health_color'),
 };
+
+globals.current_theme = Object.keys(themes)[0];
+
 /**
  * Returns the amount of inventory items per row
  *
@@ -89,9 +92,6 @@ const theme_entries = {
 export function inventory_items_per_row() {
     return Math.max(Math.floor(display_size[0] / 3) - 2, 1);
 }
-
-globals.current_theme = Object.keys(themes)[0];
-
 /**
  * Returns the value of the key in the current theme
  *

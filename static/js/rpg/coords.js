@@ -25,7 +25,7 @@ export const Direction = Object.freeze({
         let opposite = [Math.sign(r) * -1, Math.sign(d) * -1];
         return this.to_dir(opposite);
     },
-    /** @type {([r,d]: [number, number]) => (readonly [number, number])[]} [clockwise, counterclockwise] from [0, 0] */
+    /** @type {([r,d]: [number, number]) => [readonly [number, number], readonly [number, number]]} [clockwise, counterclockwise] around [0, 0] */
     perpendicular([r, d]) {
         let clockwise = Object.freeze([d * -1, r]);
         let counterclockwise = Object.freeze([d, r * -1]);
@@ -83,9 +83,9 @@ export function coords_distance(point_a, point_b) {
  * @param {Entity|Entity[]} [excluded] Entities to exclude from checks
  * @returns {boolean}
  */
-export function can_walk(coords, excluded=null) {
+export function can_walk(coords, excluded=[]) {
     let [x, y] = coords;
-    if (excluded instanceof Entity) excluded = [excluded];
+    if (!Array.isArray(excluded)) excluded = [excluded];
 
     if (!(coords.toString() in globals.can_walked)) {
         let cw = Tile.solid_tiles.filter(t => t.x == x && t.y == y && !(t instanceof Entity)).length == 0;
