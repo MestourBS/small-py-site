@@ -123,6 +123,7 @@ function parseContent(content) {
         case 'file':
             let link_div = document.createElement('div');
             let link = document.createElement('a');
+            link.rel = 'noopener noreferrer nofollow';
             link.href = Flask.url_for('static', {filename: 'uploads/' + content.content});
             link.innerText = content.content;
             link_div.appendChild(link);

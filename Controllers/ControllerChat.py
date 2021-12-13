@@ -140,7 +140,7 @@ def message_create(group_id: int = 0):
         text = markdown.markdown(text, extensions=[
             'markdown.extensions.sane_lists',
             'markdown.extensions.nl2br',
-        ])
+        ]).replace('<a ', '<a rel="noopener noreferrer nofollow" ');
         message_content_model.insert_single({'fk_message': message_id, 'fk_type': types['text'], 'content': escape_string(text)})
     type_switch = {
         'audio': types['sound'],
