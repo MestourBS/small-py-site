@@ -1,13 +1,16 @@
 import { Tile } from './tile.js';
 import { Item } from './item.js';
+import { Skill } from './skills.js';
 import { MinHeap } from './minheap.js';
 import { number_between } from './primitives.js';
 import { inventory_items_per_row } from './display.js';
 import { Direction, surrounding_square, coords_distance, can_walk } from './coords.js';
 import Random from './random.js';
 import globals from './globals.js';
-/** @typedef {import('./room.js').Room} Room */
-/** @typedef {import('./color.js').Color} Color */
+/**
+ * @typedef {import('./room.js').Room} Room
+ * @typedef {import('./color.js').Color} Color
+ */
 
 /**
  * TODO LIST
@@ -215,6 +218,10 @@ export class Entity extends Tile {
     #health;
     /** @type {number} */
     #health_max;
+    /** @type {number} */
+    #magic;
+    /** @type {number} */
+    #magic_max;
     /** @type {{[k: string]: number}} */
     #defense;
     /** @type {{[k: string]: number}} */
@@ -228,6 +235,8 @@ export class Entity extends Tile {
     #inventory = [];
     /** @type {{[k: number]: Item|null}} */
     #equipment = {};
+    /** @type {Skill[]} */
+    #skills = [];
 
     /**
      * @param {Object} params
@@ -238,6 +247,8 @@ export class Entity extends Tile {
      * @param {string} [params.name]
      * @param {number} [params.health]
      * @param {number} [params.health_max]
+     * @param {number} [params.magic]
+     * @param {number} [params.magic_max]
      * @param {number|{[k: string]: number}} [params.defense]
      * @param {number|{[k: string]: number}} [params.damage]
      * @param {number} [params.speed]
@@ -246,12 +257,16 @@ export class Entity extends Tile {
      */
     constructor({
         x, y, z, content, name=null,
-        health=10, health_max=null, defense=1, damage=1,
+        health=10, health_max=null, magic=10, magic_max=null,
+        defense=1, damage=1,
         speed=1, range=.75, equip_slots=[]
     }) {
         health_max ??= health;
+        magic_max ??= magic;
         if (typeof health != 'number') throw new TypeError(`Invalid entity parameter health: ${health}`);
         if (typeof health_max != 'number') throw new TypeError(`Invalid entity parameter health_max: ${health_max}`);
+        if (typeof magic != 'number') throw new TypeError(`Invalid entity parameter magic: ${magic}`);
+        if (typeof magic_max != 'number') throw new TypeError(`Invalid entity parameter magic_max: ${magic_max}`);
         if (typeof defense == 'number') {
             defense = {'none': defense};
         } else if (typeof defense != 'object') throw new TypeError(`Invalid entity parameter defense: ${defense}`);
@@ -267,6 +282,8 @@ export class Entity extends Tile {
         this.name = name == null ? '' : name.toString();
         this.#health = health;
         this.#health_max = health_max;
+        this.#magic = magic;
+        this.#magic_max = magic_max;
         this.#defense = defense;
         this.#damage = damage;
         this.#speed = speed;
@@ -301,11 +318,38 @@ export class Entity extends Tile {
             .filter(i => i != null)
             .map(i => +(i?.equipped?.health_max ?? 0))
             .reduce((s, n) => s + n, 0);
+        bonus += this.#skills.map(s => +(s?.passive?.health_max ?? 0))
+            .reduce((s, n) => s + n, 0);
 
         return bonus;
     }
     get base_health_max() { return this.#health_max; }
     set base_health_max(health_max) { if (!isNaN(health_max)) this.#health_max = Math.max(+health_max, 0); }
+    get magic() {
+        return Math.min(this.#magic, this.magic_max);
+    }
+    set magic(magic) {
+        if (!isNaN(magic)) {
+            this.#magic = Math.max(Math.min(this.magic_max, magic), 0);
+        }
+    }
+    get magic_max() { return Math.max(this.base_magic_max + this.bonus_magic_max, 0); }
+    get bonus_magic_max() {
+        let bonus = this.#inventory.map(([item, amount]) => {
+            if (!amount) return 0;
+            return (item.passive?.magic_max ?? 0) * amount;
+        }).reduce((s, n) => s + n, 0);
+        bonus += Object.values(this.#equipment)
+            .filter(i => i != null)
+            .map(i => +(i?.equipped?.magic_max ?? 0))
+            .reduce((s, n) => s + n, 0);
+        bonus += this.#skills.map(s => +(s?.passive?.magic_max ?? 0))
+            .reduce((s, n) => s + n, 0);
+
+        return bonus;
+    }
+    get base_magic_max() { return this.#magic_max; }
+    set base_magic_max(magic_max) { if (!isNaN(magic_max)) this.#magic_max = Math.max(+magic_max, 0); }
     get defense() {
         /** @type {{[k: string]: number}} */
         let defense = {};
@@ -344,6 +388,14 @@ export class Entity extends Tile {
                     else defense[type] += def;
                 });
             });
+        this.#skills.forEach(skill => {
+            if (!skill.passive.hasOwnProperty('defense') || typeof skill.passive.defense != 'object') return;
+            let skill_defense = skill.passive.defense;
+            Object.entries(skill_defense).forEach(([type, def]) => {
+                if (!defense.hasOwnProperty(type)) defense[type] = def;
+                else defense[type] += def;
+            });
+        });
 
         return defense;
     }
@@ -391,6 +443,14 @@ export class Entity extends Tile {
                     else damage[type] += dmg;
                 });
             });
+        this.#skills.forEach(skill => {
+            if (!skill.passive.hasOwnProperty('damage') || typeof skill.passive.damage != 'object') return;
+            let skill_damage = skill.passive.damage;
+            Object.entries(skill_damage).forEach(([type, def]) => {
+                if (!damage.hasOwnProperty(type)) damage[type] = def;
+                else damage[type] += def;
+            });
+        });
 
         return damage;
     }
@@ -410,6 +470,8 @@ export class Entity extends Tile {
             .filter(i => i != null)
             .map(i => +(i?.equipped?.speed ?? 0))
             .reduce((s, n) => s + n, 0);
+        bonus += this.#skills.map(s => +(s?.passive?.speed ?? 0))
+            .reduce((s, n) => s + n, 0);
 
         return bonus;
     }
@@ -425,6 +487,8 @@ export class Entity extends Tile {
             .filter(i => i != null)
             .map(i => +(i?.equipped?.range ?? 0))
             .reduce((s, n) => s + n, 0);
+        bonus += this.#skills.map(s => +(s?.passive?.range ?? 0))
+            .reduce((s, n) => s + n, 0);
 
         return bonus;
     }
@@ -433,6 +497,7 @@ export class Entity extends Tile {
 
     get inventory() { return this.#inventory; }
     get equipment() { return this.#equipment; }
+    get skills() { return this.#skills; }
 
     /**
      * Moves an entity somewhere
@@ -851,6 +916,100 @@ export class Entity extends Tile {
             this.#inventory[inventory_index][1]++;
         }
     }
+    /**
+     * Uses a skill
+     *
+     * A target can be set for the skill's on_use_target, otherwise the skill's on_use_self will be used
+     *
+     * @param {Skill|number|string} skill skill|index|id
+     * @param {{x: number, y: number}?} [target] Target position, can be a tile for simplicity, or null for self
+     */
+    use_skill(skill, target=null) {
+        let index;
+        if (skill instanceof Skill) {
+            index = this.#skills.findIndex(s => s.id == skill.id);
+        } else if (typeof skill == 'string') {
+            index = this.#skills.findIndex(s => s.id == skill);
+        } else if (typeof skill == 'number') {
+            index = skill;
+        }
+
+        if (!(index in this.#skills)) return;
+
+        let real_skill = this.#skills[index];
+
+        if (this.magic < real_skill.cost) return;
+
+        this.magic -= real_skill.cost;
+
+        if (!target) {
+            Object.entries(real_skill.on_use_self).forEach(([attr, change]) => {
+                if (`base_${attr}` in this) {
+                    attr = `base_${attr}`;
+                }
+                if (!(attr in this)) return;
+
+                if (typeof change != 'object') {
+                    this[attr] += change;
+                } else {
+                    Object.entries(change).forEach(([type, change]) => {
+                        this[attr][type] += change;
+                    });
+                }
+            });
+        } else {
+            let range = real_skill.range;
+            let dist = coords_distance(this, target);
+            if (dist > range + .5) {
+                // Get potatial targets, sorted from closest to target to farthest
+                let targets = Tile.grid.filter(t => t != this && coords_distance(t, this) <= dist)
+                    .sort((ta, tb) => coords_distance(ta, target) - coords_distance(tb, target));
+
+                if (!targets.length) {
+                    // We couldn't find a valid target, so we make a fake one
+                    let dist_x = target.x - this.x;
+                    let dist_y = target.y - this.y;
+                    let angle = Math.atan(Math.abs(dist_y) / Math.abs(dist_x));
+
+                    if (Math.sign(dist_y) == -1) {
+                        // Below this
+                        angle += Math.PI;
+                    }
+                    if (dist_x && dist_y && Math.sign(dist_y) != Math.sign(dist_x)) {
+                        // 2nd quadrant of the half
+                        angle += Math.PI / 2;
+                    }
+
+                    // The new target tile for the skill
+                    target = {
+                        x: Math.round(Math.cos(angle) * range),
+                        y: Math.round(Math.sin(angle) * range),
+                    };
+                } else {
+                    // Get the nearest target
+                    target = targets[0];
+                }
+            }
+            let radius = real_skill.radius;
+            let x_range = [Math.round(target.x - radius), Math.round(target.x + radius)];
+            let y_range = [Math.round(target.y - radius), Math.round(target.y + radius)];
+            let affected = Entity.entities.filter(e => e.solid && number_between(e.x, ...x_range) && number_between(e.y, ...y_range));
+            Object.entries(real_skill.on_use_target).forEach(([attr, change]) => {
+                if (`base_${attr}` in this) {
+                    attr = `base_${attr}`;
+                }
+                if (!(attr in this)) return;
+
+                if (typeof change != 'object') {
+                    affected.forEach(e => e[attr] += change);
+                } else {
+                    Object.entries(change).forEach(([type, change]) => {
+                        affected.forEach(e => e[attr][type] += change);
+                    });
+                }
+            });
+        }
+    }
 }
 /**
  * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, this: AutonomousEntity<T>) => void} T
@@ -890,8 +1049,8 @@ export class AutonomousEntity extends Entity {
         name=null, health=10, health_max=null, defense=1, damage=1, speed=1, range=.5,
         targeting=()=>null, pathfinding=()=>null
     }) {
-        if (typeof targeting != 'function') throw new TypeError(`Invalid moving entity parameter targeting: ${targeting}`);
-        if (typeof pathfinding != 'function') throw new TypeError(`Invalid moving entity parameter pathfinding: ${pathfinding}`);
+        if (typeof targeting != 'function') throw new TypeError(`Invalid autonomous entity parameter targeting: ${targeting}`);
+        if (typeof pathfinding != 'function') throw new TypeError(`Invalid autonomous entity parameter pathfinding: ${pathfinding}`);
 
         super({x, y, z, content, name, health, health_max, defense, damage, speed, range});
 

@@ -5,6 +5,7 @@ import { Entity, AutonomousEntity } from './entity.js';
 import { Room } from './room.js';
 import { tile_size } from './display.js';
 import { create_items } from './item.js';
+import { create_skills } from './skills.js';
 import { get_theme_value } from './display.js';
 import { canvas_reset, canvas_refresh } from './canvas.js';
 import globals from './globals.js';
@@ -13,8 +14,6 @@ import './actions.js';
 /**
  * TODO LIST
  * =========
- *
- * ?Custom right-click menu, depends where clicked
  *
  * *options
  *  - needs the ability to show/read input equivalents
@@ -44,6 +43,7 @@ let loop_last;
  */
 function init() {
     create_items();
+    create_skills();
 
     loop_last = Date.now();
     canvas_reset();
@@ -57,7 +57,7 @@ function init() {
 
         context.fillText('☺', x, y);
     };
-    globals.player = new Entity({x: 0, y: 0, z: 10, content: draw_player, health: 10, speed: 2, equip_slots: [0, 3, 5]});
+    globals.focused_entity = globals.player = new Entity({x: 0, y: 0, z: 10, content: draw_player, health: 10, speed: 2, equip_slots: [0, 3, 5]});
 
     Room.make_map();
 

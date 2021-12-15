@@ -4,28 +4,42 @@ export const globals = {
     /**
      * Current game state
      *
-     * @type {'playing'|'inventory'|'pause'|'status'}
+     * @type {'playing'|'inventory'|'pause'|'status'|'skills'|'skill_targeting'}
      */
     game_state: 'playing',
     /**
      * Current player character
      *
-     * Affects player movement, display and more
+     * Affects player movement
      *
      * @type {Entity}
      */
     player: null,
+    /**
+     * Currently focused entity
+     *
+     * Affects display
+     *
+     * Can be an entity or just a location
+     *
+     * @type {Entity|{x: number, y: number}}
+     */
+    focused_entity: null,
     /**
      * Current cursors for different screens, as [x, y]
      *
      * @type {{
      *  inventory: [number, number],
      *  status: [number, number],
+     *  skill_select: [number, number],
+     *  skill_target: [number, number],
      * }}
      */
     cursors: {
         inventory: [0, 0],
         status: [0, 0],
+        skill_select: [0, 0],
+        skill_target: [0, 0],
     },
     /**
      * Whether the status shows as much as possible or not

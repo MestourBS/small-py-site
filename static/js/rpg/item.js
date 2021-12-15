@@ -325,6 +325,9 @@ export function create_items() {
             content: '☘',
             id: 'clover',
             name: gettext('games_rpg_items_clover'),
+            on_use: {
+                magic: 5,
+            },
         },
         {
             content: '🔥',

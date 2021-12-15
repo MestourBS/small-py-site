@@ -16,11 +16,15 @@
  */
 import { Tile } from './tile.js';
 import { Item } from './item.js';
+import { Entity } from './entity.js';
 import { canvas } from './canvas.js';
-import { Direction } from './coords.js';
+import { coords_distance, Direction } from './coords.js';
 import { number_between } from './primitives.js';
-import { display_size, get_theme_value, inventory_items_per_row, tile_size } from './display.js';
+import { display_size, entity_skills_per_row, get_theme_value, inventory_items_per_row, tile_size } from './display.js';
 import globals from './globals.js';
+/**
+ * @typedef {import('./skills.js').Skill} Skill
+ */
 
 /**
  * Game keybinds
@@ -32,13 +36,15 @@ import globals from './globals.js';
  * Composite building is also done in an alphabetical way, so alt+ctrl+key is correct, unlike ctrl+alt+key.
  *
  * - Actions are in-game actions (movement, attack, etc.)
- * - Others are other actions (pause, resume, inventory, etc.)
+ * - Others are other global actions (pause, resume, inventory, etc.)
  *
  * @type {{
  *  playing: {[k: string]: (keyof actions)[]},
  *  pause: {[k: string]: (keyof actions)[]},
  *  inventory: {[k: string]: (keyof actions)[]},
  *  status: {[k: string]: (keyof actions)[]},
+ *  skills: {[k: string]: (keyof actions)[]},
+ *  skill_targeting: {[k: string]: (keyof actions)[]},
  *  others: {[k: string]: (keyof actions)[]},
  * }}
  */
@@ -54,6 +60,7 @@ const keybinds = {
         'arrowup': ['move_player_up'],
         'i': ['show_inventory'],
         'o': ['show_status'],
+        'k': ['show_skills'],
     },
     pause: {},
     inventory: {
@@ -71,7 +78,37 @@ const keybinds = {
         'e': ['toggle_equip_inventory_selected'],
     },
     status: {
+        's': ['move_cursor_status_down'],
+        'w': ['move_cursor_status_up'],
+        'arrowdown': ['move_cursor_status_down'],
+        'arrowup': ['move_cursor_status_up'],
         'o': ['hide_status'],
+    },
+    skills: {
+        'a': ['move_cursor_skill_select_left'],
+        'd': ['move_cursor_skill_select_right'],
+        's': ['move_cursor_skill_select_down'],
+        'w': ['move_cursor_skill_select_up'],
+        'arrowleft': ['move_cursor_skill_select_left'],
+        'arrowright': ['move_cursor_skill_select_right'],
+        'arrowdown': ['move_cursor_skill_select_down'],
+        'arrowup': ['move_cursor_skill_select_up'],
+        ' ': ['select_skill_selected'],
+        'k': ['hide_skills'],
+    },
+    skill_targeting: {
+        'a': ['move_cursor_skill_target_left'],
+        'd': ['move_cursor_skill_target_right'],
+        's': ['move_cursor_skill_target_down'],
+        'w': ['move_cursor_skill_target_up'],
+        'arrowleft': ['move_cursor_skill_target_left'],
+        'arrowright': ['move_cursor_skill_target_right'],
+        'arrowdown': ['move_cursor_skill_target_down'],
+        'arrowup': ['move_cursor_skill_target_up'],
+        'k': ['change_skill'],
+        'q': ['cancel_skill'],
+        ' ': ['use_skill'],
+        //'+': ['level_skill'], //todo make it cost something
     },
     others: {
         'p': ['game_pause_toggle'],
@@ -82,6 +119,7 @@ const keybinds = {
  * Existing actions
  */
 const actions = new Proxy(Object.freeze({
+    // Player actions
     'move_player_left': {
         name: gettext('games_rpg_action_move_player_left'),
         func: () => {
@@ -106,6 +144,7 @@ const actions = new Proxy(Object.freeze({
             globals.player.move(Direction.up, 1/10);
         },
     },
+    // Cursors actions
     'move_cursor_inventory_left': {
         name: gettext('games_rpg_action_move_cursor_inventory_left'),
         func: () => {
@@ -219,8 +258,8 @@ const actions = new Proxy(Object.freeze({
     'move_cursor_inventory_up': {
         name: gettext('games_rpg_action_move_cursor_inventory_up'),
         func: () => {
-            let items_per_row = inventory_items_per_row();
             if (globals.cursors.inventory[1] <= 0) return;
+            let items_per_row = inventory_items_per_row();
 
             if (globals.cursors.inventory[0] == items_per_row) {
                 let prevs = Object.keys(globals.player.equipment).sort((a,b) => b-a).filter(n => n < globals.cursors.inventory[1]);
@@ -260,8 +299,146 @@ const actions = new Proxy(Object.freeze({
             globals.cursors.status[1] += dir[1];
         },
     },
+    'move_cursor_skill_select_up': {
+        name: gettext('games_rpg_action_move_cursor_skill_select_up'),
+        func: () => {
+            if (globals.cursors.skill_select[1] <= 0) return;
+            let skills_per_row = entity_skills_per_row();
+
+            let current_index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
+            let target_index = current_index - skills_per_row;
+
+            if (target_index in globals.player.skills) {
+                globals.cursors.skill_select[1]--;
+            }
+        },
+    },
+    'move_cursor_skill_select_down': {
+        name: gettext('games_rpg_action_move_cursor_skill_select_down'),
+        func: () => {
+            let skills_per_row = entity_skills_per_row();
+
+            let current_index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
+            let target_index = current_index + skills_per_row;
+
+            if (target_index in globals.player.skills) {
+                globals.cursors.skill_select[1]++;
+            }
+        },
+    },
+    'move_cursor_skill_select_left': {
+        name: gettext('games_rpg_action_move_cursor_skill_select_left'),
+        func: () => {
+            if (globals.cursors.skill_select.every(n => n <= 0)) return;
+            let skills_per_row = entity_skills_per_row();
+
+            let current_index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
+            let target_index = current_index - 1;
+
+            if (target_index in globals.player.skills) {
+                if (globals.cursors.skill_select[0] <= 0) {
+                    globals.cursors.skill_select[0] = skills_per_row - 1;
+                    globals.cursors.skill_select[1]--;
+                } else {
+                    globals.cursors.skill_select[0]--;
+                }
+            }
+        },
+    },
+    'move_cursor_skill_select_right': {
+        name: gettext('games_rpg_action_move_cursor_skill_select_right'),
+        func: () => {
+            let skills_per_row = entity_skills_per_row();
+
+            let current_index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
+            let target_index = current_index + 1;
+
+            if (target_index in globals.player.skills) {
+                if (globals.cursors.skill_select[0] >= skills_per_row - 1) {
+                    globals.cursors.skill_select[0] = 0;
+                    globals.cursors.skill_select[1]++;
+                } else {
+                    globals.cursors.skill_select[0]++;
+                }
+            }
+        },
+    },
+    'move_cursor_skill_target_up': {
+        name: gettext('games_rpg_action_move_cursor_skill_target_up'),
+        func: () => {
+            let skills_per_row = entity_skills_per_row();
+            const skill_target = globals.cursors.skill_target;
+
+            let index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
+            let skill = globals.player.skills[index];
+            let range = skill.range;
+            let dist = coords_distance(skill_target, globals.player);
+            let dist_next = coords_distance(skill_target.map((n,i) => n + Direction.up[i] * .1), globals.player);
+
+            if (dist_next <= range || dist_next < dist) {
+                skill_target[0] += Direction.up[0] * .1;
+                skill_target[1] += Direction.up[1] * .1;
+            }
+        },
+    },
+    'move_cursor_skill_target_down': {
+        name: gettext('games_rpg_action_move_cursor_skill_target_down'),
+        func: () => {
+            let skills_per_row = entity_skills_per_row();
+            const skill_target = globals.cursors.skill_target;
+
+            let index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
+            let skill = globals.player.skills[index];
+            let range = skill.range;
+            let dist = coords_distance(skill_target, globals.player);
+            let dist_next = coords_distance(skill_target.map((n,i) => n + Direction.down[i] * .1), globals.player);
+
+            if (dist_next <= range || dist_next < dist) {
+                skill_target[0] += Direction.down[0] * .1;
+                skill_target[1] += Direction.down[1] * .1;
+            }
+        },
+    },
+    'move_cursor_skill_target_left': {
+        name: gettext('games_rpg_action_move_cursor_skill_target_left'),
+        func: () => {
+            let skills_per_row = entity_skills_per_row();
+            const skill_target = globals.cursors.skill_target;
+
+            let index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
+            let skill = globals.player.skills[index];
+            let range = skill.range;
+            let dist = coords_distance(skill_target, globals.player);
+            let dist_next = coords_distance(skill_target.map((n,i) => n + Direction.left[i] * .1), globals.player);
+
+            if (dist_next <= range || dist_next < dist) {
+                skill_target[0] += Direction.left[0] * .1;
+                skill_target[1] += Direction.left[1] * .1;
+            }
+        },
+    },
+    'move_cursor_skill_target_right': {
+        name: gettext('games_rpg_action_move_cursor_skill_target_right'),
+        func: () => {
+            let skills_per_row = entity_skills_per_row();
+            const skill_target = globals.cursors.skill_target;
+
+            let index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
+            let skill = globals.player.skills[index];
+            let range = skill.range;
+            let dist = coords_distance(skill_target, globals.player);
+            let dist_next = coords_distance(skill_target.map((n,i) => n + Direction.right[i] * .1), globals.player);
+
+            if (dist_next <= range || dist_next < dist) {
+                skill_target[0] += Direction.right[0] * .1;
+                skill_target[1] += Direction.right[1] * .1;
+            }
+        },
+    },
+    // Cursor-position based actions
     'use_inventory_selected': {
         name: gettext('games_rpg_action_use_inventory_selected'),
+        /** @param {number?} [index] */
         func: (index = null) => {
             let items_per_row = inventory_items_per_row();
             if (globals.cursors.inventory[0] < items_per_row) {
@@ -272,6 +449,7 @@ const actions = new Proxy(Object.freeze({
     },
     'drop_inventory_selected': {
         name: gettext('games_rpg_action_drop_inventory_selected'),
+        /** @param {number?} [index] */
         func: (index = null) => {
             let items_per_row = inventory_items_per_row();
             let equip = globals.cursors.inventory[0] >= items_per_row;
@@ -288,6 +466,7 @@ const actions = new Proxy(Object.freeze({
     },
     'toggle_equip_inventory_selected': {
         name: gettext('games_rpg_action_toggle_equip_inventory_selected'),
+        /** @param {number?} [index] */
         func: (index = null) => {
             let items_per_row = inventory_items_per_row();
             if (globals.cursors.inventory[0] == items_per_row) {
@@ -299,6 +478,63 @@ const actions = new Proxy(Object.freeze({
             }
         },
     },
+    'select_skill_selected': {
+        name: gettext('games_rpg_action_select_skill_selected'),
+        /** @param {number?} [index] */
+        func: (index = null) => {
+            let skills_per_row = entity_skills_per_row();
+            let sindex = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
+            let skill = globals.player.skills[index ?? sindex];
+
+            if (skill.cost > globals.player.magic) return;
+
+            if (Object.keys(skill.on_use_target).length || skill.range > 0) {
+                globals.game_state = 'skill_targeting';
+                globals.focused_entity = {
+                    get x() { return globals.cursors.skill_target[0]; },
+                    get y() { return globals.cursors.skill_target[1]; },
+                };
+            } else if (Object.keys(skill.on_use_self).length) {
+                globals.player.use_skill(index ?? sindex);
+            }
+        },
+    },
+    'use_skill': {
+        name: gettext('games_rpg_action_use_skill'),
+        /**
+         * @param {number?} [index]
+         * @param {Entity?} [target]
+         */
+        func: (index = null, target = null) => {
+            globals.game_state = 'playing';
+            globals.focused_entity = globals.player;
+
+            let skills_per_row = entity_skills_per_row();
+            index ??= globals.cursors.skill_select[1] * skills_per_row + globals.cursors.skill_select[0];
+            // If we're further than half a tile from the player, we select a nearby target
+            if (coords_distance(globals.player, globals.cursors.skill_target) > .5) {
+                let range_x = [globals.cursors.skill_target[0] - .5, globals.cursors.skill_target[0] + .5];
+                let range_y = [globals.cursors.skill_target[1] - .5, globals.cursors.skill_target[1] + .5];
+
+                target ??= Tile.grid.find(t => number_between(t.x, ...range_x) && number_between(t.y, ...range_y));
+            }
+            globals.player.use_skill(index, target);
+        },
+    },
+    'level_skill': {
+        name: gettext('games_rpg_action_level_skill'),
+        /** @param {number?} [index] */
+        func: (index = null) => {
+            globals.game_state = 'playing';
+            globals.focused_entity = globals.player;
+
+            let skills_per_row = entity_skills_per_row();
+            index ??= globals.cursors.skill_select[1] * skills_per_row + globals.cursors.skill_select[0];
+            let skill = globals.player.skills[index];
+            skill.level++;
+        },
+    },
+    // Game state actions
     'game_pause': {
         name: gettext('games_rpg_action_game_pause'),
         func: () => {
@@ -315,6 +551,7 @@ const actions = new Proxy(Object.freeze({
         name: gettext('games_rpg_action_game_pause_toggle'),
         func: () => {
             globals.game_state = globals.game_state == 'playing' ? 'pause' : 'playing';
+            globals.focused_entity = globals.player;
         },
     },
     'show_inventory': {
@@ -345,6 +582,37 @@ const actions = new Proxy(Object.freeze({
             globals.game_state = 'playing';
         },
     },
+    'show_skills': {
+        name: gettext('games_rpg_action_show_skills'),
+        func: () => {
+            globals.game_state = 'skills';
+            globals.cursors.skill_select[0] = 0;
+            globals.cursors.skill_select[1] = 0;
+            globals.cursors.skill_target[0] = globals.player.x;
+            globals.cursors.skill_target[1] = globals.player.y;
+        },
+    },
+    'hide_skills': {
+        name: gettext('games_rpg_action_hide_skills'),
+        func: () => {
+            globals.game_state = 'playing';
+        },
+    },
+    'change_skill': {
+        name: gettext('games_rpg_action_change_skill'),
+        func: () => {
+            globals.game_state = 'skills';
+            globals.focused_entity = globals.player;
+        },
+    },
+    'cancel_skill': {
+        name: gettext('games_rpg_action_cancel_skill'),
+        func: () => {
+            globals.game_state = 'playing';
+            globals.focused_entity = globals.player;
+        },
+    },
+    // Click actions
     'open_context_menu': {
         name: gettext('games_rpg_action_open_context_menu'),
         func: () => {
@@ -363,6 +631,13 @@ const actions = new Proxy(Object.freeze({
     set: (obj, prop, val) => {},
 });
 
+/**
+ * Whether the game is in pseudo-pause
+ *
+ * The game is considered pseudo-paused if the window's focus is lost for any reason
+ *
+ * @type {boolean}
+ */
 let blur_pause = !document.hasFocus();
 /**
  * Current mouse position on the document
@@ -424,27 +699,72 @@ export function keydown(e) {
  */
 function click(x, y) {
     const player = globals.player;
-    if (globals.game_state == 'inventory') {
-        let target_x = Math.floor(x / tile_size[0]);
-        let target_y = Math.floor(y / tile_size[1]);
-        let max_rows = Math.max(Math.floor(display_size[1] / 3) - 1, 1);
-        // Empty slot, ignore it
-        if (!(target_x % 3 && target_y % 3) || target_y / 3 > max_rows) return;
-        // Inventory slots are 3 times as big as normal tiles, so further divide by 3
-        target_x = Math.floor(target_x / 3);
-        target_y = Math.floor(target_y / 3);
 
-        // Move cursor to clicked slot, if it exists
-        let items_per_row = inventory_items_per_row();
-        if (target_x == items_per_row) {
-            if (!(target_y in player.equipment)) return;
-        } else {
-            let index = target_x + target_y * items_per_row;
-            if (index && !(index in player.inventory)) return;
-        }
+    switch (globals.game_state) {
+        case 'inventory': {
+            let target_x = Math.floor(x / tile_size[0]);
+            let target_y = Math.floor(y / tile_size[1]);
+            let max_rows = Math.max(Math.floor(display_size[1] / 3) - 1, 1);
+            // Empty slot, ignore it
+            if (!(target_x % 3 && target_y % 3) || target_y / 3 > max_rows) return;
+            // Inventory slots are 3 times as big as normal tiles, so divide by 3
+            target_x = Math.floor(target_x / 3);
+            target_y = Math.floor(target_y / 3);
 
-        globals.cursors.inventory[0] = target_x;
-        globals.cursors.inventory[1] = target_y;
+            // Move cursor to clicked slot, if it exists
+            let items_per_row = inventory_items_per_row();
+            if (target_x == items_per_row) {
+                if (!(target_y in player.equipment)) return;
+            } else {
+                let index = target_x + target_y * items_per_row;
+                if (index && !(index in player.inventory)) return;
+            }
+
+            globals.cursors.inventory[0] = target_x;
+            globals.cursors.inventory[1] = target_y;
+            }
+            break;
+        case 'skills': {
+            let target_x = Math.floor(x / tile_size[0]);
+            let target_y = Math.floor(y / tile_size[1]);
+            let max_rows = Math.max(Math.floor(display_size[1] / 3) - 1, 1);
+            // Empty slot, ignore it
+            if (!(target_x % 3 && target_y % 3) || target_y / 3 > max_rows) return;
+            // Skill slots are 3 times as big as normal tiles, so divide by 3
+            target_x = Math.floor(target_x / 3);
+            target_y = Math.floor(target_y / 3);
+
+            // Move cursor to clicked slot, if it exists
+            let skills_per_row = entity_skills_per_row();
+            let index = target_x + target_y * skills_per_row;
+            if (index && !(index in player.skills)) return;
+
+            globals.cursors.skill_select[0] = target_x;
+            globals.cursors.skill_select[1] = target_y;
+            }
+            break;
+        case 'skill_targeting': {
+            const focused = globals.focused_entity;
+            let target_x = Math.floor((x / tile_size[0] + focused.x - display_size[0] / 2 - .25) * 2) / 2;
+            let target_y = Math.floor((y / tile_size[1] + focused.y - display_size[1] / 2 - .25) * 2) / 2;
+
+            // Check if outside of range
+            let skills_per_row = entity_skills_per_row();
+            let index = globals.cursors.skill_select[0] + globals.cursors.skill_select[1] * skills_per_row;
+            if (!(index in player.skills)) return;
+            let skill = player.skills[index];
+            let range = skill.range;
+
+            if (range < coords_distance(player, [target_x, target_y])) {
+                canvas.style.cursor = 'not-allowed';
+                setTimeout(() => canvas.style.cursor = null, 250);
+                return;
+            }
+
+            globals.cursors.skill_target[0] = target_x;
+            globals.cursors.skill_target[1] = target_y;
+            }
+            break;
     }
 }
 /**
@@ -454,137 +774,210 @@ function click(x, y) {
  * @param {number} y y position where the click was on the canvas
  */
 function contextmenu(x, y) {
-    const player = globals.player;
     let content;
+    const player = globals.player;
 
-    if (globals.game_state == 'playing') {
-        //todo disable when clicking on the mini status
-        let target_x = Math.floor(x / tile_size[0] + player.x - display_size[0] / 2);
-        let target_y = Math.floor(y / tile_size[1] + player.y - display_size[1] / 2);
+    switch (globals.game_state) {
+        case 'playing': {
+            //todo disable when clicking on the mini status
+            const focused = globals.focused_entity;
+            let target_x = Math.floor(x / tile_size[0] + focused.x - display_size[0] / 2);
+            let target_y = Math.floor(y / tile_size[1] + focused.y - display_size[1] / 2);
 
-        // Get content at the target
-        let targets = Tile.visible_grid.filter(t => Math.round(t.x) == target_x && Math.round(t.y) == target_y);
-        if (!targets.length) return;
+            // Get content at the target
+            let targets = Tile.visible_grid.filter(t => Math.round(t.x) == target_x && Math.round(t.y) == target_y);
+            if (!targets.length) return;
 
-        // Show options
-        content = document.createElement('table');
-        content.style.cursor = 'default';
-        targets.forEach(t => {
-            // Make the context row contents
-            let mini_canvas = document.createElement('canvas');
-            let mini_context = mini_canvas.getContext('2d');
-            mini_canvas.style.width = `${tile_size[0]}px`;
-            mini_canvas.style.height = `${tile_size[1]}px`;
-            mini_canvas.style.border = `${get_theme_value('border_context_menu_color')} 1px solid`;
-            mini_canvas.width = tile_size[0];
-            mini_canvas.height = tile_size[1];
-            let row = document.createElement('tr');
-            let cell_canvas = document.createElement('td');
-            let cell_name = document.createElement('td');
-            let cell_options = document.createElement('td');
-            cell_options.classList.add('option-selector');
-            cell_canvas.appendChild(mini_canvas);
-            row.appendChild(cell_canvas);
-            row.appendChild(cell_name);
-            row.appendChild(cell_options);
-            content.appendChild(row);
+            // Show options
+            content = document.createElement('table');
+            content.style.cursor = 'default';
+            targets.forEach(t => {
+                // Make the context row contents
+                let mini_canvas = document.createElement('canvas');
+                let mini_context = mini_canvas.getContext('2d');
+                mini_canvas.style.width = `${tile_size[0]}px`;
+                mini_canvas.style.height = `${tile_size[1]}px`;
+                mini_canvas.style.border = `${get_theme_value('border_context_menu_color')} 1px solid`;
+                mini_canvas.width = tile_size[0];
+                mini_canvas.height = tile_size[1];
+                let row = document.createElement('tr');
+                let cell_canvas = document.createElement('td');
+                let cell_name = document.createElement('td');
+                let cell_options = document.createElement('td');
+                cell_options.classList.add('option-selector');
+                cell_canvas.appendChild(mini_canvas);
+                row.appendChild(cell_canvas);
+                row.appendChild(cell_name);
+                row.appendChild(cell_options);
+                content.appendChild(row);
 
-            // Draw in the context menu
-            t.draw(0, 0, mini_context);
-            cell_name.textContent = t.name ?? (t.solid ? 'wall' : 'floor');
-            let has_options = false;
-            if (t instanceof Item) {
-                has_options ||= Object.keys(t.passive).length || Object.keys(t.on_use).length || t.equip_slot != null;
-            }
-            // Good enough
-            cell_options.innerHTML = has_options ? '▶' : '';
-
-            let options_shown = false;
-            cell_options.addEventListener('click', e => {
-                if (t.constructor == Tile) return;
-                content.querySelectorAll('.option').forEach(e => content.removeChild(e));
-                content.querySelectorAll('.option-selector').forEach(e => e.textContent = e.textContent.replace('▼', '▶'));
-
-                options_shown = !options_shown;
-                if (options_shown) {
-                    let options = [];
-                    if (t instanceof Item) {
-                        if (Object.keys(t.passive).length) options.push(gettext('games_rpg_item_has_passive'));
-                        if (Object.keys(t.on_use).length) options.push(gettext('games_rpg_item_can_use'));
-                        if (t.equip_slot != null) options.push(gettext('games_rpg_item_can_equip'));
-                    }
-                    if (!options.length) return;
-                    cell_options.textContent = '▼';
-                    options = options.map(o => {
-                        let row = document.createElement('tr');
-                        row.classList.add('option');
-                        let cells = [
-                            document.createElement('td'),
-                            document.createElement('td'),
-                        ];
-                        cells[1].innerText = o;
-                        cells[1].colSpan = 2;
-                        cells.forEach(c => row.appendChild(c));
-                        return row;
-                    }).reverse();
-
-                    options.forEach(o => {
-                        content.insertBefore(o, row.nextSibling);
+                // Draw in the context menu
+                t.draw(0, 0, mini_context);
+                cell_name.textContent = t.name ?? (t.solid ? 'wall' : 'floor');
+                let has_options = false;
+                if (t instanceof Item) {
+                    has_options ||= Object.keys(t.passive).length || Object.keys(t.on_use).length || t.equip_slot != null;
+                } else if (t instanceof Entity) {
+                    let skills = player.skills.filter(s => {
+                        if (!Object.keys(s.on_use_target).length) return false;
+                        if (coords_distance(t, player) > s.range + .1) return false;
+                        if (s.cost > player.magic) return false;
+                        return true;
                     });
+                    has_options ||= t.health > 0 && skills.length;
                 }
-            });
-        });
-    } else if (globals.game_state == 'inventory') {
-        let target_x = Math.floor(x / tile_size[0]);
-        let target_y = Math.floor(y / tile_size[1]);
-        let max_rows = Math.max(Math.floor(display_size[1] / 3) - 1, 1);
-        // Empty slot, ignore it
-        if (!(target_x % 3 && target_y % 3) || target_y / 3 > max_rows) return;
-        // Inventory slots are 3 times as big as normal tiles, so further divide by 3
-        target_x = Math.floor(target_x / 3);
-        target_y = Math.floor(target_y / 3);
+                // Good enough
+                cell_options.innerHTML = has_options ? '▶' : '';
 
-        // Get contents at the target
-        let items_per_row = inventory_items_per_row();
-        let is_equipped = target_x == items_per_row;
-        let target = null;
-        let index;
-        if (is_equipped) {
-            if (target_y in player.equipment) {
-                target = player.equipment[target_y];
-                index = target_y;
+                let options_shown = false;
+                cell_options.addEventListener('click', e => {
+                    if (t.constructor == Tile) return;
+                    content.querySelectorAll('.option').forEach(e => content.removeChild(e));
+                    content.querySelectorAll('.option-selector').forEach(e => e.textContent = e.textContent.replace('▼', '▶'));
+
+                    options_shown = !options_shown;
+                    if (options_shown) {
+                        /** @type {(string|[string, [string, ...any]])[]} */
+                        let options = [];
+                        if (t instanceof Item) {
+                            if (Object.keys(t.passive).length) options.push(gettext('games_rpg_item_has_passive'));
+                            if (Object.keys(t.on_use).length) options.push(gettext('games_rpg_item_can_use'));
+                            if (t.equip_slot != null) options.push(gettext('games_rpg_item_can_equip'));
+                        } else if (t instanceof Entity) {
+                            player.skills.filter(s => Object.keys(s.on_use_target).length && coords_distance(t, player) <= s.range)
+                                .forEach(s => {
+                                    options.push([`${actions.use_skill.name}: ${s.name} (${s.level})`, ['use_skill', s, t]]);
+                                });
+                        }
+                        if (!options.length) return;
+                        cell_options.textContent = '▼';
+                        options = options.map(o => {
+                            let row = document.createElement('tr');
+                            row.classList.add('option');
+                            let cells = [
+                                document.createElement('td'),
+                                document.createElement('td'),
+                            ];
+                            if (typeof o == 'string') {
+                                cells[1].innerText = o;
+                            } else if (Array.isArray(o)) {
+                                let [text, action] = o;
+                                cells[1].innerText = text;
+                                let [a, ...args] = action;
+                                console.log(args);
+                                row.addEventListener('click', e => {
+                                    actions[a].func(...args);
+                                });
+                                row.style.cursor = 'pointer';
+                            }
+                            cells[1].colSpan = 2;
+                            cells.forEach(c => row.appendChild(c));
+                            return row;
+                        }).reverse();
+
+                        options.forEach(o => {
+                            content.insertBefore(o, row.nextSibling);
+                        });
+                    }
+                });
+            });
             }
-        } else {
-            index = target_x + target_y * items_per_row;
-            if (index in player.inventory) target = player.inventory[index][0];
-        }
-        // There's no item there
-        if (!target) return;
+            break;
+        case 'inventory': {
+            let target_x = Math.floor(x / tile_size[0]);
+            let target_y = Math.floor(y / tile_size[1]);
+            let max_rows = Math.max(Math.floor(display_size[1] / 3) - 1, 1);
+            // Empty slot, ignore it
+            if (!(target_x % 3 && target_y % 3) || target_y / 3 > max_rows) return;
+            // Inventory slots are 3 times as big as normal tiles, so divide by 3
+            target_x = Math.floor(target_x / 3);
+            target_y = Math.floor(target_y / 3);
 
-        // Show options
-        let options = [
-            'drop_inventory_selected',
-        ];
-        if (Object.keys(target.on_use).length && !is_equipped) options.push('use_inventory_selected');
-        if (target.equip_slot != null) options.push('toggle_equip_inventory_selected');
+            // Get contents at the target
+            let items_per_row = inventory_items_per_row();
+            let is_equipped = target_x == items_per_row;
+            let target = null;
+            let index;
+            if (is_equipped) {
+                if (target_y in player.equipment) {
+                    target = player.equipment[target_y];
+                    index = target_y;
+                }
+            } else {
+                index = target_x + target_y * items_per_row;
+                if (index in player.inventory) target = player.inventory[index][0];
+            }
+            // There's no item there
+            if (!target) return;
 
-        content = document.createElement('table');
-        content.style.cursor = 'cursor';
-        options = options.map(o => {
-            let row = document.createElement('tr');
-            let cell = document.createElement('td');
-            row.style.cursor = 'pointer';
-            row.appendChild(cell);
+            // Show options
+            let options = [
+                'drop_inventory_selected',
+            ];
+            if (Object.keys(target.on_use).length && !is_equipped) options.push('use_inventory_selected');
+            if (target.equip_slot != null) options.push('toggle_equip_inventory_selected');
 
-            cell.innerText = actions[o].name;
-            cell.addEventListener('click', e => {
-                actions[o].func(index);
-                hide_context_menu();
+            content = document.createElement('table');
+            content.style.cursor = 'cursor';
+            options.forEach(o => {
+                let row = document.createElement('tr');
+                let cell = document.createElement('td');
+                row.style.cursor = 'pointer';
+                row.appendChild(cell);
+
+                cell.innerText = actions[o].name;
+                cell.addEventListener('click', e => {
+                    actions[o].func(index);
+                    hide_context_menu();
+                });
+
+                content.appendChild(row);
             });
+            }
+            break;
+        case 'skills': {
+            let target_x = Math.floor(x / tile_size[0]);
+            let target_y = Math.floor(y / tile_size[1]);
+            let max_rows = Math.max(Math.floor(display_size[1] / 3) - 1, 1);
+            // Empty slot, ignore it
+            if (!(target_x % 3 && target_y % 3) || target_y / 3 > max_rows) return;
+            // Skill slots are 3 times as big as normal tiles, so divide by 3
+            target_x = Math.floor(target_x / 3);
+            target_y = Math.floor(target_y / 3);
 
-            content.appendChild(row);
-        });
+            // Get contents at the target
+            let skills_per_row = entity_skills_per_row();
+            /** @type {Skill} */
+            let target = null;
+            let index = target_x + target_y * skills_per_row;
+            if (index in player.skills) target = player.skills[index];
+            // There's no skill there
+            if (!target) return;
+
+            // Show options
+            let options = [];
+            if (player.magic >= target.cost) options.push('select_skill_selected');
+
+            content = document.createElement('table');
+            content.style.cursor = 'cursor';
+            options.forEach(o => {
+                let row = document.createElement('tr');
+                let cell = document.createElement('td');
+                row.style.cursor = 'pointer';
+                row.appendChild(cell);
+
+                cell.innerText = actions[o].name;
+                cell.addEventListener('click', e => {
+                    actions[o].func(index);
+                    hide_context_menu();
+                });
+
+                content.appendChild(row);
+            });
+            }
+            break;
     }
+
     show_context_menu(x + tile_size[0] * .5, y + tile_size[1] * 2, content);
 }
 /**

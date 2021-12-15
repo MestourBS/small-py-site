@@ -19,15 +19,15 @@ export class Tile {
     static #visible_grid = false;
     /** @type {Tile[]|false} */
     static #solid_tiles = false;
-    static #player_x;
-    static #player_y;
+    static focused_x;
+    static focused_y;
 
     /** @type {Tile[]} */
     static get visible_grid() {
-        if (this.#player_x != globals.player.x || this.#player_y != globals.player.y) {
+        if (this.focused_x != globals.focused_entity.x || this.focused_y != globals.focused_entity.y) {
             this.#visible_grid = false;
-            this.#player_x = globals.player.x;
-            this.#player_y = globals.player.y;
+            this.focused_x = globals.focused_entity.x;
+            this.focused_y = globals.focused_entity.y;
         }
         if (this.#visible_grid === false) {
             this.#visible_grid = this.grid.filter(t => t.is_visible);
@@ -58,7 +58,7 @@ export class Tile {
     /** @type {null|(entity: Entity, this: Tile<T>) => void} */
     #interacted;
 
-    /** @type {((content: string) => Color)[]} */
+    /** @type {((content: string) => T)[]} */
     #converters = [
         Color.from_hex,
         Color.from_css_rgb,
@@ -77,9 +77,11 @@ export class Tile {
      * @param {boolean} [params.override=true]
      */
     constructor({x, y, z, content, solid=false, insert=true, interacted=null, override=true}) {
-        if (typeof x != 'number') throw new TypeError(`Invalid tile parameter x: ${x}`);
-        if (typeof y != 'number') throw new TypeError(`Invalid tile parameter y: ${y}`);
-        if (typeof z != 'number') throw new TypeError(`Invalid tile parameter z: ${z}`);
+        override &&= insert;
+
+        if (typeof x != 'number') throw new TypeError(`Invalid Tile parameter x: ${x}`);
+        if (typeof y != 'number') throw new TypeError(`Invalid Tile parameter y: ${y}`);
+        if (typeof z != 'number') throw new TypeError(`Invalid Tile parameter z: ${z}`);
         if (typeof content == 'function'); // Don't bind to this, it will break future rebinds
         else if (isinstance(content, Color, HTMLCanvasElement, HTMLImageElement, SVGImageElement, HTMLVideoElement, ImageBitmap));
         else if (typeof content == 'string') {
@@ -90,8 +92,8 @@ export class Tile {
                     break;
                 } catch {}
             }
-        } else throw new TypeError(`Invalid tile parameter content: ${content}`);
-        if (typeof interacted != 'function' && interacted != null) throw new TypeError(`Invalid tile parameter interacted: ${interacted}`);
+        } else throw new TypeError(`Invalid Tile parameter content: ${content}`);
+        if (typeof interacted != 'function' && interacted != null) throw new TypeError(`Invalid Tile parameter interacted: ${interacted}`);
 
         this.x = x;
         this.y = y;
@@ -143,10 +145,10 @@ export class Tile {
     }
 
     get is_visible() {
-        let x_low = globals.player.x - display_size[0] / 2 - 1;
-        let x_high = globals.player.x + display_size[0] / 2;
-        let y_low = globals.player.y - display_size[1] / 2 - 1;
-        let y_high = globals.player.y + display_size[1] / 2;
+        let x_low = globals.focused_entity.x - display_size[0] / 2 - 1;
+        let x_high = globals.focused_entity.x + display_size[0] / 2;
+        let y_low = globals.focused_entity.y - display_size[1] / 2 - 1;
+        let y_high = globals.focused_entity.y + display_size[1] / 2;
 
         return this.x >= x_low && this.x <= x_high && this.y >= y_low && this.y <= y_high;
     }
@@ -159,8 +161,8 @@ export class Tile {
     draw(x = null, y = null, context = null) {
         context ??= canvas_context;
 
-        let x_start = x ?? (this.x - (globals.player.x - display_size[0] / 2)) * tile_size[0];
-        let y_start = y ?? (this.y - (globals.player.y - display_size[1] / 2)) * tile_size[1];
+        let x_start = x ?? (this.x - (globals.focused_entity.x - display_size[0] / 2)) * tile_size[0];
+        let y_start = y ?? (this.y - (globals.focused_entity.y - display_size[1] / 2)) * tile_size[1];
         let content = this.#content;
 
         if (typeof content == 'function') {

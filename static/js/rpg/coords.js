@@ -1,5 +1,6 @@
 import { Tile } from './tile.js';
 import { Entity } from './entity.js';
+import { number_between } from './primitives.js';
 import globals from './globals.js';
 
 /**
@@ -10,9 +11,13 @@ import globals from './globals.js';
  * @enum {readonly [number, number]}
  */
 export const Direction = Object.freeze({
+    /** @type {readonly [number, number]} */
     'right': Object.freeze([1, 0]),
+    /** @type {readonly [number, number]} */
     'up': Object.freeze([0, -1]),
+    /** @type {readonly [number, number]} */
     'left': Object.freeze([-1, 0]),
+    /** @type {readonly [number, number]} */
     'down': Object.freeze([0, 1]),
 
     /** @type {([r,d]: [number, number]) => readonly [number, number]} */
@@ -65,11 +70,16 @@ export function surrounding_square(center_x, center_y, radius) {
 /**
  * Calculates the distance between 2 points
  *
- * @param {[number, number]} point_a
- * @param {[number, number]} point_b
+ * @param {[number, number]|{x: number, y: number}} point_a
+ * @param {[number, number]|{x: number, y: number}} point_b
  * @returns {number}
  */
 export function coords_distance(point_a, point_b) {
+    if ('x' in point_a != 'y' in point_a) throw new TypeError(`Point a has either 'x' or 'y', but not both`);
+    if ('x' in point_b != 'y' in point_b) throw new TypeError(`Point b has either 'x' or 'y', but not both`);
+
+    if ('x' in point_a && 'y' in point_a) point_a = [point_a.x, point_a.y];
+    if ('x' in point_b && 'y' in point_b) point_b = [point_b.x, point_b.y];
     if ([...point_a, ...point_b].some(n => isNaN(n) || !isFinite(n))) return Infinity;
     let dist_x = Math.abs(point_a[0] - point_b[0]);
     let dist_y = Math.abs(point_a[1] - point_b[1]);
@@ -92,4 +102,16 @@ export function can_walk(coords, excluded=[]) {
         globals.can_walked[coords.toString()] = cw;
     }
     return globals.can_walked[coords.toString()] && !Entity.entities.some(e => !excluded.includes(e) && e.solid && Math.round(e.x) == x && Math.round(e.y) == y);
+}
+/**
+ * Checks if the coordinates are between min and max
+ *
+ * @param {[number, number]} coords
+ * @param {[number, number]} cornera
+ * @param {[number, number]} cornerb
+ *
+ * @returns {boolean}
+ */
+export function coords_between(coords, cornera, cornerb) {
+    return number_between(coords[0], cornera[0], cornerb[0]) && number_between(coords[1], cornera[1], cornerb[1]);
 }

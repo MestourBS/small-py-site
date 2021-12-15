@@ -212,5 +212,3 @@ export const Random = Object.freeze({
     },
 });
 export default Random;
-
-//? object functions as module functions
