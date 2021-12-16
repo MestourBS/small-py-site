@@ -199,7 +199,7 @@ export const Random = Object.freeze({
         const total_weight = 412;
         let target_weight = Math.floor(Random.range(0, total_weight + 1));
         let i = -1;
-        while (target_weight >= 0 && i < emoji_ranges.length) {
+        while (target_weight >= 0 && i < emoji_ranges.length - 1) {
             i++;
             let range = emoji_ranges[i];
             target_weight -= get_weight(range);

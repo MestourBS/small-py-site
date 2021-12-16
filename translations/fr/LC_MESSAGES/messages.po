@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-12-15 13:33+0100\n"
+"POT-Creation-Date: 2021-12-16 14:54+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -694,176 +694,188 @@ msgid "games_rpg_status_range"
 msgstr "Portée"
 
 #: static/js/rpg/canvas.js:56
+msgid "games_rpg_status_kills"
+msgstr "Entité(s) tuée(s)"
+
+#: static/js/rpg/canvas.js:57
 msgid "games_rpg_status_inventory"
 msgstr "Inventaire"
 
-#: static/js/rpg/canvas.js:57
+#: static/js/rpg/canvas.js:58
+msgid "games_rpg_status_skills"
+msgstr "Capacités"
+
+#: static/js/rpg/canvas.js:59
+msgid "games_rpg_status_skills_total_levels"
+msgstr "niveaux totaux"
+
+#: static/js/rpg/canvas.js:60
 msgid "games_rpg_status_defense"
 msgstr "Défense %(type)s"
 
-#: static/js/rpg/canvas.js:58
+#: static/js/rpg/canvas.js:61
 msgid "games_rpg_status_damage"
 msgstr "Dégats %(type)s"
 
-#: static/js/rpg/canvas.js:70
+#: static/js/rpg/canvas.js:73
 msgid "games_rpg_slot_head"
 msgstr "Tête"
 
-#: static/js/rpg/canvas.js:74
+#: static/js/rpg/canvas.js:77
 msgid "games_rpg_slot_face"
 msgstr "Visage"
 
-#: static/js/rpg/canvas.js:78
+#: static/js/rpg/canvas.js:81
 msgid "games_rpg_slot_neck"
 msgstr "Cou"
 
-#: static/js/rpg/canvas.js:82
+#: static/js/rpg/canvas.js:85
 msgid "games_rpg_slot_chest"
 msgstr "Torse"
 
-#: static/js/rpg/canvas.js:86
+#: static/js/rpg/canvas.js:89
 msgid "games_rpg_slot_arm"
 msgstr "Bras"
 
-#: static/js/rpg/canvas.js:90
+#: static/js/rpg/canvas.js:93
 msgid "games_rpg_slot_hand"
 msgstr "Main"
 
-#: static/js/rpg/canvas.js:94
+#: static/js/rpg/canvas.js:97
 msgid "games_rpg_slot_leg"
 msgstr "Jambe"
 
-#: static/js/rpg/canvas.js:98
+#: static/js/rpg/canvas.js:101
 msgid "games_rpg_slot_foot"
 msgstr "Pied"
 
-#: static/js/rpg/canvas.js:277 static/js/rpg/canvas.js:349
-#: static/js/rpg/canvas.js:477
+#: static/js/rpg/canvas.js:285 static/js/rpg/canvas.js:357
+#: static/js/rpg/canvas.js:489
 msgid "games_rpg_status_name"
 msgstr "Nom"
 
-#: static/js/rpg/canvas.js:277 static/js/rpg/canvas.js:349
-#: static/js/rpg/canvas.js:477
+#: static/js/rpg/canvas.js:285 static/js/rpg/canvas.js:357
+#: static/js/rpg/canvas.js:489
 msgid "games_rpg_status_name_unnamed"
 msgstr "Sans nom"
 
-#: static/js/rpg/canvas.js:279 static/js/rpg/canvas.js:479
+#: static/js/rpg/canvas.js:287 static/js/rpg/canvas.js:491
 msgid "games_rpg_status_description"
 msgstr "Description"
 
-#: static/js/rpg/canvas.js:281
+#: static/js/rpg/canvas.js:289
 msgid "games_rpg_status_on_use"
 msgstr "Sur utilisation"
 
-#: static/js/rpg/canvas.js:295 static/js/rpg/canvas.js:487
+#: static/js/rpg/canvas.js:303 static/js/rpg/canvas.js:499
 msgid "games_rpg_status_passive"
 msgstr "Passif"
 
-#: static/js/rpg/canvas.js:311
+#: static/js/rpg/canvas.js:319
 msgid "games_rpg_status_equipped"
 msgstr "Quand équipé"
 
-#: static/js/rpg/canvas.js:317
+#: static/js/rpg/canvas.js:325
 msgid "games_rpg_status_equip_slot"
 msgstr "Equipé sur %(slot)s"
 
-#: static/js/rpg/canvas.js:371
+#: static/js/rpg/canvas.js:379
 msgid "defense"
 msgstr ""
 
-#: static/js/rpg/canvas.js:378
+#: static/js/rpg/canvas.js:386
 msgid "damage"
 msgstr ""
 
-#: static/js/rpg/canvas.js:391
+#: static/js/rpg/canvas.js:400
 msgid "games_rpg_status_items"
 msgstr "objets"
 
-#: static/js/rpg/canvas.js:391
+#: static/js/rpg/canvas.js:400
 msgid "games_rpg_status_item"
 msgstr "objet"
 
-#: static/js/rpg/canvas.js:482
+#: static/js/rpg/canvas.js:494
 msgid "games_rpg_status_cost"
 msgstr "Coût"
 
-#: static/js/rpg/canvas.js:501
+#: static/js/rpg/canvas.js:513
 msgid "games_rpg_status_on_use_self"
 msgstr "Sur utilisation sur soi"
 
-#: static/js/rpg/canvas.js:515
+#: static/js/rpg/canvas.js:527
 msgid "games_rpg_status_on_use_target"
 msgstr "Sur utilisation sur cible"
 
-#: static/js/rpg/display.js:60
+#: static/js/rpg/display.js:61
 msgid "games_rpg_themes_dark"
 msgstr "Mode sombre"
 
-#: static/js/rpg/display.js:114
+#: static/js/rpg/display.js:116
 msgid "games_rpg_theme_text_font"
 msgstr "Police du texte"
 
-#: static/js/rpg/display.js:115
+#: static/js/rpg/display.js:117
 msgid "games_rpg_theme_text_color"
 msgstr "Couleur du text"
 
-#: static/js/rpg/display.js:116
+#: static/js/rpg/display.js:118
 msgid "games_rpg_theme_text_item_amount_color"
 msgstr "Couleur du nombre d'objet"
 
-#: static/js/rpg/display.js:117
+#: static/js/rpg/display.js:119
 msgid "games_rpg_theme_text_very_low_health_color"
 msgstr "Couleur vie très basse"
 
-#: static/js/rpg/display.js:118
+#: static/js/rpg/display.js:120
 msgid "games_rpg_theme_text_low_health_color"
 msgstr "Couleur vie basse"
 
-#: static/js/rpg/display.js:119
+#: static/js/rpg/display.js:121
 msgid "games_rpg_theme_text_item_equipped_color"
 msgstr "Couleur quand équippé"
 
-#: static/js/rpg/display.js:120
+#: static/js/rpg/display.js:122
 msgid "games_rpg_theme_text_item_has_slot_color"
 msgstr "Couleur quand il est possible d'équipper"
 
-#: static/js/rpg/display.js:121
+#: static/js/rpg/display.js:123
 msgid "games_rpg_theme_text_item_has_not_slot_color"
 msgstr "Couleur quand il n'est pas possible d'équipper"
 
-#: static/js/rpg/display.js:124
+#: static/js/rpg/display.js:126
 msgid "games_rpg_theme_border_tooltip_color"
 msgstr "Couleur de la bordure de l'info-bulle"
 
-#: static/js/rpg/display.js:125
+#: static/js/rpg/display.js:127
 msgid "games_rpg_theme_border_inventory_cell_color"
 msgstr "Couleur de la bordure des cases d'inventaire"
 
-#: static/js/rpg/display.js:126
+#: static/js/rpg/display.js:128
 msgid "games_rpg_theme_border_equipment_cell_color"
 msgstr "Couleur de la bordure des cases d'équipement"
 
-#: static/js/rpg/display.js:127
+#: static/js/rpg/display.js:129
 msgid "games_rpg_theme_border_inventory_cursor_color"
 msgstr "Couleur du curseur de l'inventaire"
 
-#: static/js/rpg/display.js:130
+#: static/js/rpg/display.js:132
 msgid "games_rpg_theme_background_tooltip_color"
 msgstr "Couleur de fond de l'info-bulle"
 
-#: static/js/rpg/display.js:131
+#: static/js/rpg/display.js:133
 msgid "games_rpg_theme_background_inventory_color"
 msgstr "Couleur de fond de l'inventaire"
 
-#: static/js/rpg/display.js:132
+#: static/js/rpg/display.js:134
 msgid "games_rpg_theme_background_equipment_cell_locked_color"
 msgstr "Couleur de fond des cases d'équipement non disponibles"
 
-#: static/js/rpg/display.js:133
+#: static/js/rpg/display.js:135
 msgid "games_rpg_theme_background_entity_health_color"
 msgstr "Couleur de fond de vie"
 
-#: static/js/rpg/display.js:134
+#: static/js/rpg/display.js:136
 msgid "games_rpg_theme_background_entity_missing_health_color"
 msgstr "Couleur de fond de vie manquante"
 
@@ -883,39 +895,43 @@ msgstr "Gateau"
 msgid "games_rpg_items_bricks"
 msgstr "Briques"
 
-#: static/js/rpg/item.js:307
+#: static/js/rpg/item.js:313
 msgid "games_rpg_items_sparks"
 msgstr "Etincelles"
 
-#: static/js/rpg/item.js:316
+#: static/js/rpg/item.js:322
 msgid "games_rpg_items_flag"
 msgstr "Drapeau"
 
-#: static/js/rpg/item.js:325
+#: static/js/rpg/item.js:331
 msgid "games_rpg_items_gift"
 msgstr "Cadeau"
 
-#: static/js/rpg/item.js:330
+#: static/js/rpg/item.js:336
 msgid "games_rpg_items_clover"
 msgstr "Trèfle"
 
-#: static/js/rpg/item.js:335
+#: static/js/rpg/item.js:344
 msgid "games_rpg_items_fire"
 msgstr "Feu"
 
-#: static/js/rpg/item.js:340
+#: static/js/rpg/item.js:353
 msgid "games_rpg_items_cash"
 msgstr "Argent"
+
+#: static/js/rpg/item.js:358
+msgid "games_rpg_items_video_game"
+msgstr "Jeu Vidéo"
 
 #: static/js/rpg/skills.js:336
 msgid "games_rpg_skills_rest"
 msgstr "Repos"
 
-#: static/js/rpg/skills.js:347
+#: static/js/rpg/skills.js:348
 msgid "games_rpg_skills_see"
 msgstr "Vision"
 
-#: static/js/rpg/skills.js:360
+#: static/js/rpg/skills.js:361
 msgid "games_rpg_skills_stab"
 msgstr "Poignarder"
 

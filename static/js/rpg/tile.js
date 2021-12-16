@@ -21,6 +21,12 @@ export class Tile {
     static #solid_tiles = false;
     static focused_x;
     static focused_y;
+    /** @type {((content: string) => T)[]} */
+    static #converters = [
+        Color.from_hex,
+        Color.from_css_rgb,
+        Color.from_html_name,
+    ];
 
     /** @type {Tile[]} */
     static get visible_grid() {
@@ -46,24 +52,30 @@ export class Tile {
 
         this.#visible_grid = value;
     }
+    /** @type {Tile[]} */
     static get solid_tiles() {
         if (this.#solid_tiles === false) {
             this.#solid_tiles = this.grid.filter(t => t.solid);
         }
         return this.#solid_tiles;
     }
+    /** @param {Tile[]|false} value */
+    static set solid_tiles(value) {
+        if (value === false) {
+            this.#solid_tiles = false;
+            return;
+        }
+
+        if (!Array.isArray(value)) value = [];
+        else if (!value.every(t => t instanceof Tile)) value = value.filter(t => t instanceof Tile);
+
+        this.#solid_tiles = value;
+    }
 
     /** @type {T} */
     #content;
     /** @type {null|(entity: Entity, this: Tile<T>) => void} */
     #interacted;
-
-    /** @type {((content: string) => T)[]} */
-    #converters = [
-        Color.from_hex,
-        Color.from_css_rgb,
-        Color.from_html_name,
-    ];
 
     /**
      * @param {Object} params
@@ -85,7 +97,7 @@ export class Tile {
         if (typeof content == 'function'); // Don't bind to this, it will break future rebinds
         else if (isinstance(content, Color, HTMLCanvasElement, HTMLImageElement, SVGImageElement, HTMLVideoElement, ImageBitmap));
         else if (typeof content == 'string') {
-            for (let conv of this.#converters) {
+            for (let conv of Tile.#converters) {
                 try {
                     let c = conv(content);
                     content = c;
@@ -113,7 +125,7 @@ export class Tile {
         if (typeof content == 'function') {
             content = content;
         } else if (typeof content == 'string') {
-            for (let conv of this.#converters) {
+            for (let conv of Tile.#converters) {
                 try {
                     let c = conv(content);
                     content = c;
@@ -169,7 +181,7 @@ export class Tile {
             content.call(this, x ?? x_start, y ?? y_start, context);
         } else if (typeof content == 'string') {
             context.textAlign = 'center';
-            context.fillStyle = '#000';
+            context.fillStyle = get_theme_value('text_default_tile_color');
             context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
             x_start += tile_size[0] / 2;
             y_start += tile_size[1] - 5;

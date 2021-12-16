@@ -1,5 +1,5 @@
 import { Tile } from './tile.js';
-import { beautify, number_between } from './primitives.js';
+import { beautify, capitalize, number_between } from './primitives.js';
 import { AutonomousEntity } from './entity.js';
 import { tile_size, display_size, get_theme_value, inventory_items_per_row, entity_skills_per_row } from './display.js';
 import globals from './globals.js';
@@ -53,7 +53,10 @@ const attributes_names = {
     'magic_max': gettext('games_rpg_status_magic_max'),
     'speed': gettext('games_rpg_status_speed'),
     'range': gettext('games_rpg_status_range'),
+    'kills': gettext('games_rpg_status_kills'),
     'inventory': gettext('games_rpg_status_inventory'),
+    'skills': gettext('games_rpg_status_skills'),
+    'skills_total_levels': gettext('games_rpg_status_skills_total_levels'),
     'defense': gettext('games_rpg_status_defense', {type: '%(type)s'}),
     'damage': gettext('games_rpg_status_damage', {type: '%(type)s'}),
 };
@@ -168,6 +171,8 @@ export function canvas_refresh() {
 function show_mini_status(entity) {
     let height = tile_size[1];
     let top = (display_size[1] * tile_size[1]) - height * 2;
+    let can_magic = entity.magic_max > 0 && entity.skills.length;
+    if (!can_magic) top += height;
 
     // Health vars
     let health_width = Math.min(Math.max(Math.ceil(entity.health_max / 10), 10), display_size[0]) * tile_size[0];
@@ -176,13 +181,6 @@ function show_mini_status(entity) {
     let health_fill = Math.ceil(entity.health / entity.health_max * health_width) || 0;
     let health_empty = health_width - health_fill;
 
-    // Magic vars
-    let magic_width = Math.min(Math.max(Math.ceil(entity.magic_max / 10), 10), display_size[0]) * tile_size[0];
-    let magic_left = (display_size[0] * tile_size[0]) - magic_width;
-    let magic_text_position = magic_left + magic_width / 2;
-    let magic_fill = Math.ceil(entity.magic / entity.magic_max * magic_width) || 0;
-    let magic_empty = magic_width - magic_fill;
-
     // Draw health
     context.fillStyle = get_theme_value('background_entity_health_color');
     context.fillRect(health_left, top, health_fill, height);
@@ -190,13 +188,23 @@ function show_mini_status(entity) {
     context.fillRect(health_left + health_fill, top, health_empty, height);
     canvas_write(`${beautify(entity.health)}/${beautify(entity.health_max)}`, health_text_position - tile_size[0], top - tile_size[1] * .2, {text_align: 'center'});
 
-    // Draw magic
-    top += height;
-    context.fillStyle = get_theme_value('background_entity_magic_color');
-    context.fillRect(magic_left, top, magic_fill, height);
-    context.fillStyle = get_theme_value('background_entity_missing_magic_color');
-    context.fillRect(magic_left + magic_fill, top, magic_empty, height);
-    canvas_write(`${beautify(entity.magic)}/${beautify(entity.magic_max)}`, magic_text_position - tile_size[0], top - tile_size[1] * .2, {text_align: 'center'});
+    if (can_magic) {
+        top += height;
+
+        // Magic vars
+        let magic_width = Math.min(Math.max(Math.ceil(entity.magic_max / 10), 10), display_size[0]) * tile_size[0];
+        let magic_left = (display_size[0] * tile_size[0]) - magic_width;
+        let magic_text_position = magic_left + magic_width / 2;
+        let magic_fill = Math.ceil(entity.magic / entity.magic_max * magic_width) || 0;
+        let magic_empty = magic_width - magic_fill;
+
+        // Draw magic
+        context.fillStyle = get_theme_value('background_entity_magic_color');
+        context.fillRect(magic_left, top, magic_fill, height);
+        context.fillStyle = get_theme_value('background_entity_missing_magic_color');
+        context.fillRect(magic_left + magic_fill, top, magic_empty, height);
+        canvas_write(`${beautify(entity.magic)}/${beautify(entity.magic_max)}`, magic_text_position - tile_size[0], top - tile_size[1] * .2, {text_align: 'center'});
+    }
 }
 /**
  * Shows the grid, the player and the entities
@@ -266,18 +274,18 @@ function show_inventory(entity) {
     if (item) {
         let signs = {'-1':'-','1':'+'}
         let lines = [
-            gettext('games_rpg_status_name') + ': ' + (item.name || gettext('games_rpg_status_name_unnamed')) + ` (${amount})`,
+            gettext('games_rpg_status_name') + ': ' + capitalize(item.name || gettext('games_rpg_status_name_unnamed')) + ` (${amount})`,
         ];
         if (item.description) lines.push(gettext('games_rpg_status_description') + ': ' + item.description);
         if (Object.keys(item.on_use).length) {
             lines.push('---', gettext('games_rpg_status_on_use'));
             Object.entries(item.on_use).forEach(([attr, change]) => {
                 if (typeof change == 'number') {
-                    attr = attributes_names[attr];
+                    attr = capitalize(attributes_names[attr]);
                     lines.push(`${attr}: ${beautify(change, {signs})}`);
                 } else {
                     Object.entries(change).forEach(([type, change]) => {
-                        attr = gettext(attributes_names[attr], {type});
+                        attr = capitalize(gettext(attributes_names[attr], {type}));
                         lines.push(`${attr}: ${beautify(change, {signs})}`);
                     });
                 }
@@ -287,11 +295,11 @@ function show_inventory(entity) {
             lines.push('---', gettext('games_rpg_status_passive'));
             Object.entries(item.passive).forEach(([attr, change]) => {
                 if (typeof change == 'number') {
-                    attr = attributes_names[attr];
+                    attr = capitalize(attributes_names[attr]);
                     lines.push(`${attr}: ${beautify(change, {signs})}`);
                 } else {
                     Object.entries(change).forEach(([type, change]) => {
-                        attr = gettext(attributes_names[attr], {type});
+                        attr = capitalize(gettext(attributes_names[attr], {type}));
                         lines.push(`${attr}: ${beautify(change, {signs})}`);
                     });
                 }
@@ -312,12 +320,12 @@ function show_inventory(entity) {
 
             Object.entries(item.equipped).forEach(([attr, change]) => {
                 if (typeof change == 'number') {
-                    attr = attributes_names[attr];
+                    attr = capitalize(attributes_names[attr]);
                     let sign = {'1': '+', '-1': '-', '0': ''}[Math.sign(change)];
                     lines.push(`${attr}: ${sign}${change}`);
                 } else {
                     Object.entries(change).forEach(([type, change]) => {
-                        attr = gettext(attributes_names[attr], {type});
+                        attr = capitalize(gettext(attributes_names[attr], {type}));
                         let sign = {'1': '+', '-1': '-', '0': ''}[Math.sign(change)];
                         lines.push(`${attr}: ${sign}${change}`);
                     });
@@ -337,7 +345,7 @@ function show_status(entity) {
     // Get what must be written
     let lines = [];
     let bonus_signs = {'-1':'-', '1':'+'};
-    let name_line = gettext('games_rpg_status_name') + ': ' + (entity.name || gettext('games_rpg_status_name_unnamed'));
+    let name_line = gettext('games_rpg_status_name') + ': ' + capitalize(entity.name || gettext('games_rpg_status_name_unnamed'));
     lines.push(name_line);
     if (globals.debug_status) {
         lines.push(`x: ${beautify(entity.x)}`, `y: ${beautify(entity.y)}`, `z: ${beautify(entity.z)}`, `solid: ${entity.solid}`);
@@ -350,37 +358,54 @@ function show_status(entity) {
         }
     }
 
-    let health_line = attributes_names['health'] + `: ${beautify(entity.health)}/${beautify(entity.health_max)}`;
+    let health_line = `${capitalize(attributes_names['health'])} : ${beautify(entity.health)}/${beautify(entity.health_max)}`;
     if (entity.bonus_health_max)
         health_line += ` (${beautify(entity.base_health_max)} ${beautify(entity.bonus_health_max, {signs: bonus_signs})})`;
-    let magic_line = attributes_names['magic'] + `: ${beautify(entity.magic)}/${beautify(entity.magic_max)}`;
+    let magic_line = `${attributes_names['magic']} : ${beautify(entity.magic)}/${beautify(entity.magic_max)}`;
     if (entity.bonus_magic_max)
         magic_line += ` (${beautify(entity.base_magic_max)} ${beautify(entity.bonus_magic_max, {signs: bonus_signs})})`;
     lines.push(health_line, magic_line);
 
     Object.entries(entity.defense).forEach(([type, def]) => {
-        let line = gettext(attributes_names['defense'], {type: types_names[type]}) + `: ${beautify(def)}`;
+        let line = capitalize(gettext(attributes_names['defense'], {type: types_names[type]})) + `: ${beautify(def)}`;
         if (type in entity.bonus_defense) {
             line += ` (${beautify(entity.base_defense[type])} ${beautify(entity.bonus_defense[type], {signs: bonus_signs})})`;
         }
         lines.push(line);
     });
     Object.entries(entity.damage).forEach(([type, dmg]) => {
-        let line = gettext(attributes_names['damage'], {type: types_names[type]}) + `: ${beautify(dmg)}`;
+        let line = capitalize(gettext(attributes_names['damage'], {type: types_names[type]})) + `: ${beautify(dmg)}`;
         if (type in entity.bonus_damage) {
-            line += ` (${beautify(entity.base_damage[type])} +${beautify(entity.bonus_damage[type], {signs: bonus_signs})})`;
+            line += ` (${beautify(entity.base_damage[type])} ${beautify(entity.bonus_damage[type], {signs: bonus_signs})})`;
         }
         lines.push(line);
     });
 
-    let speed_line = `${attributes_names['speed']}: ${beautify(entity.speed)}`;
+    let speed_line = `${capitalize(attributes_names['speed'])}: ${beautify(entity.speed)}`;
     if (entity.bonus_speed) speed_line += ` (${beautify(entity.base_speed)} ${beautify(entity.bonus_speed, {signs: bonus_signs})})`;
-    let range_line = `${attributes_names['range']}: ${beautify(entity.range)}`;
+    let range_line = `${capitalize(attributes_names['range'])}: ${beautify(entity.range)}`;
     if (entity.bonus_range) range_line += ` (${beautify(entity.base_range)} ${beautify(entity.bonus_range, {signs: bonus_signs})})`;
+    lines.push(speed_line, range_line);
+
+    if (entity.kills > 0) {
+        let kills_line = `${capitalize(attributes_names['kills'])}: ${beautify(entity.kills)}`;
+        lines.push(kills_line);
+    }
+
     let inventory_count = entity.inventory.map(([_, a]) => a).reduce((s, a) => s + a, 0);
-    let inventory_line = `${attributes_names['inventory']}: ${beautify(inventory_count)} ` +
+    let inventory_line = `${capitalize(attributes_names['inventory'])}: ${beautify(inventory_count)} ` +
         (inventory_count > 1 ? gettext('games_rpg_status_items') : gettext('games_rpg_status_item'));
-    lines.push(speed_line, range_line, inventory_line);
+    lines.push(inventory_line);
+
+    if (entity.skills.length > 0) {
+        let skills_levels = entity.skills.map(s => s.level);
+        let total_levels = skills_levels.reduce((s, n) => s + n, 0);
+        let skills_line = `${capitalize(attributes_names['skills'])}: ${beautify(entity.skills.length)}`;
+        if (total_levels > 0) {
+            skills_line += ` (${beautify(total_levels)} ${attributes_names['skills_total_levels'].toLowerCase()})`;
+        }
+        lines.push(skills_line);
+    }
 
     // Write
     let left = 2 * tile_size[0];
@@ -459,7 +484,7 @@ function show_skills(entity) {
     if (skill) {
         let signs = {'-1':'-','1':'+'}
         let lines = [
-            gettext('games_rpg_status_name') + ': ' + (skill.name || gettext('games_rpg_status_name_unnamed')) + ` (${skill.level})`,
+            gettext('games_rpg_status_name') + ': ' + capitalize(skill.name || gettext('games_rpg_status_name_unnamed')) + ` (${skill.level})`,
         ];
         if (skill.description) lines.push(gettext('games_rpg_status_description') + ': ' + skill.description);
         if (skill.cost > 0) {
@@ -472,11 +497,11 @@ function show_skills(entity) {
             lines.push('---', gettext('games_rpg_status_passive'));
             Object.entries(skill.passive).forEach(([attr, change]) => {
                 if (typeof change == 'number') {
-                    attr = attributes_names[attr];
+                    attr = capitalize(attributes_names[attr]);
                     lines.push(`${attr}: ${beautify(change, {signs})}`);
                 } else {
                     Object.entries(change).forEach(([type, change]) => {
-                        attr = gettext(attributes_names[attr], {type});
+                        attr = capitalize(gettext(attributes_names[attr], {type}));
                         lines.push(`${attr}: ${beautify(change, {signs})}`);
                     });
                 }
@@ -486,11 +511,11 @@ function show_skills(entity) {
             lines.push('---', gettext('games_rpg_status_on_use_self'));
             Object.entries(skill.on_use_self).forEach(([attr, change]) => {
                 if (typeof change == 'number') {
-                    attr = attributes_names[attr];
+                    attr = capitalize(attributes_names[attr]);
                     lines.push(`${attr}: ${beautify(change, {signs})}`);
                 } else {
                     Object.entries(change).forEach(([type, change]) => {
-                        attr = gettext(attributes_names[attr], {type});
+                        attr = capitalize(gettext(attributes_names[attr], {type}));
                         lines.push(`${attr}: ${beautify(change, {signs})}`);
                     });
                 }
@@ -500,12 +525,12 @@ function show_skills(entity) {
             lines.push('---', gettext('games_rpg_status_on_use_target'));
             Object.entries(skill.on_use_target).forEach(([attr, change]) => {
                 if (typeof change == 'number') {
-                    attr = attributes_names[attr];
+                    attr = capitalize(attributes_names[attr]);
                     lines.push(`${attr}: ${beautify(change, {signs})}`);
                 } else {
                     Object.entries(change).forEach(([type, change]) => {
-                        attr = gettext(attributes_names[attr], {type});
-                        lines.push(`${attr}: ${beautify(change, signs)}`);
+                        attr = capitalize(gettext(attributes_names[attr], {type}));
+                        lines.push(`${attr}: ${beautify(change, {signs})}`);
                     });
                 }
             });

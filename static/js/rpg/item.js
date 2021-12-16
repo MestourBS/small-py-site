@@ -215,7 +215,7 @@ export class Item extends Tile {
             content.call(this, this.x, this.y, context, inventory);
         } else if (typeof content == 'string') {
             context.textAlign = 'center';
-            context.fillStyle = '#000';
+            context.fillStyle = get_theme_value('text_default_tile_color');
             context.font = `${tile_size[1] * 2}px ${get_theme_value('text_font')}`;
             let x = x_start + tile_size[0];
             let y = y_start + tile_size[1] * 1.75;
@@ -252,9 +252,9 @@ export function create_items() {
      *  id: string,
      *  name?: string,
      *  description?: string,
-     *  on_use?: {[k: string]: number},
-     *  passive?: {[k: string]: number},
-     *  equipped?: {[k: string]: number},
+     *  on_use?: {[k: string]: number|{[k: string]: number}},
+     *  passive?: {[k: string]: number|{[k: string]: number}},
+     *  equipped?: {[k: string]: number|{[k: string]: number}},
      *  equip_slot?: number,
      *  x?: number,
      *  y?: number,
@@ -293,6 +293,12 @@ export function create_items() {
             content: '🧱',
             id: 'bricks',
             name: gettext('games_rpg_items_bricks'),
+            equip_slot: 5,
+            equipped: {
+                damage: {
+                    none: 1,
+                },
+            },
         },
         {
             content: '✨',
@@ -338,6 +344,18 @@ export function create_items() {
             content: '💲',
             id: 'cash',
             name: gettext('games_rpg_items_cash'),
+        },
+        {
+            // Everyone knows video games cause violence
+            content: '🎮',
+            id: 'video_game',
+            name: gettext('games_rpg_items_video_game'),
+            equip_slot: 5,
+            equipped: {
+                damage: {
+                    none: 1,
+                },
+            },
         },
     ];
 

@@ -183,6 +183,43 @@ export class Color {
         return new Color(this);
     }
     /**
+     * Makes a darker version of this color
+     *
+     * @param {number} [percent] Between 1 and 0, with 1 being 100% darker and 0 being 0% darker
+     * @returns {Color}
+     */
+    darken(percent = 1) {
+        if (isNaN(percent) || percent < 0 || percent > 1) return;
+        if (percent == 0) return this.clone();
+
+        percent = 1 - percent;
+        let {red, green, blue} = this;
+
+        red *= percent;
+        green *= percent;
+        blue *= percent;
+
+        return new Color(Math.floor(red), Math.floor(green), Math.floor(blue));
+    }
+    /**
+     * Makes a brighter version of this color
+     *
+     * @param {number} [percent] Between 1 and 0, with 1 being 100% brighter and 0 being 0% brighter
+     */
+    brighten(percent = 1) {
+        if (isNaN(percent) || percent < 0 || percent > 1) return;
+        if (percent == 0) return this.clone();
+
+        percent = 1 - percent;
+        let {red, green, blue} = this;
+
+        red = 255 - (255 - red) * percent;
+        green = 255 - (255 - green) * percent;
+        blue = 255 - (255 - blue) * percent;
+
+        return new Color(Math.floor(red), Math.floor(green), Math.floor(blue));
+    }
+    /**
      * Mixes 2 colors
      *
      * @param {Color} color

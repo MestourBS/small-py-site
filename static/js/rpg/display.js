@@ -7,6 +7,7 @@ import globals from './globals.js';
  * @prop {string} text_low_health_color
  * @prop {string} text_item_amount_color
  * @prop {string} text_skill_level_color
+ * @prop {string} text_default_tile_color
  * @prop {string} text_item_equipped_color
  * @prop {string} text_item_has_slot_color
  * @prop {string} text_very_low_health_color
@@ -64,6 +65,7 @@ const themes = {
         text_low_health_color: 'orange',
         text_item_amount_color: '#fff',
         text_skill_level_color: '#fff',
+        text_default_tile_color: '#000',
         text_item_equipped_color: '#0a3',
         text_item_has_slot_color: '#070',
         text_very_low_health_color: '#f00',

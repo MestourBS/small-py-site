@@ -7,9 +7,9 @@ import { inventory_items_per_row } from './display.js';
 import { Direction, surrounding_square, coords_distance, can_walk } from './coords.js';
 import Random from './random.js';
 import globals from './globals.js';
+import Color from './color.js';
 /**
  * @typedef {import('./room.js').Room} Room
- * @typedef {import('./color.js').Color} Color
  */
 
 /**
@@ -279,7 +279,24 @@ export class Entity extends Tile {
         if (typeof range != 'number') throw new TypeError(`Invalid entity parameter range: ${range}`);
         if (!Array.isArray(equip_slots)) throw new TypeError(`Invalid entity parameter equip_slots: ${equip_slots}`);
 
-        super({x, y, z, content, solid: health > 0, override: false});
+        super({x, y, z, content, solid: health > 0, override: false, interacted: /**@this {Entity}*/function(entity) {
+            let enemy = true;
+
+            if (enemy) {
+                let damage = 0;
+                Object.entries(entity.damage).forEach(([type, dmg]) => {
+                    let def = this.defense?.[type] ?? 0;
+                    damage += Math.max(0, dmg - def);
+                });
+
+                this.health -= damage;
+                if (this.health <= 0) {
+                    entity.kills++;
+                }
+            } else {
+                // do something else
+            }
+        }});
 
         this.name = name == null ? '' : name.toString();
         this.#health = health;
@@ -290,10 +307,13 @@ export class Entity extends Tile {
         this.#damage = damage;
         this.#speed = speed;
         this.#range = range;
+        this.kills = 0;
         equip_slots.sort((a,b) => a-b).forEach(n => this.#equipment[n] = null);
 
         Entity.entities.push(this);
     }
+
+    get can_interact() { return this.health > 0; }
 
     get health() {
         return Math.min(this.#health, this.health_max);
@@ -307,6 +327,13 @@ export class Entity extends Tile {
                     this.drop_item(0, false, 'max');
                 }
                 Object.keys(this.#equipment).forEach(n => this.drop_item(+n, true));
+                Tile.solid_tiles = false;
+
+                if (typeof this.content == 'string') {
+                    this.content = '💀';
+                } else if (this.content instanceof Color) {
+                    this.content = this.content.darken(.25);
+                }
             }
         }
     }
@@ -545,8 +572,8 @@ export class Entity extends Tile {
         }
 
         // Interact with next tile(s)
-        let x_range = [Math.floor(this.x + .5 - amounts[0]), Math.ceil(this.x - .5)];
-        let y_range = [Math.floor(this.y + .5 - amounts[1]), Math.ceil(this.y - .5)];
+        let x_range = [Math.floor(this.x + .5 - amounts[0]), Math.ceil(this.x - .5 + amounts[0])];
+        let y_range = [Math.floor(this.y + .5 - amounts[1]), Math.ceil(this.y - .5 + amounts[1])];
 
         switch (direction[0]) {
             case 1:
@@ -565,7 +592,14 @@ export class Entity extends Tile {
 
         // Interact with tiles
         Tile.grid
-            .filter(t => number_between(t.x, ...x_range) && number_between(t.y, ...y_range) && t.can_interact)
+            .filter(t => {
+                if (t == this || !t.can_interact) return false;
+                let tx_range = [Math.floor(t.x + .25), Math.ceil(t.x - .25)];
+                let ty_range = [Math.floor(t.y + .25), Math.ceil(t.y - .25)];
+
+                if (!tx_range.some(n => number_between(n, ...x_range))) return false;
+                return ty_range.some(n => number_between(n, ...y_range));
+            })
             .forEach(t => t.interacted(this));
     }
     /**
@@ -1021,8 +1055,6 @@ export class AutonomousEntity extends Entity {
     #target = null;
     /** Whether the targeting never returns a target */
     #target_never = false;
-    /** Whether the pathfinding never returns a direction nor a path */
-    #path_never = false;
     /** @type {(this: AutonomousEntity<T>) => Tile|null} */
     #targeting;
     /** @type {(this: AutonomousEntity<T>) => Direction|null} */
@@ -1065,15 +1097,26 @@ export class AutonomousEntity extends Entity {
         // The function always returns null so...
         if (this.#target_never) return null;
 
-        if (this.#target == null && !this.#reset_target()) {
+        if (this.#target == null && !(target = this.#reset_target())) {
             this.#target_never = true;
             return null;
         }
 
         // Check if we've reached the target, and get a new one if so
-        if (target && coords_distance(this, target) <= 1 + target.solid) {
-            this.#reset_target();
-            target = this.#target;
+        if (target) {
+            let reset = false;
+
+            if (target instanceof Entity) {
+                reset = target.health <= 0;
+            } else if (target instanceof Item) {
+                reset = target.owner == this;
+            } else {
+                reset = coords_distance(this, target) <= 1 + target.solid;
+            }
+
+            if (reset) {
+                target = this.#reset_target();
+            }
         }
 
         if (target instanceof Item && target.owner) {
@@ -1099,7 +1142,6 @@ export class AutonomousEntity extends Entity {
         if (typeof pathfinding == 'function') {
             this.#pathfinding = pathfinding;
             this.path = null;
-            this.#path_never = false;
         }
     }
 
@@ -1109,9 +1151,8 @@ export class AutonomousEntity extends Entity {
         if (target) {
             this.#target = target;
             this.path = null;
-            this.#path_never = false;
         }
-        return !!target;
+        return target;
     }
     /**
      * @param {Direction} [dir]
@@ -1119,12 +1160,10 @@ export class AutonomousEntity extends Entity {
      */
     move(dir=null, multiplier=1) {
         // Dead things can't move
-        if (this.health <= 0 || this.#path_never) return;
+        if (this.health <= 0) return;
 
         dir ??= this.#pathfinding.call(this);
-        if (dir == null && this.path == null) {
-            this.#path_never = true;
-        } else if (dir && !dir.every(n => n == 0)) super.move(dir, multiplier);
+        if (dir && !dir.every(n => n == 0)) super.move(dir, multiplier);
     }
     /**
      * Automatic item using
@@ -1142,30 +1181,58 @@ export class AutonomousEntity extends Entity {
             /** @type {[Item, number, number][]} */
             let useful = usables.map(([i, a]) => {
                 let usefulness = 0;
-                a && Object.entries(i.on_use).forEach(([attr, change]) => {
-                    if (`base_${attr}` in this) {
-                        attr = `base_${attr}`;
-                    }
-                    if (!(attr in this)) return;
 
-                    let clc_chng;
-                    if (typeof change != 'object') {
-                        clc_chng = change;
-                    } else {
-                        clc_chng = average(...Object.values(change));
-                    }
+                if (a > 0) {
+                    Object.entries(i.on_use).forEach(([attr, change]) => {
+                        if (`base_${attr}` in this) {
+                            attr = `base_${attr}`;
+                        }
+                        if (!(attr in this)) return;
 
-                    let has_max = `${attr}_max` in this;
-                    let overshoot = false;
-                    let is_max = attr.endsWith('_max');
-                    if (has_max) {
-                        overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
-                    }
+                        let clc_chng;
+                        if (typeof change != 'object') {
+                            clc_chng = change;
+                        } else {
+                            clc_chng = average(...Object.values(change));
+                        }
 
-                    // A change is worth more if it's for a limited value
-                    // A change is worth less if it goes above limited but is less than half
-                    usefulness += clc_chng * (1 + 1 * has_max - .5 * overshoot) * (1 + .5 * is_max);
-                });
+                        let has_max = `${attr}_max` in this;
+                        let overshoot = false;
+                        let is_max = attr.endsWith('_max');
+                        if (has_max) {
+                            let max = this[`${attr}_max`];
+                            overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
+                        }
+
+                        // A change is worth more if it's for a limited value
+                        // A change is worth less if it goes above limited but is less than half
+                        usefulness += clc_chng * (1 + 1 * has_max - .5 * overshoot) * (1 + .5 * is_max);
+                    });
+                    Object.entries(i.passive).forEach(([attr, change]) => {
+                        if (`base_${attr}` in this) {
+                            attr = `base_${attr}`;
+                        }
+                        if (!(attr in this)) return;
+
+                        let clc_chng;
+                        if (typeof change != 'object') {
+                            clc_chng = change;
+                        } else {
+                            clc_chng = average(...Object.values(change));
+                        }
+
+                        let has_max = `${attr}_max` in this;
+                        let overshoot = false;
+                        let is_max = attr.endsWith('_max');
+                        if (has_max) {
+                            let max = this[`${attr}_max`];
+                            overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
+                        }
+
+                        usefulness -= clc_chng * (1 + 1 * has_max - .5 * overshoot) * (1 + .5 * is_max);
+                    });
+                }
+
                 return [i, a, usefulness];
             }).filter(r => r[2] > 0).sort((a,b) => b[2] - a[2]);
             if (!useful.length) return;
@@ -1195,24 +1262,49 @@ export class AutonomousEntity extends Entity {
                 let usefulness = 0;
                 let compared = this.equipment[i.equip_slot];
 
-                a && Object.entries(i.equipped).forEach(([attr, change]) => {
-                    if (`base_${attr}` in this) {
-                        attr = `base_${attr}`;
-                    }
-                    if (!(attr in this)) return;
-
-                    let is_max = attr.endsWith('_max');
-                    let diff;
-                    if (typeof change != 'object') {
-                        diff = change - (compared?.[attr] ?? 0);
-                    } else {
-                        diff = average(...Object.values(change));
-                        if (Object.keys(compared?.[attr] ?? {}).length) {
-                            diff -= average(...Object.values(compared[attr]));
+                if (a > 0) {
+                    Object.entries(i.equipped).forEach(([attr, change]) => {
+                        if (`base_${attr}` in this) {
+                            attr = `base_${attr}`;
                         }
-                    }
-                    usefulness += diff * (1 + .5 * is_max);
-                });
+                        if (!(attr in this)) return;
+
+                        let is_max = attr.endsWith('_max');
+                        let diff;
+                        if (typeof change != 'object') {
+                            diff = change - (compared?.[attr] ?? 0);
+                        } else {
+                            diff = average(...Object.values(change));
+                            if (Object.keys(compared?.[attr] ?? {}).length) {
+                                diff -= average(...Object.values(compared[attr]));
+                            }
+                        }
+                        usefulness += diff * (1 + .5 * is_max);
+                    });
+                    Object.entries(i.passive).forEach(([attr, change]) => {
+                        if (`base_${attr}` in this) {
+                            attr = `base_${attr}`;
+                        }
+                        if (!(attr in this)) return;
+
+                        let clc_chng;
+                        if (typeof change != 'object') {
+                            clc_chng = change;
+                        } else {
+                            clc_chng = average(...Object.values(change));
+                        }
+
+                        let has_max = `${attr}_max` in this;
+                        let overshoot = false;
+                        let is_max = attr.endsWith('_max');
+                        if (has_max) {
+                            let max = this[`${attr}_max`];
+                            overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
+                        }
+
+                        usefulness -= clc_chng * (1 + 1 * has_max - .5 * overshoot) * (1 + .5 * is_max);
+                    });
+                }
 
                 return [i, usefulness];
             }).filter(r => r[1] > 0).sort((a,b) => b[1] - a[1]);
@@ -1240,6 +1332,7 @@ export class AutonomousEntity extends Entity {
             let dist = Infinity;
             if (this.#target) {
                 dist = coords_distance(this, this.#target);
+                target = this.#target;
             }
 
             // Filter between useful for this, and useful against target
@@ -1264,6 +1357,7 @@ export class AutonomousEntity extends Entity {
                     let is_max = attr.endsWith('_max');
                     let overshoot = false;
                     if (has_max) {
+                        let max = this[`${attr}_max`];
                         overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
                     }
 
@@ -1295,6 +1389,7 @@ export class AutonomousEntity extends Entity {
                     let is_max = attr.endsWith('_max');
                     let overshoot = false;
                     if (has_max) {
+                        let max = this[`${attr}_max`];
                         overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
                     }
 

@@ -47,8 +47,13 @@ function init() {
 
     loop_last = Date.now();
     canvas_reset();
-    /** @param {number} x @param {number} y @param {CanvasRenderingContext2D} context */
-    const draw_player = (x,y,context) => {
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {CanvasRenderingContext2D} context
+     * @this {Entity}
+     */
+    function draw_player(x, y, context) {
         context.textAlign = 'center';
         context.fillStyle = '#f00';
         context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
@@ -61,24 +66,42 @@ function init() {
 
     Room.make_map();
 
-    requestAnimationFrame(loop);
+    requestAnimationFrame(refresh_loop);
 }
 /**
- * Main game loop
+ * Main game display loop
  */
-function loop() {
-    let now = Date.now();
-    let diff = now - loop_last;
-    loop_last = now;
-
+function refresh_loop() {
     canvas_refresh();
 
-    if (globals.game_state == 'playing') {
-        /** @type {AutonomousEntity[]} */
-        Entity.entities.filter(t => t instanceof AutonomousEntity).forEach(t => t.move(null, diff / 500));
-    }
+    compute_loop();
 
-    requestAnimationFrame(loop);
+    requestAnimationFrame(refresh_loop);
+}
+/**
+ * Main game computations loop
+ */
+function compute_loop() {
+    let now = Date.now();
+    let time_since_last = now - loop_last;
+    loop_last = now;
+
+    if (globals.game_state == 'playing') {
+        let diff = time_since_last / 500;
+        let move = diff < 1 / 16;
+        let equip_items = diff < 1 / 8;
+        let use_items = diff < 1 / 4;
+        let use_skills = diff < 1 / 2;
+
+        /** @type {AutonomousEntity[]} */
+        let entities = Entity.entities.filter(t => t instanceof AutonomousEntity);
+        entities.forEach(e => {
+            if (move) e.move(null, diff);
+            if (equip_items) e.equip_item();
+            if (use_items) e.use_item();
+            if (use_skills) e.use_skill();
+        });
+    }
 }
 
 init();

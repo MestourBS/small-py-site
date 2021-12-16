@@ -41,8 +41,11 @@ export function beautify(number, {trim = true, min_short = 6, precision = 3, pow
         power -= (power % power_step);
         if (power > base_power) power -= power_step;
     }
-    if (power >= min_short || power < 0) {
+    if (power >= min_short || power <= -precision) {
         number /= 10 ** power;
+    }
+    if (power > -precision && power < 0) {
+        power = 0;
     }
 
     let whole = BigInt(Math.floor(number)).toString();
@@ -72,6 +75,22 @@ export function average(...numbers) {
     if (!numbers.length) return 0;
 
     return numbers.reduce((a,b) => a+b, 0) / numbers.length;
+}
+
+// String functions
+/**
+ * Capitalizes the string
+ *
+ * @param {string} string
+ * @param {boolean} [all] If true, all words will be capitalized
+ * @returns {string}
+ */
+export function capitalize(string, all = false) {
+    let reg_str = '^.|[^\w].';
+    let flags = 'g'.repeat(all);
+    let regexp = new RegExp(reg_str, flags);
+
+    return string.toLowerCase().replace(regexp, s => s.toUpperCase());
 }
 
 // Object functions
