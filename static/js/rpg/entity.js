@@ -2,7 +2,7 @@ import { Tile } from './tile.js';
 import { Item } from './item.js';
 import { Skill } from './skills.js';
 import { MinHeap } from './minheap.js';
-import { number_between } from './primitives.js';
+import { average, number_between } from './primitives.js';
 import { inventory_items_per_row } from './display.js';
 import { Direction, surrounding_square, coords_distance, can_walk } from './coords.js';
 import Random from './random.js';
@@ -55,7 +55,9 @@ export const targetings = {
         return Random.array_element(items);
     },
     'entity': function() {
-        return Random.array_element(Entity.entities);
+        let entities = Entity.entities.filter(e => e.health > 0);
+        if (!entities.length) return null;
+        return Random.array_element(entities);
     },
 };
 /**
@@ -991,8 +993,8 @@ export class Entity extends Tile {
                 }
             }
             let radius = real_skill.radius;
-            let x_range = [Math.round(target.x - radius), Math.round(target.x + radius)];
-            let y_range = [Math.round(target.y - radius), Math.round(target.y + radius)];
+            let x_range = [Math.round(target.x - radius - .1), Math.round(target.x + radius + .1)];
+            let y_range = [Math.round(target.y - radius - .1), Math.round(target.y + radius + .1)];
             let affected = Entity.entities.filter(e => e.solid && number_between(e.x, ...x_range) && number_between(e.y, ...y_range));
             Object.entries(real_skill.on_use_target).forEach(([attr, change]) => {
                 if (`base_${attr}` in this) {
@@ -1016,7 +1018,7 @@ export class Entity extends Tile {
  */
 export class AutonomousEntity extends Entity {
     /** @type {Tile|null} */
-    #target;
+    #target = null;
     /** Whether the targeting never returns a target */
     #target_never = false;
     /** Whether the pathfinding never returns a direction nor a path */
@@ -1059,6 +1061,7 @@ export class AutonomousEntity extends Entity {
     }
 
     get target() {
+        let target = this.#target;
         // The function always returns null so...
         if (this.#target_never) return null;
 
@@ -1068,22 +1071,15 @@ export class AutonomousEntity extends Entity {
         }
 
         // Check if we've reached the target, and get a new one if so
-        let target = this.#target;
-        let x_range = [target.x - .1, target.x + .1];
-        let y_range = [target.y - .1, target.y + .1];
-        if (this.#target.solid) {
-            // If we're next to the target, get a new one
-            x_range[0]--;
-            x_range[1]++;
-            y_range[0]--;
-            y_range[1]++;
+        if (target && coords_distance(this, target) <= 1 + target.solid) {
+            this.#reset_target();
+            target = this.#target;
         }
-        if (number_between(this.x, ...x_range) && number_between(this.y, ...y_range)) this.#reset_target();
 
-        if (this.#target instanceof Item && this.#target.owner) {
-            this.#target = this.#target.owner;
+        if (target instanceof Item && target.owner) {
+            target = this.#target = target.owner;
         }
-        return this.#target;
+        return target;
     }
     set target(target) {
         if (target instanceof Tile || target == null) {
@@ -1129,6 +1125,200 @@ export class AutonomousEntity extends Entity {
         if (dir == null && this.path == null) {
             this.#path_never = true;
         } else if (dir && !dir.every(n => n == 0)) super.move(dir, multiplier);
+    }
+    /**
+     * Automatic item using
+     *
+     * @param {Item|number|string|null} [item] item|index|id|auto
+     * @param {number|'max'} amount
+     */
+    use_item(item = null, amount=1) {
+        if (item == null) {
+            // Get only items that can be used
+            let usables = this.inventory.filter(([i]) => Object.keys(i.on_use).length);
+            if (!usables.length) return;
+
+            // Get only items that have an impact, sorted by impact strength
+            /** @type {[Item, number, number][]} */
+            let useful = usables.map(([i, a]) => {
+                let usefulness = 0;
+                a && Object.entries(i.on_use).forEach(([attr, change]) => {
+                    if (`base_${attr}` in this) {
+                        attr = `base_${attr}`;
+                    }
+                    if (!(attr in this)) return;
+
+                    let clc_chng;
+                    if (typeof change != 'object') {
+                        clc_chng = change;
+                    } else {
+                        clc_chng = average(...Object.values(change));
+                    }
+
+                    let has_max = `${attr}_max` in this;
+                    let overshoot = false;
+                    let is_max = attr.endsWith('_max');
+                    if (has_max) {
+                        overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
+                    }
+
+                    // A change is worth more if it's for a limited value
+                    // A change is worth less if it goes above limited but is less than half
+                    usefulness += clc_chng * (1 + 1 * has_max - .5 * overshoot) * (1 + .5 * is_max);
+                });
+                return [i, a, usefulness];
+            }).filter(r => r[2] > 0).sort((a,b) => b[2] - a[2]);
+            if (!useful.length) return;
+
+            // Get what is clearly the most useful item
+            item = useful[0];
+        }
+        super.use_item(item, amount);
+    }
+    /**
+     * Automatic item equipping
+     *
+     * @param {Item|number|string|null} item item|index|id|auto
+     */
+    equip_item(item = null) {
+        // No equipment slot
+        if (!Object.keys(this.equipment).length) return;
+
+        if (item == null) {
+            // Get only items that can be equipped
+            let equippable = this.inventory.filter(([i]) => i.equip_slot in this.equipment && Object.keys(i.equipped).length);
+            if (!equippable.length) return;
+
+            // Get only items that have a better impact, sorted by impact strength
+            /** @type {[Item, number][]} */
+            let useful = equippable.map(([i, a]) => {
+                let usefulness = 0;
+                let compared = this.equipment[i.equip_slot];
+
+                a && Object.entries(i.equipped).forEach(([attr, change]) => {
+                    if (`base_${attr}` in this) {
+                        attr = `base_${attr}`;
+                    }
+                    if (!(attr in this)) return;
+
+                    let is_max = attr.endsWith('_max');
+                    let diff;
+                    if (typeof change != 'object') {
+                        diff = change - (compared?.[attr] ?? 0);
+                    } else {
+                        diff = average(...Object.values(change));
+                        if (Object.keys(compared?.[attr] ?? {}).length) {
+                            diff -= average(...Object.values(compared[attr]));
+                        }
+                    }
+                    usefulness += diff * (1 + .5 * is_max);
+                });
+
+                return [i, usefulness];
+            }).filter(r => r[1] > 0).sort((a,b) => b[1] - a[1]);
+            if (!useful.length) return;
+
+            // Get what is clearly the most useful equipment
+            item = useful[0];
+        }
+        super.equip_item(item);
+    }
+    /**
+     * Automatic skill usage
+     *
+     * @param {Skill|number|string|null} [skill] skill|index|id|auto
+     * @param {{x: number, y: number}?} [target]
+     */
+    use_skill(skill = null, target = null) {
+        if (!this.skills.length) return;
+
+        if (skill == null) {
+            // Get only skills that can be cast
+            let castables = this.skills.filter(s => s.cost <= this.magic && Object.keys(s.on_use_self).length + Object.keys(s.on_use_target).length);
+            if (!castables.length) return;
+
+            let dist = Infinity;
+            if (this.#target) {
+                dist = coords_distance(this, this.#target);
+            }
+
+            // Filter between useful for this, and useful against target
+            /** @type {[Skill, number][]} */
+            let useful_self = castables.map(s => {
+                let usefulness = 0;
+
+                Object.entries(s.on_use_self).forEach(([attr, change]) => {
+                    if (`base_${attr}` in this) {
+                        attr = `base_${attr}`;
+                    }
+                    if (!(attr in this)) return;
+
+                    let clc_chng;
+                    if (typeof change != 'object') {
+                        clc_chng = change;
+                    } else {
+                        clc_chng = average(...Object.values(change));
+                    }
+
+                    let has_max = `${attr}_max` in this;
+                    let is_max = attr.endsWith('_max');
+                    let overshoot = false;
+                    if (has_max) {
+                        overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
+                    }
+
+                    usefulness += clc_chng * (1 + 1 * has_max - .5 * overshoot) * (1 + .5 * is_max);
+                });
+
+                return [s, usefulness / s.cost];
+            }).filter(r => r[1] > 0);
+            /** @type {[Skill, number][]} */
+            let useful_target = castables.map(s => {
+                let usefulness = 0;
+
+                let within_range = dist <= s.range;
+
+                within_range && Object.entries(s.on_use_target).forEach(([attr, change]) => {
+                    if (`base_${attr}` in this) {
+                        attr = `base_${attr}`;
+                    }
+                    if (!(attr in this)) return;
+
+                    let clc_chng;
+                    if (typeof change != 'object') {
+                        clc_chng = change;
+                    } else {
+                        clc_chng = average(...Object.values(change));
+                    }
+
+                    let has_max = `${attr}_max` in this;
+                    let is_max = attr.endsWith('_max');
+                    let overshoot = false;
+                    if (has_max) {
+                        overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
+                    }
+
+                    // Multiply by -1 to make sure only damaging things are chosen
+                    usefulness += clc_chng * (1 + 1 * has_max - .5 * overshoot) * (1 + .5 * is_max) * -1;
+                });
+
+                return [s, usefulness / s.cost];
+            }).filter(r => r[1] > 0);
+
+            if (!(useful_self.length + useful_target.length)) return;
+
+            // Choose the most useful skill
+            let bests = [
+                useful_self[0] ?? [null, -1],
+                useful_target[0] ?? [null, -1],
+            ].sort((a,b) => b[1] - a[1]);
+
+            // Forget the target, it's for ourselves
+            if (target && bests[0] == useful_self[0]) target = null;
+
+            skill = bests[0][0];
+        }
+        super.use_skill(skill, target);
     }
 }
 /**

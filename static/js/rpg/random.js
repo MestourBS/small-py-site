@@ -117,9 +117,6 @@ export const Random = Object.freeze({
      * @returns {string}
      */
     emoji_person: () => {
-        /**
-         * String.fromCodePoint
-         */
         /** @type {([number, number]|number)[][]} ([min codepoint, max codepoint]|codepoint)[][] min and max are inclusive */
         const emoji_ranges = [
             //#region Emojis

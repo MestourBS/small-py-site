@@ -62,6 +62,17 @@ export function beautify(number, {trim = true, min_short = 6, precision = 3, pow
 
     return `${str_sign}${whole}${str_fraction}${str_exp}`;
 }
+/**
+ * Calculates the average of multiple numbers
+ *
+ * @param {...number} numbers
+ * @returns {number}
+ */
+export function average(...numbers) {
+    if (!numbers.length) return 0;
+
+    return numbers.reduce((a,b) => a+b, 0) / numbers.length;
+}
 
 // Object functions
 /**

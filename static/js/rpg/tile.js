@@ -207,6 +207,6 @@ export class Tile {
      * @param {Entity} entity
      */
     interacted(entity) {
-        this.#interacted && this.#interacted.call(this, entity);
+        this.#interacted?.call(this, entity);
     }
 }
