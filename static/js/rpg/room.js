@@ -724,6 +724,8 @@ export class Room {
     /**
      * Merges multiple rooms into one, by overwriting walls with floors
      *
+     * Randomly keeps a floor/wall if there are multiple on the same spot
+     *
      * @param {...Room} rooms
      * @returns {Room<Tile>}
      */
@@ -731,24 +733,33 @@ export class Room {
         rooms.forEach(r => r.to_tiles(null, null, false));
 
         /** @type {Tile[]} */
-        let master_grid = [];
+        let master_grid = rooms.map(r => r.grid).flat();
 
-        rooms.forEach(r => {
-            /** @type {Tile[]} */
-            let grid = r.grid;
-            grid.forEach(tile => {
-                let i = master_grid.findIndex(t => t.x == tile.x && t.y == tile.y);
-                if (i == -1) {
-                    master_grid.push(tile);
-                } else {
-                    let target = master_grid[i];
-                    if (target.solid && !tile.solid) {
-                        master_grid[i] = tile;
-                    } else if (target.solid == tile.solid && Math.round(Math.random())) {
-                        master_grid[i] = tile;
-                    }
-                }
+        [...master_grid].forEach(tile => {
+            if (!master_grid.includes(tile)) return;
+
+            let shared = master_grid.filter(t => t.x == tile.x && t.y == tile.y);
+            if (shared.length <= 1) return;
+
+            let floors = shared.filter(t => !t.solid);
+            let walls = shared.filter(t => t.solid);
+            if (floors.length) {
+                let chosen = Random.array_element(floors);
+                floors.splice(floors.indexOf(chosen), 1);
+                floors.forEach(t => {
+                    let i = master_grid.indexOf(t);
+                    master_grid[i] = null;
+                });
+            } else {
+                let chosen = Random.array_element(walls);
+                walls.splice(walls.indexOf(chosen), 1);
+            }
+            walls.forEach(t => {
+                let i = master_grid.indexOf(t);
+                master_grid[i] = null;
             });
+
+            master_grid = master_grid.filter(t => t != null);
         });
 
         return new Room({grid: master_grid});
