@@ -170,40 +170,39 @@ export function canvas_refresh() {
  */
 function show_mini_status(entity) {
     let height = tile_size[1];
-    let top = (display_size[1] * tile_size[1]) - height * 2;
-    let can_magic = entity.magic_max > 0 && entity.skills.length;
-    if (!can_magic) top += height;
+    let top = (display_size[1] * tile_size[1]);
+    let vals = ['health'];
+    if (entity.magic_max > 0 && entity.skills.length) vals.push('magic');
 
-    // Health vars
-    let health_width = Math.min(Math.max(Math.ceil(entity.health_max / 10), 10), display_size[0]) * tile_size[0];
-    let health_left = (display_size[0] * tile_size[0]) - health_width;
-    let health_text_position = health_left + health_width / 2;
-    let health_fill = Math.ceil(entity.health / entity.health_max * health_width) || 0;
-    let health_empty = health_width - health_fill;
+    top -= height * vals.length;
 
-    // Draw health
-    context.fillStyle = get_theme_value('background_entity_health_color');
-    context.fillRect(health_left, top, health_fill, height);
-    context.fillStyle = get_theme_value('background_entity_missing_health_color');
-    context.fillRect(health_left + health_fill, top, health_empty, height);
-    canvas_write(`${beautify(entity.health)}/${beautify(entity.health_max)}`, health_text_position - tile_size[0], top - tile_size[1] * .2, {text_align: 'center'});
+    for (let val of vals) {
+        let width;
+        let fill;
+        if (`${val}_max` in entity) {
+            width = entity[`${val}_max`];
+            fill = entity[val] / entity[`${val}_max`];
+        } else {
+            width = entity[val];
+            fill = 1;
+        }
+        width = Math.min(Math.max(Math.ceil(width / 10), 10), display_size[0]) * tile_size[0];
+        fill = Math.ceil(fill * width) || 0;
 
-    if (can_magic) {
+        let left = (display_size[0] * tile_size[0]) - width;
+        let text_position = left + width / 2;
+        let empty = width - fill;
+
+        if (fill > 0) {
+            context.fillStyle = get_theme_value(`background_entity_${val}_color`);
+            context.fillRect(left, top, fill, height);
+        }
+        if (fill / width < 1) {
+            context.fillStyle = get_theme_value(`background_entity_missing_${val}_color`);
+            context.fillRect(left + fill, top, empty, height);
+        }
+        canvas_write(`${beautify(entity[val])}/${entity[`${val}_max`]}`, text_position - tile_size[0], top - tile_size[1] * .2, {text_align: 'center'});
         top += height;
-
-        // Magic vars
-        let magic_width = Math.min(Math.max(Math.ceil(entity.magic_max / 10), 10), display_size[0]) * tile_size[0];
-        let magic_left = (display_size[0] * tile_size[0]) - magic_width;
-        let magic_text_position = magic_left + magic_width / 2;
-        let magic_fill = Math.ceil(entity.magic / entity.magic_max * magic_width) || 0;
-        let magic_empty = magic_width - magic_fill;
-
-        // Draw magic
-        context.fillStyle = get_theme_value('background_entity_magic_color');
-        context.fillRect(magic_left, top, magic_fill, height);
-        context.fillStyle = get_theme_value('background_entity_missing_magic_color');
-        context.fillRect(magic_left + magic_fill, top, magic_empty, height);
-        canvas_write(`${beautify(entity.magic)}/${beautify(entity.magic_max)}`, magic_text_position - tile_size[0], top - tile_size[1] * .2, {text_align: 'center'});
     }
 }
 /**
