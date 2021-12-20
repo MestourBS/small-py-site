@@ -634,7 +634,7 @@ export class Room {
         },
         //#region huge map
         /*'huge': (room_amount=null, spawn_player=true) => {
-            //** @type {Room<Tile>[]} /
+            /** @type {Room<Tile>[]} /
             let rooms = [];
             let width = Math.ceil(Random.range(10, 50));
             let height = Math.ceil(Random.range(10, 50));

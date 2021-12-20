@@ -8,9 +8,6 @@ import { Direction, surrounding_square, coords_distance, can_walk } from './coor
 import Random from './random.js';
 import globals from './globals.js';
 import Color from './color.js';
-/**
- * @typedef {import('./room.js').Room} Room
- */
 
 /**
  * TODO LIST
@@ -713,16 +710,18 @@ export class Entity extends Tile {
             this.#inventory.splice(index, 1)[0][0].owner = null;
             this.#inventory.filter((_, i) => i >= index).forEach(([i]) => i.re_position());
 
-            // Check if cursor is at the end of the inventory and move it backwards if it is
-            let items_per_row = inventory_items_per_row();
-            let cursor_index = globals.cursors.inventory[1] * items_per_row + globals.cursors.inventory[0];
-            if (cursor_index == this.#inventory.length) {
-                if (globals.cursors.inventory[0] > 0) {
-                    globals.cursors.inventory[0]--;
-                } else if (globals.cursors.inventory[1] > 0) {
-                    globals.cursors.inventory[0] = items_per_row - 1;
-                    globals.cursors.inventory[1]--;
-                } //Else that was the only item, so we don't move it
+            if (this == globals.player) {
+                // Check if cursor is at the end of the inventory and move it backwards if it is
+                let items_per_row = inventory_items_per_row();
+                let cursor_index = globals.cursors.inventory[1] * items_per_row + globals.cursors.inventory[0];
+                if (cursor_index == this.#inventory.length) {
+                    if (globals.cursors.inventory[0] > 0) {
+                        globals.cursors.inventory[0]--;
+                    } else if (globals.cursors.inventory[1] > 0) {
+                        globals.cursors.inventory[0] = items_per_row - 1;
+                        globals.cursors.inventory[1]--;
+                    } //Else that was the only item, so we don't move it
+                }
             }
         } else {
             this.#inventory[index][1] -= amount;
@@ -779,15 +778,17 @@ export class Entity extends Tile {
             this.#inventory.splice(index, 1);
             this.#inventory.filter((_, i) => i >= index).forEach(([i]) => i.re_position());
 
-            // Check if cursor is at the end of the inventory and move it backwards if it is
-            let cursor_index = globals.cursors.inventory[1] * items_per_row + globals.cursors.inventory[0];
-            if (cursor_index == this.#inventory.length) {
-                if (globals.cursors.inventory[0] > 0) {
-                    globals.cursors.inventory[0]--;
-                } else if (globals.cursors.inventory[1] > 0) {
-                    globals.cursors.inventory[0] = items_per_row - 1;
-                    globals.cursors.inventory[1]--;
-                } //Else that was the last item, so we don't move it
+            if (this == globals.player) {
+                // Check if cursor is at the end of the inventory and move it backwards if it is
+                let cursor_index = globals.cursors.inventory[1] * items_per_row + globals.cursors.inventory[0];
+                if (cursor_index == this.#inventory.length) {
+                    if (globals.cursors.inventory[0] > 0) {
+                        globals.cursors.inventory[0]--;
+                    } else if (globals.cursors.inventory[1] > 0) {
+                        globals.cursors.inventory[0] = items_per_row - 1;
+                        globals.cursors.inventory[1]--;
+                    } //Else that was the last item, so we don't move it
+                }
             }
         } else {
             this.#inventory[index][1] -= amount;
@@ -904,16 +905,18 @@ export class Entity extends Tile {
             this.#inventory.splice(index, 1);
             this.#inventory.filter((_,i) => i >= index).forEach(([i]) => i.re_position());
 
-            // Check if cursor is at the end of the inventory and move it backwards if it is
-            let items_per_row = inventory_items_per_row();
-            let cursor_index = globals.cursors.inventory[1] * items_per_row + globals.cursors.inventory[0];
-            if (cursor_index == this.#inventory.length) {
-                if (globals.cursors.inventory[0] > 0) {
-                    globals.cursors.inventory[0]--;
-                } else if (globals.cursors.inventory[1] > 0) {
-                    globals.cursors.inventory[0] = items_per_row - 1;
-                    globals.cursors.inventory[1]--;
-                } //Else that was the last item, so we don't move it
+            if (this == globals.player) {
+                // Check if cursor is at the end of the inventory and move it backwards if it is
+                let items_per_row = inventory_items_per_row();
+                let cursor_index = globals.cursors.inventory[1] * items_per_row + globals.cursors.inventory[0];
+                if (cursor_index == this.#inventory.length) {
+                    if (globals.cursors.inventory[0] > 0) {
+                        globals.cursors.inventory[0]--;
+                    } else if (globals.cursors.inventory[1] > 0) {
+                        globals.cursors.inventory[0] = items_per_row - 1;
+                        globals.cursors.inventory[1]--;
+                    } //Else that was the last item, so we don't move it
+                }
             }
         }
 
@@ -1029,7 +1032,7 @@ export class Entity extends Tile {
             let radius = real_skill.radius;
             let x_range = [Math.round(target.x - radius - .1), Math.round(target.x + radius + .1)];
             let y_range = [Math.round(target.y - radius - .1), Math.round(target.y + radius + .1)];
-            let affected = Entity.entities.filter(e => e.solid && number_between(e.x, ...x_range) && number_between(e.y, ...y_range));
+            let affected = Entity.entities.filter(e => e.#health > 0 && number_between(e.x, ...x_range) && number_between(e.y, ...y_range));
             Object.entries(real_skill.on_use_target).forEach(([attr, change]) => {
                 if (`base_${attr}` in this) {
                     attr = `base_${attr}`;
