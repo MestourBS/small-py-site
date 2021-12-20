@@ -1048,7 +1048,7 @@ export class Room {
             let {x, y} = target;
             let pathfinding = Random.AutonomousEntity.pathfinding();
             let targeting = Random.AutonomousEntity.targeting();
-            new AutonomousEntity({x, y, z: 9, content: Random.emoji_person(), pathfinding, targeting});
+            new AutonomousEntity({x, y, z: 9, content: Random.emoji_person(), pathfinding, targeting, faction: Random.Entity.faction()});
         }
     }
 

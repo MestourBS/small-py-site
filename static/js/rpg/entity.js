@@ -15,14 +15,6 @@ import Color from './color.js';
  *
  * ?pathfinding: smarter that takes speed & size in account
  *
- * entity:
- *  * factions & intents
- *  * skills
- *  * attacking/interacting
- *
- * autonomous entity:
- *  * auto equip
- *  * auto use
  *
  * projectiles
  */
@@ -51,10 +43,17 @@ export const targetings = {
         }
         return Random.array_element(items);
     },
-    'entity': function() {
+    /*'entity': function() {
         let entities = Entity.entities.filter(e => e.health > 0);
         if (!entities.length) return null;
         return Random.array_element(entities);
+    },*/
+    /** @this {AutonomousEntity} */
+    'enemy': function() {
+        let faction = this.faction.id;
+        let enemies = Entity.entities.filter(e => e.health > 0 && (e.faction.relations[faction] ?? 0) < -10);
+        if (!enemies.length) return null;
+        return Random.array_element(enemies);
     },
 };
 /**
@@ -205,6 +204,46 @@ export const pathfindings = {
         return null;
     },
 };
+/**
+ * Entity factions
+ *
+ * Below -10 means hostility
+ * Above +10 means alliance
+ * In between means neutrality
+ *
+ * @type {{[k: string]: {
+ *  name: string,
+ *  id: string,
+ *  relations: {
+ *      [k: string]: number,
+ *  },
+ * }}}
+ */
+export const factions = {
+    'null': {
+        name: gettext('games_rpg_faction_null'),
+        id: 'null',
+        relations: {
+            get 'null'() { return -100; },
+        },
+    },
+    'player': {
+        name: gettext('games_rpg_faction_player'),
+        id: 'player',
+        relations: {
+            'anti_player': -100,
+        },
+    },
+    'anti_player': {
+        name: gettext('games_rpg_faction_anti_player'),
+        id: 'anti_player',
+        relations: {
+            'player': -100,
+        },
+    },
+};
+
+let attackers_memory = 5;
 
 /**
  * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, this: Entity<T>) => void} T
@@ -236,6 +275,10 @@ export class Entity extends Tile {
     #equipment = {};
     /** @type {Skill[]} */
     #skills = [];
+    /** @type {string} */
+    #faction = null;
+    /** @type {Entity[]} */
+    #last_attackers = [];
 
     /**
      * @param {Object} params
@@ -253,12 +296,13 @@ export class Entity extends Tile {
      * @param {number} [params.speed]
      * @param {number} [params.range] Interaction range
      * @param {number[]} [params.equip_slots]
+     * @param {string} [params.faction]
      */
     constructor({
         x, y, z, content, name=null,
         health=10, health_max=null, magic=10, magic_max=null,
         defense=1, damage=1,
-        speed=1, range=.75, equip_slots=[]
+        speed=1, range=.75, equip_slots=[], faction=null,
     }) {
         health_max ??= health;
         magic_max ??= magic;
@@ -275,9 +319,12 @@ export class Entity extends Tile {
         if (typeof speed != 'number') throw new TypeError(`Invalid entity parameter speed: ${speed}`);
         if (typeof range != 'number') throw new TypeError(`Invalid entity parameter range: ${range}`);
         if (!Array.isArray(equip_slots)) throw new TypeError(`Invalid entity parameter equip_slots: ${equip_slots}`);
+        if (!(faction in factions)) throw new TypeError(`Invalid entity parameter faction: ${faction}`);
 
         super({x, y, z, content, solid: health > 0, override: false, interacted: /**@this {Entity}*/function(entity) {
-            let enemy = true;
+            let relation = entity.faction.relations[this.#faction] ?? 0;
+            let enemy = relation < -10;
+            let ally = relation > 10;
 
             if (enemy) {
                 let damage = 0;
@@ -290,8 +337,15 @@ export class Entity extends Tile {
                 if (this.health <= 0) {
                     entity.kills++;
                 }
+
+                if (!this.#last_attackers.includes(entity)) {
+                    this.#last_attackers.push(entity);
+                    this.#last_attackers = this.#last_attackers.filter(e => e.health > 0).slice(-attackers_memory);
+                }
+            } else if (ally) {
+                // friendly
             } else {
-                // do something else
+                // do nothing
             }
         }});
 
@@ -304,6 +358,7 @@ export class Entity extends Tile {
         this.#damage = damage;
         this.#speed = speed;
         this.#range = range;
+        this.#faction = faction;
         this.kills = 0;
         equip_slots.sort((a,b) => a-b).forEach(n => this.#equipment[n] = null);
 
@@ -524,6 +579,18 @@ export class Entity extends Tile {
     get inventory() { return this.#inventory; }
     get equipment() { return this.#equipment; }
     get skills() { return this.#skills; }
+    get last_attackers() { return this.#last_attackers; }
+
+    /** @type {{name: string, id: string, relations: {[k: string]: number}}} */
+    get faction() { return factions[this.#faction]; }
+    /** @param {{id: string}|string} faction */
+    set faction(faction) {
+        if (typeof faction == 'string') {
+            if (faction in factions) this.#faction = faction;
+        } else if (typeof faction == 'object') {
+            if ('id' in faction && faction.id in factions) this.#faction = faction.id;
+        }
+    }
 
     /**
      * Moves an entity somewhere
@@ -1083,13 +1150,13 @@ export class AutonomousEntity extends Entity {
      */
     constructor({
         x, y, z, content,
-        name=null, health=10, health_max=null, defense=1, damage=1, speed=1, range=.5,
+        name=null, health=10, health_max=null, defense=1, damage=1, speed=1, range=.5, faction=null,
         targeting=()=>null, pathfinding=()=>null
     }) {
         if (typeof targeting != 'function') throw new TypeError(`Invalid autonomous entity parameter targeting: ${targeting}`);
         if (typeof pathfinding != 'function') throw new TypeError(`Invalid autonomous entity parameter pathfinding: ${pathfinding}`);
 
-        super({x, y, z, content, name, health, health_max, defense, damage, speed, range});
+        super({x, y, z, content, name, health, health_max, defense, damage, speed, range, faction});
 
         this.#targeting = targeting;
         this.#pathfinding = pathfinding;
@@ -1333,9 +1400,14 @@ export class AutonomousEntity extends Entity {
             if (!castables.length) return;
 
             let dist = Infinity;
+            let relation = 0;
             if (this.#target) {
                 dist = coords_distance(this, this.#target);
                 target = this.#target;
+
+                if (this.#target instanceof Entity) {
+                    relation = Math.sign(this.faction.relations[this.#target.faction.id] ?? 0);
+                }
             }
 
             // Filter between useful for this, and useful against target
@@ -1374,33 +1446,37 @@ export class AutonomousEntity extends Entity {
                 let usefulness = 0;
 
                 let within_range = dist <= s.range;
+                // Killing blows are more important
+                let will_kill = target instanceof Entity && 'health' in s.on_use_target && s.on_use_target.health >= target.health;
 
-                within_range && Object.entries(s.on_use_target).forEach(([attr, change]) => {
-                    if (`base_${attr}` in this) {
-                        attr = `base_${attr}`;
-                    }
-                    if (!(attr in this)) return;
+                if (within_range) {
+                    Object.entries(s.on_use_target).forEach(([attr, change]) => {
+                        if (`base_${attr}` in this) {
+                            attr = `base_${attr}`;
+                        }
+                        if (!(attr in this)) return;
 
-                    let clc_chng;
-                    if (typeof change != 'object') {
-                        clc_chng = change;
-                    } else {
-                        clc_chng = average(...Object.values(change));
-                    }
+                        let clc_chng;
+                        if (typeof change != 'object') {
+                            clc_chng = change;
+                        } else {
+                            clc_chng = average(...Object.values(change));
+                        }
 
-                    let has_max = `${attr}_max` in this;
-                    let is_max = attr.endsWith('_max');
-                    let overshoot = false;
-                    if (has_max) {
-                        let max = this[`${attr}_max`];
-                        overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
-                    }
+                        let has_max = `${attr}_max` in this;
+                        let is_max = attr.endsWith('_max');
+                        let overshoot = false;
+                        if (has_max) {
+                            let max = this[`${attr}_max`];
+                            overshoot = this[attr] + change > max || this[attr] <= Math.ceil(max / 2);
+                        }
 
-                    // Multiply by -1 to make sure only damaging things are chosen
-                    usefulness += clc_chng * (1 + 1 * has_max - .5 * overshoot) * (1 + .5 * is_max) * -1;
-                });
+                        // Multiply by -1 to make sure only damaging things are chosen
+                        usefulness += clc_chng * (1 + 1 * has_max - .5 * overshoot) * (1 + .5 * is_max) * -1;
+                    });
+                }
 
-                return [s, usefulness / s.cost];
+                return [s, usefulness / s.cost * relation * (1 + 2 * will_kill)];
             }).filter(r => r[1] > 0);
 
             if (!(useful_self.length + useful_target.length)) return;

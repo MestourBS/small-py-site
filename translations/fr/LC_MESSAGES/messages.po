@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-12-16 14:54+0100\n"
+"POT-Creation-Date: 2021-12-20 15:40+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -750,16 +750,16 @@ msgid "games_rpg_slot_foot"
 msgstr "Pied"
 
 #: static/js/rpg/canvas.js:285 static/js/rpg/canvas.js:357
-#: static/js/rpg/canvas.js:489
+#: static/js/rpg/canvas.js:503
 msgid "games_rpg_status_name"
 msgstr "Nom"
 
 #: static/js/rpg/canvas.js:285 static/js/rpg/canvas.js:357
-#: static/js/rpg/canvas.js:489
+#: static/js/rpg/canvas.js:503
 msgid "games_rpg_status_name_unnamed"
 msgstr "Sans nom"
 
-#: static/js/rpg/canvas.js:287 static/js/rpg/canvas.js:491
+#: static/js/rpg/canvas.js:287 static/js/rpg/canvas.js:505
 msgid "games_rpg_status_description"
 msgstr "Description"
 
@@ -767,7 +767,7 @@ msgstr "Description"
 msgid "games_rpg_status_on_use"
 msgstr "Sur utilisation"
 
-#: static/js/rpg/canvas.js:303 static/js/rpg/canvas.js:499
+#: static/js/rpg/canvas.js:303 static/js/rpg/canvas.js:513
 msgid "games_rpg_status_passive"
 msgstr "Passif"
 
@@ -779,31 +779,35 @@ msgstr "Quand équipé"
 msgid "games_rpg_status_equip_slot"
 msgstr "Equipé sur %(slot)s"
 
-#: static/js/rpg/canvas.js:379
+#: static/js/rpg/canvas.js:358
+msgid "games_rpg_status_faction"
+msgstr "Groupe"
+
+#: static/js/rpg/canvas.js:380
 msgid "defense"
 msgstr ""
 
-#: static/js/rpg/canvas.js:386
+#: static/js/rpg/canvas.js:387
 msgid "damage"
 msgstr ""
 
-#: static/js/rpg/canvas.js:400
+#: static/js/rpg/canvas.js:407
 msgid "games_rpg_status_items"
 msgstr "objets"
 
-#: static/js/rpg/canvas.js:400
+#: static/js/rpg/canvas.js:407
 msgid "games_rpg_status_item"
 msgstr "objet"
 
-#: static/js/rpg/canvas.js:494
+#: static/js/rpg/canvas.js:508
 msgid "games_rpg_status_cost"
 msgstr "Coût"
 
-#: static/js/rpg/canvas.js:513
+#: static/js/rpg/canvas.js:527
 msgid "games_rpg_status_on_use_self"
 msgstr "Sur utilisation sur soi"
 
-#: static/js/rpg/canvas.js:527
+#: static/js/rpg/canvas.js:541
 msgid "games_rpg_status_on_use_target"
 msgstr "Sur utilisation sur cible"
 
@@ -879,6 +883,18 @@ msgstr "Couleur de fond de vie"
 msgid "games_rpg_theme_background_entity_missing_health_color"
 msgstr "Couleur de fond de vie manquante"
 
+#: static/js/rpg/entity.js:238
+msgid "games_rpg_faction_null"
+msgstr "Sans groupe"
+
+#: static/js/rpg/entity.js:245
+msgid "games_rpg_faction_player"
+msgstr "Joueur"
+
+#: static/js/rpg/entity.js:252
+msgid "games_rpg_faction_anti_player"
+msgstr "Anti joueur"
+
 #: static/js/rpg/item.js:274
 msgid "games_rpg_items_no"
 msgstr "Non"
@@ -915,11 +931,11 @@ msgstr "Trèfle"
 msgid "games_rpg_items_fire"
 msgstr "Feu"
 
-#: static/js/rpg/item.js:353
+#: static/js/rpg/item.js:349
 msgid "games_rpg_items_cash"
 msgstr "Argent"
 
-#: static/js/rpg/item.js:358
+#: static/js/rpg/item.js:356
 msgid "games_rpg_items_video_game"
 msgstr "Jeu Vidéo"
 

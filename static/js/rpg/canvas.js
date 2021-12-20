@@ -346,7 +346,8 @@ function show_status(entity) {
     let lines = [];
     let bonus_signs = {'-1':'-', '1':'+'};
     let name_line = gettext('games_rpg_status_name') + ': ' + capitalize(entity.name || gettext('games_rpg_status_name_unnamed'));
-    lines.push(name_line);
+    let faction_line = gettext('games_rpg_status_faction') + ': ' + capitalize(entity.faction.name);
+    lines.push(name_line, faction_line);
     if (globals.debug_status) {
         lines.push(`x: ${beautify(entity.x)}`, `y: ${beautify(entity.y)}`, `z: ${beautify(entity.z)}`, `solid: ${entity.solid}`);
         if (entity instanceof AutonomousEntity) {

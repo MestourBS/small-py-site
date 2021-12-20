@@ -1,5 +1,5 @@
 import { ascii_symbols, Room } from './room.js';
-import { targetings, pathfindings } from './entity.js';
+import { targetings, pathfindings, factions } from './entity.js';
 import Color from './color.js';
 
 /**
@@ -50,6 +50,9 @@ export const Random = Object.freeze({
         targeting: () => Random.array_element(Object.entries(targetings).filter(([id]) => id != 'null').map(a => a[1])),
         /** @returns {(this: AutonomousEntity) => readonly [number, number]} */
         pathfinding: () => Random.array_element(Object.entries(pathfindings).filter(([id]) => id != 'null').map(a => a[1])),
+    },
+    Entity: {
+        faction: () => Random.array_element(Object.keys(factions)),
     },
 
     /**

@@ -62,7 +62,10 @@ function init() {
 
         context.fillText('☺', x, y);
     };
-    globals.focused_entity = globals.player = new Entity({x: 0, y: 0, z: 10, content: draw_player, health: 10, speed: 2, equip_slots: [0, 3, 5]});
+    globals.focused_entity = globals.player = new Entity({
+        x: 0, y: 0, z: 10, content: draw_player,
+        health: 10, speed: 2, equip_slots: [0, 3, 5], faction: 'player',
+    });
 
     Room.make_map();
 
