@@ -1,5 +1,5 @@
 import { Tile } from './tile.js';
-import { beautify, capitalize, number_between } from './primitives.js';
+import { average, beautify, capitalize, number_between } from './primitives.js';
 import { AutonomousEntity } from './entity.js';
 import { tile_size, display_size, get_theme_value, inventory_items_per_row, entity_skills_per_row } from './display.js';
 import globals from './globals.js';
@@ -169,40 +169,53 @@ export function canvas_refresh() {
  * @param {Entity} entity
  */
 function show_mini_status(entity) {
-    let height = tile_size[1];
-    let top = (display_size[1] * tile_size[1]);
-    let vals = ['health'];
-    if (entity.magic_max > 0 && entity.skills.length) vals.push('magic');
+    let vals = mini_status_rows(entity);
+    let rows = mini_status_rows_sizes(entity);
+    /** @type {[keyof Entity, [number, number, number, number]][]} */
+    let sets = vals.map((v, i) => [v, rows[i]]);
 
-    top -= height * vals.length;
+    for (let [property, row] of sets) {
+        if (!(property in entity)) continue;
 
-    for (let val of vals) {
-        let width;
-        let fill;
-        if (`${val}_max` in entity) {
-            width = entity[`${val}_max`];
-            fill = entity[val] / entity[`${val}_max`];
+        // Value of property
+        /** @type {number} */
+        let amount;
+        if (typeof entity[property] == 'number') {
+            amount = entity[property];
         } else {
-            width = entity[val];
-            fill = 1;
+            amount = average(...Object.values(entity[property]));
         }
-        width = Math.min(Math.max(Math.ceil(width / 10), 10), display_size[0]) * tile_size[0];
-        fill = Math.ceil(fill * width) || 0;
+        let max = false;
+        if (`${property}_max` in entity) {
+            if (typeof entity[`${property}_max`] == 'number') {
+                max = entity[`${property}_max`];
+            } else {
+                max = average(...Object.values(entity[`${property}_max`]));
+            }
+        }
 
-        let left = (display_size[0] * tile_size[0]) - width;
-        let text_position = left + width / 2;
+        // Rectangle parameters
+        let [left, top, width, height] = row;
+        let fill = amount / max;
+        fill = Math.ceil(fill * width) || 0;
         let empty = width - fill;
 
         if (fill > 0) {
-            context.fillStyle = get_theme_value(`background_entity_${val}_color`);
+            context.fillStyle = get_theme_value(`background_entity_${property}_color`);
             context.fillRect(left, top, fill, height);
         }
         if (fill / width < 1) {
-            context.fillStyle = get_theme_value(`background_entity_missing_${val}_color`);
+            context.fillStyle = get_theme_value(`background_entity_missing_${property}_color`);
             context.fillRect(left + fill, top, empty, height);
         }
-        canvas_write(`${beautify(entity[val])}/${entity[`${val}_max`]}`, text_position - tile_size[0], top - tile_size[1] * .2, {text_align: 'center'});
-        top += height;
+
+        // Text parameters
+        let text_position = left + width / 2;
+        let text = beautify(amount);
+        if (max !== false) {
+            text += `/${beautify(max)}`;
+        }
+        canvas_write(text, text_position - tile_size[0], top - tile_size[1] * .2, {text_align: 'center'});
     }
 }
 /**
@@ -225,7 +238,8 @@ function show_game() {
 function show_inventory(entity) {
     // Draw inventory background
     let items_per_row = inventory_items_per_row();
-    let item_rows = Math.max(Math.floor(display_size[1] / 3) - 1, 1);
+    let mini_rows = Math.ceil(mini_status_rows(entity).length / 3);
+    let item_rows = Math.max(Math.floor(display_size[1] / 3) - mini_rows, 1);
     for (let y = 0; y < item_rows; y++) {
         for (let x = 0; x < items_per_row + 1; x++) {
             let offset_x = tile_size[0];
@@ -449,7 +463,8 @@ function show_status(entity) {
 function show_skills(entity) {
     // Draw skills background
     const skills_per_row = entity_skills_per_row();
-    const skill_rows = Math.max(Math.floor(display_size[1] / 3) - 1, 1);
+    const mini_rows = Math.ceil(mini_status_rows(entity).length / 3);
+    const skill_rows = Math.max(Math.floor(display_size[1] / 3) - mini_rows, 1);
     const offset_x = tile_size[0];
     const offset_y = tile_size[1];
     for (let y = 0; y < skill_rows; y++) {
@@ -592,6 +607,18 @@ function canvas_tooltip(lines, left, top) {
     canvas_write(lines, left, top);
 }
 /**
+ * Returns the content rows for the mini status
+ *
+ * @param {Entity} entity
+ * @returns {string[]}
+ */
+function mini_status_rows(entity) {
+    let rows = ['health'];
+    if (entity.magic_max > 0 && entity.skills.length) rows.push('magic');
+
+    return rows;
+}
+/**
  * Writes text, with colors if you want, on the canvas
  *
  * @param {string[]|string} lines Lines to write. Change color by writing `{color:<color>}`. Any amount of backslashes will disable colors
@@ -717,4 +744,32 @@ export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, t
             context.fillText(line.replace(regex_not_color, n => n.slice(1)), x, y);
         }
     }
+}
+/**
+ * Calculates the sizes of each row for a ministatus
+ *
+ * @param {Entity} entity
+ * @param {string[]?} [rows]
+ * @returns {[number, number, number, number][]} [left, top, width, height]
+ */
+export function mini_status_rows_sizes(entity, rows=null) {
+    rows ??= mini_status_rows(entity);
+    /** @type {[number, number, number, number][]} */
+    let rects = [];
+
+    let height = tile_size[1];
+    let top = display_size[1] * tile_size[1] - rows.length * height;
+
+    for (let val of rows) {
+        if (!(`${val}_max` in entity || val in entity)) continue;
+
+        let width = entity?.[`${val}_max`] ?? entity[val];
+        width = Math.min(Math.max(Math.ceil(width / 10), 10), display_size[0]) * tile_size[0];
+
+        let left = (display_size[0] * tile_size[0]) - width;
+        rects.push([left, top, width, height]);
+        top += height;
+    }
+
+    return rects;
 }

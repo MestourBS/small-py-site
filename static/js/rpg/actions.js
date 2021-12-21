@@ -17,8 +17,8 @@
 import { Tile } from './tile.js';
 import { Item } from './item.js';
 import { Entity } from './entity.js';
-import { canvas } from './canvas.js';
-import { coords_distance, Direction } from './coords.js';
+import { canvas, mini_status_rows_sizes } from './canvas.js';
+import { coords_between, coords_distance, Direction } from './coords.js';
 import { number_between } from './primitives.js';
 import { display_size, entity_skills_per_row, get_theme_value, inventory_items_per_row, tile_size } from './display.js';
 import globals from './globals.js';
@@ -699,6 +699,9 @@ export function keydown(e) {
  */
 function click(x, y) {
     const player = globals.player;
+    // Prevent from firing if we're clicking on the mini status
+    const rows = mini_status_rows_sizes(player);
+    if (rows.some(r => coords_between([x, y], [r[0], r[1]], [r[0] + r[2], r[1] + r[3]]))) return;
 
     switch (globals.game_state) {
         case 'inventory': {
@@ -776,6 +779,9 @@ function click(x, y) {
 function contextmenu(x, y) {
     let content;
     const player = globals.player;
+    // Prevent from firing if we're clicking on the mini status
+    const rows = mini_status_rows_sizes(player);
+    if (rows.some(r => coords_between([x, y], [r[0], r[1]], [r[0] + r[2], r[1] + r[3]]))) return;
 
     switch (globals.game_state) {
         case 'playing': {
