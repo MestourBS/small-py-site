@@ -371,7 +371,7 @@ export class Entity extends Tile {
             this.solid = this.#health > 0;
             if (this.#health <= 0) {
                 while (this.#inventory.length > 0) {
-                    this.drop_item(0, false, 'max');
+                    this.drop_item(0, false, 1);
                 }
                 Object.keys(this.#equipment).forEach(n => this.drop_item(+n, true));
                 Tile.solid_tiles = false;
