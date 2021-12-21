@@ -27,9 +27,6 @@ export const targetings = {
     'roaming': function() {
         return Random.array_element(Tile.grid.filter(t => !t.solid && t != this && (!(t instanceof Item) || t.owner != this)));
     },
-    'player': function() {
-        return globals.player;
-    },
     'item': function() {
         /** @type {Item[]} */
         let items = Tile.grid.filter(t => t instanceof Item && !t.owner);
@@ -43,11 +40,16 @@ export const targetings = {
         }
         return Random.array_element(items);
     },
-    /*'entity': function() {
+    /*
+    'player': function() {
+        return globals.player;
+    },
+    'entity': function() {
         let entities = Entity.entities.filter(e => e.health > 0);
         if (!entities.length) return null;
         return Random.array_element(entities);
-    },*/
+    },
+    */
     /** @this {AutonomousEntity} */
     'enemy': function() {
         let faction = this.faction.id;
@@ -735,6 +737,7 @@ export class Entity extends Tile {
 
         return result;
     }
+
     /**
      * Uses an item in the inventory
      *
@@ -1018,6 +1021,7 @@ export class Entity extends Tile {
             this.#inventory[inventory_index][1]++;
         }
     }
+
     /**
      * Uses a skill
      *
@@ -1154,9 +1158,15 @@ export class Entity extends Tile {
                 cost_entries.forEach(([item_id, amount]) => {
                     amount = Math.round(amount);
 
-                    let i = this.#inventory.findIndex(e => e[0].id == item_id);
+                    let index = this.#inventory.findIndex(e => e[0].id == item_id);
+                    let [item, real_amount] = this.#inventory[index];
 
-                    this.#inventory[i][1] -= amount;
+                    if (amount >= real_amount) {
+                        item.owner = null;
+                        this.#inventory.splice(index, 1);
+                    } else {
+                        this.#inventory[index][1] -= amount;
+                    }
                 });
 
                 real_skill.level++;
@@ -1164,6 +1174,16 @@ export class Entity extends Tile {
                 break;
             }
         }
+    }
+    /**
+     * Unlocks all the entity's skills
+     */
+    unlock_skills() {
+        Skill.get_unlockable_skills(this).forEach(s => {
+            let skill = Skill.get_skill(s, {owner: this});
+            this.skills.push(skill);
+            skill.re_position();
+        });
     }
 }
 /**

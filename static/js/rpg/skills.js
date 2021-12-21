@@ -23,6 +23,19 @@ export class Skill extends Tile {
         }
         return null;
     }
+    /**
+     * Returns a list of skills the entity doesn't have and it can unlock
+     *
+     * @param {Entity} entity
+     * @returns {string[]}
+     */
+    static get_unlockable_skills(entity) {
+        return Object.values(this.#skills).filter(skill => {
+            if (entity.skills.find(s => s.id == skill.id)) return false;
+
+            return skill.unlock_conditions(entity);
+        }).map(s => s.id);
+    }
 
     #level;
     /** @type {number|false} */
@@ -58,13 +71,14 @@ export class Skill extends Tile {
      * @param {{[k: string]: number|{[k: string]: number}}} [params.on_use_target]
      * @param {{[k: string]: number|{[k: string]: number}}} [params.passive]
      * @param {(level: number) => {[item_id: string]: number}} [params.cost_func]
+     * @param {null|(entity: Entity) => boolean} [params.unlock_conditions]
      */
     constructor({
         content, id, name = null, description = null,
         level = 1, cost = 0, boost_func = (n => n),
         range = 0, radius = 0, owner = null,
         on_use_self = {}, on_use_target = {}, passive = {},
-        cost_func = (n => ({})),
+        cost_func = (n => ({})), unlock_conditions = null,
     }) {
         if (isNaN(level)) throw new TypeError(`Invalid skill parameter level: ${level}`);
         if (isNaN(cost)) throw new TypeError(`Invalid skill parameter cost: ${cost}`);
@@ -76,6 +90,7 @@ export class Skill extends Tile {
         if (typeof passive != 'object') throw new TypeError(`Invalid skill parameter passive: ${passive}`);
         if (owner && !(owner instanceof Entity)) throw new TypeError(`Invalid skill parameter owner: ${owner}`);
         if (typeof cost_func != 'function') throw new TypeError(`Invalid skill parameter cost_func: ${cost_func}`);
+        if (unlock_conditions && typeof unlock_conditions != 'function') throw new TypeError(`Invalid skill parameter conditions: ${unlock_conditions}`);
 
         let x = 0;
         let y = 0;
@@ -93,8 +108,9 @@ export class Skill extends Tile {
         this.#on_use_target = on_use_target;
         this.#passive = passive;
         this.#level = level;
-        this.cost_func = cost_func;
 
+        this.unlock_conditions = unlock_conditions;
+        this.cost_func = cost_func;
         this.id = id;
         this.name = name;
         this.description = description;
@@ -268,12 +284,12 @@ export class Skill extends Tile {
         let {
             content, level, boost_func, owner, cost, name, description, id,
             base_passive, base_on_use_self, base_on_use_target, range, radius,
-            cost_func,
+            cost_func, unlock_conditions: conditions,
         } = this;
         let skill = {
             content, on_use_self: {}, passive: {}, on_use_target: {}, id,
             level, boost_func, owner, cost, name, description, range, radius,
-            cost_func,
+            cost_func, conditions,
         };
 
         Object.entries(base_passive).forEach(([attr, change]) => {
@@ -352,6 +368,7 @@ export function create_skills() {
      *  on_use_target?: {[k:string]: number|{[k: string]: number}},
      *  passive?: {[k:string]: number|{[k: string]: number}},
      *  cost_func?: (level: number) => {[item_id: string]: number},
+     *  unlock_conditions?: (entity: Entity) => boolean,
      * }[]}
      */
     let skills = [
@@ -366,6 +383,7 @@ export function create_skills() {
                 //magic: 1,
             },
             cost_func: level => ({yes: level * 2 - 2 + 1}),
+            unlock_conditions: e => e.health_max >= 15,
         },
         {
             id: 'see',
@@ -379,6 +397,7 @@ export function create_skills() {
                 magic_max: 3,
             },
             cost_func: level => ({cash: level ** 2 / 2}),
+            unlock_conditions: e => e.base_speed <= e.bonus_speed,
         },
         {
             id: 'stab',
@@ -391,6 +410,7 @@ export function create_skills() {
                 health: -1,
             },
             cost_func: level => ({fire: level * 2 + 2}),
+            unlock_conditions: e => e.kills >= 3,
         },
     ];
 

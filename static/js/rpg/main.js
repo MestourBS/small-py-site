@@ -97,16 +97,18 @@ function compute_loop() {
         let use_items = diff < 1 / 2 ** 2;
         let use_skills = diff < 1 / 2 ** 3;
         let level_skills = diff < 1 / 2 ** 4;
+        let unlock_skills = diff < 1 / 2 ** 5;
 
         /** @type {AutonomousEntity[]} */
-        let entities = Entity.entities.filter(t => t instanceof AutonomousEntity);
-        entities.forEach(e => {
+        let autonomous_entities = Entity.entities.filter(t => t instanceof AutonomousEntity);
+        autonomous_entities.forEach(e => {
             if (move) e.move(null, diff);
             if (equip_items) e.equip_item();
             if (use_items) e.use_item();
             if (use_skills) e.use_skill();
             if (level_skills) e.level_skill();
         });
+        if (unlock_skills) Entity.entities.forEach(e => e.unlock_skills());
     }
 }
 

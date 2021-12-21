@@ -99,7 +99,7 @@ const keybinds = {
         'o': ['show_status'],
         ' ': ['select_skill_selected'],
         'k': ['hide_skills'],
-        '+': ['level_skill'],
+        'u': ['level_skill'],
     },
     skill_targeting: {
         'a': ['move_cursor_skill_target_left'],
