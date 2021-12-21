@@ -45,7 +45,7 @@ export class Item extends Tile {
             }
         }
         return ids;
-    };
+    }
 
     /**
      * @param {Object} params
@@ -65,7 +65,7 @@ export class Item extends Tile {
      */
     constructor({
         x, y, z, id, name=null, description=null, content, insert=false,
-        on_use={}, passive={}, equipped={}, equip_slot=null, owner=null
+        on_use={}, passive={}, equipped={}, equip_slot=null, owner=null,
     }) {
         if (typeof on_use != 'object') throw new TypeError(`Invalid item parameter on_use: ${on_use}`);
         if (typeof passive != 'object') throw new TypeError(`Invalid item parameter passive: ${passive}`);

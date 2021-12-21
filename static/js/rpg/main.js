@@ -1,12 +1,13 @@
-// Imports from entity.js must be first,
+// Imports from canvas.js must be first,
 // as importing won't attempt to load the same module twice.
-// This means that entity.js will import tile.js, which will prevent it from loading entity.js
-import { Entity, AutonomousEntity } from './entity.js';
+// This means that canvas.js will import tile.js, which will prevent it from loading modules dependant on it
+import './canvas.js';
 import { Room } from './room.js';
 import { tile_size } from './display.js';
 import { create_items } from './item.js';
 import { create_skills } from './skills.js';
 import { get_theme_value } from './display.js';
+import { Entity, AutonomousEntity } from './entity.js';
 import { canvas_reset, canvas_refresh } from './canvas.js';
 import globals from './globals.js';
 import './actions.js';
@@ -91,10 +92,11 @@ function compute_loop() {
 
     if (globals.game_state == 'playing') {
         let diff = time_since_last / 500;
-        let move = diff < 1 / 16;
-        let equip_items = diff < 1 / 8;
-        let use_items = diff < 1 / 4;
-        let use_skills = diff < 1 / 2;
+        let move = diff < 1 / 2 ** 0;
+        let equip_items = diff < 1 / 2 ** 1;
+        let use_items = diff < 1 / 2 ** 2;
+        let use_skills = diff < 1 / 2 ** 3;
+        let level_skills = diff < 1 / 2 ** 4;
 
         /** @type {AutonomousEntity[]} */
         let entities = Entity.entities.filter(t => t instanceof AutonomousEntity);
@@ -103,6 +105,7 @@ function compute_loop() {
             if (equip_items) e.equip_item();
             if (use_items) e.use_item();
             if (use_skills) e.use_skill();
+            if (level_skills) e.level_skill();
         });
     }
 }

@@ -2,6 +2,7 @@ import { Tile } from './tile.js';
 import { Entity } from './entity.js';
 import { context as canvas_context } from './canvas.js';
 import { entity_skills_per_row, tile_size, get_theme_value } from './display.js';
+import { Item } from './item.js';
 /** @typedef {import('./color.js').Color} Color */
 
 /**
@@ -38,6 +39,8 @@ export class Skill extends Tile {
     #passive;
     /** @type {{[k: string]: number|{[k: string]: number}}|false} */
     #cached_passive = false;
+    /** @type {false|{[item_id: string]: number}} */
+    #cached_cost = false;
 
     /**
      * @param {Object} params
@@ -54,12 +57,14 @@ export class Skill extends Tile {
      * @param {{[k: string]: number|{[k: string]: number}}} [params.on_use_self]
      * @param {{[k: string]: number|{[k: string]: number}}} [params.on_use_target]
      * @param {{[k: string]: number|{[k: string]: number}}} [params.passive]
+     * @param {(level: number) => {[item_id: string]: number}} [params.cost_func]
      */
     constructor({
         content, id, name = null, description = null,
         level = 1, cost = 0, boost_func = (n => n),
         range = 0, radius = 0, owner = null,
         on_use_self = {}, on_use_target = {}, passive = {},
+        cost_func = (n => ({})),
     }) {
         if (isNaN(level)) throw new TypeError(`Invalid skill parameter level: ${level}`);
         if (isNaN(cost)) throw new TypeError(`Invalid skill parameter cost: ${cost}`);
@@ -70,6 +75,7 @@ export class Skill extends Tile {
         if (typeof on_use_target != 'object') throw new TypeError(`Invalid skill parameter on_use_target: ${on_use_target}`);
         if (typeof passive != 'object') throw new TypeError(`Invalid skill parameter passive: ${passive}`);
         if (owner && !(owner instanceof Entity)) throw new TypeError(`Invalid skill parameter owner: ${owner}`);
+        if (typeof cost_func != 'function') throw new TypeError(`Invalid skill parameter cost_func: ${cost_func}`);
 
         let x = 0;
         let y = 0;
@@ -83,14 +89,16 @@ export class Skill extends Tile {
 
         super({x, y, z: 0, content, solid: false, insert: false});
 
-        this.id = id;
-        this.name = name;
-        this.description = description;
         this.#on_use_self = on_use_self;
         this.#on_use_target = on_use_target;
         this.#passive = passive;
-        this.owner = owner;
         this.#level = level;
+        this.cost_func = cost_func;
+
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.owner = owner;
         this.boost_func = boost_func;
         this.cost = cost;
         this.range = range;
@@ -107,6 +115,7 @@ export class Skill extends Tile {
             this.#cached_passive = false;
             this.#cached_on_use_self = false;
             this.#cached_on_use_target = false;
+            this.#cached_cost = false;
         }
     }
     get multiplier() {
@@ -114,6 +123,12 @@ export class Skill extends Tile {
             this.#multiplier = this.boost_func(this.#level);
         }
         return this.#multiplier;
+    }
+    get level_cost() {
+        if (this.#cached_cost === false) {
+            this.#cached_cost = this.cost_func(this.#level);
+        }
+        return this.#cached_cost;
     }
 
     /**
@@ -253,10 +268,13 @@ export class Skill extends Tile {
         let {
             content, level, boost_func, owner, cost, name, description, id,
             base_passive, base_on_use_self, base_on_use_target, range, radius,
+            cost_func,
         } = this;
         let skill = {
             content, on_use_self: {}, passive: {}, on_use_target: {}, id,
-            level, boost_func, owner, cost, name, description, range, radius};
+            level, boost_func, owner, cost, name, description, range, radius,
+            cost_func,
+        };
 
         Object.entries(base_passive).forEach(([attr, change]) => {
             if (typeof change != 'object') {
@@ -307,6 +325,15 @@ export class Skill extends Tile {
             this.y = this.equip_slot;
         }
     }
+    /**
+     * Returns the cost for levelling up at a specific level
+     *
+     * @param {number} [level]
+     * @returns {{[item_id: string]: number}}
+     */
+    level_costs_at(level=this.#level) {
+        return this.cost_func(level);
+    }
 }
 
 export function create_skills() {
@@ -324,6 +351,7 @@ export function create_skills() {
      *  on_use_self?: {[k:string]: number|{[k: string]: number}},
      *  on_use_target?: {[k:string]: number|{[k: string]: number}},
      *  passive?: {[k:string]: number|{[k: string]: number}},
+     *  cost_func?: (level: number) => {[item_id: string]: number},
      * }[]}
      */
     let skills = [
@@ -337,18 +365,20 @@ export function create_skills() {
                 health: 1,
                 //magic: 1,
             },
+            cost_func: level => ({yes: level * 2 - 2 + 1}),
         },
         {
             id: 'see',
             content: '👁',
             name: gettext('games_rpg_skills_see'),
             cost: 5,
-            range: 10,
+            range: 15,
             boost_func: n => (n + 1) / 2,
             on_use_target: {},
             passive: {
                 magic_max: 3,
             },
+            cost_func: level => ({cash: level ** 2 / 2}),
         },
         {
             id: 'stab',
@@ -360,6 +390,7 @@ export function create_skills() {
             on_use_target: {
                 health: -1,
             },
+            cost_func: level => ({fire: level * 2 + 2}),
         },
     ];
 

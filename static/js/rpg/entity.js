@@ -224,13 +224,16 @@ export const factions = {
         name: gettext('games_rpg_faction_null'),
         id: 'null',
         relations: {
-            get 'null'() { return -100; },
+            'null': -100,
+            'player': -100,
+            'anti_player': -100,
         },
     },
     'player': {
         name: gettext('games_rpg_faction_player'),
         id: 'player',
         relations: {
+            'null': -100,
             'anti_player': -100,
         },
     },
@@ -238,12 +241,11 @@ export const factions = {
         name: gettext('games_rpg_faction_anti_player'),
         id: 'anti_player',
         relations: {
+            'null': -100,
             'player': -100,
         },
     },
 };
-
-let attackers_memory = 5;
 
 /**
  * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, this: Entity<T>) => void} T
@@ -260,9 +262,9 @@ export class Entity extends Tile {
     #magic;
     /** @type {number} */
     #magic_max;
-    /** @type {{[k: string]: number}} */
+    /** @type {{[type: string]: number}} */
     #defense;
-    /** @type {{[k: string]: number}} */
+    /** @type {{[type: string]: number}} */
     #damage;
     /** @type {number} */
     #speed;
@@ -271,14 +273,12 @@ export class Entity extends Tile {
 
     /** @type {[Item, number][]} */
     #inventory = [];
-    /** @type {{[k: number]: Item|null}} */
+    /** @type {{[slot: number]: Item|null}} */
     #equipment = {};
     /** @type {Skill[]} */
     #skills = [];
     /** @type {string} */
     #faction = null;
-    /** @type {Entity[]} */
-    #last_attackers = [];
 
     /**
      * @param {Object} params
@@ -336,11 +336,6 @@ export class Entity extends Tile {
                 this.health -= damage;
                 if (this.health <= 0) {
                     entity.kills++;
-                }
-
-                if (!this.#last_attackers.includes(entity)) {
-                    this.#last_attackers.push(entity);
-                    this.#last_attackers = this.#last_attackers.filter(e => e.health > 0).slice(-attackers_memory);
                 }
             } else if (ally) {
                 // friendly
@@ -579,7 +574,6 @@ export class Entity extends Tile {
     get inventory() { return this.#inventory; }
     get equipment() { return this.#equipment; }
     get skills() { return this.#skills; }
-    get last_attackers() { return this.#last_attackers; }
 
     /** @type {{name: string, id: string, relations: {[k: string]: number}}} */
     get faction() { return factions[this.#faction]; }
@@ -756,6 +750,7 @@ export class Entity extends Tile {
         } else if (typeof item == 'number') {
             index = item;
         }
+        amount = Math.round(amount);
 
         if (!(index in this.#inventory)) return;
 
@@ -763,7 +758,7 @@ export class Entity extends Tile {
         if (amount == 'max') amount = real_amount;
         else amount = Math.min(amount, real_amount);
 
-        if (!amount || isNaN(amount) || !Object.keys(real_item.on_use).length) return;
+        if (amount <= 0 || isNaN(amount) || !Object.keys(real_item.on_use).length) return;
         Object.entries(real_item.on_use).forEach(([attr, change]) => {
             if (`base_${attr}` in this) {
                 attr = `base_${attr}`;
@@ -818,6 +813,7 @@ export class Entity extends Tile {
         } else if (typeof item == 'number') {
             index = item;
         }
+        amount = Math.round(amount);
 
         let real_item;
         let real_amount = 1;
@@ -834,7 +830,7 @@ export class Entity extends Tile {
         if (amount == 'max') amount = real_amount;
         else amount = Math.min(amount, real_amount);
 
-        if (!amount || isNaN(amount)) return;
+        if (amount <= 0 || isNaN(amount)) return;
 
         // You can't wear 2 shirts in the game
         if (equip) this.#equipment[index] = null;
@@ -1114,6 +1110,59 @@ export class Entity extends Tile {
                     });
                 }
             });
+        }
+    }
+    /**
+     * Levels up a skill
+     *
+     * @param {Skill|number|string} skill skill|index|id
+     * @param {number|'max'} [levels]
+     */
+    level_skill(skill, levels=1) {
+        let index;
+        if (skill instanceof Skill) {
+            index = this.#skills.findIndex(s => s.id == skill.id);
+        } else if (typeof skill == 'string') {
+            index = this.#skills.findIndex(s => s.id == skill);
+        } else if (typeof skill == 'number') {
+            index = skill;
+        }
+
+        if (levels == 'max') levels = Infinity;
+        levels = Math.round(levels);
+
+        if (!(index in this.#skills) || levels <= 0) return;
+
+        let real_skill = this.#skills[index];
+
+        for (let a = 0; a < levels; a++) {
+            let cost = real_skill.level_cost;
+            let can_afford = true;
+            let cost_entries = Object.entries(cost);
+
+            cost_entries.forEach(([item_id, amount]) => {
+                if (!can_afford) return;
+
+                amount = Math.round(amount);
+
+                let [,am] = this.#inventory.find(e => e[0].id == item_id) ?? [,0];
+
+                can_afford &&= am >= amount;
+            });
+
+            if (can_afford) {
+                cost_entries.forEach(([item_id, amount]) => {
+                    amount = Math.round(amount);
+
+                    let i = this.#inventory.findIndex(e => e[0].id == item_id);
+
+                    this.#inventory[i][1] -= amount;
+                });
+
+                real_skill.level++;
+            } else {
+                break;
+            }
         }
     }
 }
@@ -1493,6 +1542,58 @@ export class AutonomousEntity extends Entity {
             skill = bests[0][0];
         }
         super.use_skill(skill, target);
+    }
+    /**
+     * Levels up a skill
+     *
+     * @param {Skill|number|string|null} [skill] skill|index|id|auto
+     * @param {number|'max'} [levels]
+     */
+    level_skill(skill = null, levels = 1) {
+        if (!this.skills.length) return;
+
+        if (skill == null) {
+            /** @type {[Skill, number, number][]} [skill, max_level, cost/max level], sorted by cost/max level */
+            let levelables = this.skills.map(skill => {
+                /** @type {{[item_id: string]: number}} */
+                let total_costs = {};
+                let max_level = 0;
+
+                for (let l = 0; l < levels; l++) {
+                    let cost = skill.level_costs_at(skill.level + l);
+                    let can_afford = true;
+                    Object.entries(cost).forEach(([item_id, amount]) => {
+                        if (!(item_id in total_costs)) total_costs[item_id] = 0;
+                        total_costs[item_id] += amount;
+                    });
+
+                    Object.entries(total_costs).forEach(([item_id, amount]) => {
+                        let i = this.inventory.findIndex(([i]) => i.id == item_id);
+
+                        can_afford &&= this.inventory[i][1] >= amount;
+                    });
+
+                    max_level += can_afford;
+                    if (!can_afford) {
+                        Object.entries(cost).forEach(([item_id, amount]) => {
+                            total_costs[item_id] -= amount;
+                        });
+
+                        break;
+                    }
+                }
+
+                let cost = Object.values(total_costs).reduce((s, n) => s + n, 0);
+
+                return [skill, max_level, cost / max_level];
+            }).sort((a, b) => a[2] - b[2]).filter(r => r[1] > 0);
+
+            if (!levelables.length) return;
+
+            [skill, levels] = levelables[0];
+        }
+
+        super.use_skill(skill, levels);
     }
 }
 /**

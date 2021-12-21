@@ -1,9 +1,10 @@
+import { Item } from './item.js';
 import { Tile } from './tile.js';
-import { average, beautify, capitalize, number_between } from './primitives.js';
+import { coords_distance } from './coords.js';
 import { AutonomousEntity } from './entity.js';
+import { average, beautify, capitalize, number_between } from './primitives.js';
 import { tile_size, display_size, get_theme_value, inventory_items_per_row, entity_skills_per_row } from './display.js';
 import globals from './globals.js';
-import { coords_distance } from './coords.js';
 /**
  * @typedef {import('./entity.js').Entity} Entity
  */
@@ -323,12 +324,12 @@ function show_inventory(entity) {
 
             let title = gettext('games_rpg_status_equipped');
             if (globals.cursors.inventory[0] == items_per_row)
-                title = `{color:${get_theme_value('text_item_equipped_color')}}${title}{color:${get_theme_value('text_color')}}`;
+                title = `{color:${get_theme_value('text_item_equipped_color')}}${title}{color:reset}}`;
             lines.push(title);
 
             let has_slot = item.equip_slot in entity.equipment ? 'text_item_has_slot_color' : 'text_item_has_not_slot_color';
             lines.push(gettext('games_rpg_status_equip_slot', {
-                slot: `{color:${get_theme_value(has_slot)}}${equip_slots[item.equip_slot].name}{color:${get_theme_value('text_color')}}`
+                slot: `{color:${get_theme_value(has_slot)}}${equip_slots[item.equip_slot].name}{color:reset}`
             }));
 
             Object.entries(item.equipped).forEach(([attr, change]) => {
@@ -505,8 +506,14 @@ function show_skills(entity) {
         if (skill.cost > 0) {
             let can_cast = skill.cost <= entity.magic;
             let cost_line = `{color:${can_cast ? 'green': 'red'}}` + gettext('games_rpg_status_cost')
-                +`: ${beautify(skill.cost)} {color:${get_theme_value('text_color')}}`;
+                +`: ${beautify(skill.cost)} {color:reset}`;
             lines.push(cost_line);
+        }
+        if (Object.keys(skill.level_cost).length) {
+            lines.push('---', gettext('games_rpg_status_level_cost'));
+            Object.entries(skill.level_cost).forEach(([item_id, amount]) => {
+                lines.push(`${Item.get_item(item_id).name}: ${beautify(Math.round(amount))}`);
+            });
         }
         if (Object.keys(skill.passive).length) {
             lines.push('---', gettext('games_rpg_status_passive'));
@@ -621,7 +628,8 @@ function mini_status_rows(entity) {
 /**
  * Writes text, with colors if you want, on the canvas
  *
- * @param {string[]|string} lines Lines to write. Change color by writing `{color:<color>}`. Any amount of backslashes will disable colors
+ * @param {string[]|string} lines Lines to write. Change color by writing `{color:<color>}`.
+ *  Any amount of backslashes will disable colors. If color is `reset`, the color is reset back to its default value.
  * @param {number} left Distance from left edge
  * @param {number} top Distance from top edge
  * @param {Object} context_options
@@ -733,8 +741,10 @@ export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, t
             let color = false;
             line.split(regex_color).forEach(chunk => {
                 // Half of the pieces are color setters, the rest is actual text
-                if (color) context.fillStyle = chunk;
-                else {
+                if (color) {
+                    if (chunk.toLowerCase() == 'reset') chunk = get_theme_value('text_color');
+                    context.fillStyle = chunk;
+                } else {
                     context.fillText(chunk.replace(regex_not_color, n => n.slice(1)), x, y);
                     x += context.measureText(chunk).width;
                 }

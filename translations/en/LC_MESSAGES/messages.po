@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-12-20 15:40+0100\n"
+"POT-Creation-Date: 2021-12-21 11:17+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -604,209 +604,213 @@ msgstr "Use skill"
 msgid "games_rpg_action_level_skill"
 msgstr "Level up skill"
 
-#: static/js/rpg/actions.js:558
+#: static/js/rpg/actions.js:557
 msgid "games_rpg_action_game_pause"
 msgstr "Pause"
 
-#: static/js/rpg/actions.js:564
+#: static/js/rpg/actions.js:563
 msgid "games_rpg_action_game_resume"
 msgstr "Resume"
 
-#: static/js/rpg/actions.js:570
+#: static/js/rpg/actions.js:569
 msgid "games_rpg_action_game_pause_toggle"
 msgstr "Toggle pause"
 
-#: static/js/rpg/actions.js:577
+#: static/js/rpg/actions.js:576
 msgid "games_rpg_action_show_inventory"
 msgstr "Show inventory"
 
-#: static/js/rpg/actions.js:585
+#: static/js/rpg/actions.js:584
 msgid "games_rpg_action_hide_inventory"
 msgstr "Hide inventory"
 
-#: static/js/rpg/actions.js:591
+#: static/js/rpg/actions.js:590
 msgid "games_rpg_action_show_status"
 msgstr "Show status"
 
-#: static/js/rpg/actions.js:599
+#: static/js/rpg/actions.js:598
 msgid "games_rpg_action_hide_status"
 msgstr "Hide status"
 
-#: static/js/rpg/actions.js:605
+#: static/js/rpg/actions.js:604
 msgid "games_rpg_action_show_skills"
 msgstr "Show skills"
 
-#: static/js/rpg/actions.js:615
+#: static/js/rpg/actions.js:614
 msgid "games_rpg_action_hide_skills"
 msgstr "Hide skills"
 
-#: static/js/rpg/actions.js:621
+#: static/js/rpg/actions.js:620
 msgid "games_rpg_action_change_skill"
 msgstr "Change skill"
 
-#: static/js/rpg/actions.js:628
+#: static/js/rpg/actions.js:627
 msgid "games_rpg_action_cancel_skill"
 msgstr "Cancel skill"
 
-#: static/js/rpg/actions.js:637
+#: static/js/rpg/actions.js:636
 msgid "games_rpg_action_open_context_menu"
 msgstr "Open context menu"
 
-#: static/js/rpg/actions.js:880
+#: static/js/rpg/actions.js:887
 msgid "games_rpg_item_has_passive"
 msgstr "With passive effect"
 
-#: static/js/rpg/actions.js:881
+#: static/js/rpg/actions.js:888
 msgid "games_rpg_item_can_use"
 msgstr "Can be used"
 
-#: static/js/rpg/actions.js:882
+#: static/js/rpg/actions.js:889
 msgid "games_rpg_item_can_equip"
 msgstr "Can be equipped"
 
-#: static/js/rpg/canvas.js:42
+#: static/js/rpg/canvas.js:43
 msgid "games_rpg_type_none"
 msgstr "None"
 
-#: static/js/rpg/canvas.js:50
+#: static/js/rpg/canvas.js:51
 msgid "games_rpg_status_health"
 msgstr "Health"
 
-#: static/js/rpg/canvas.js:51
+#: static/js/rpg/canvas.js:52
 msgid "games_rpg_status_health_max"
 msgstr "Max Health"
 
-#: static/js/rpg/canvas.js:52
+#: static/js/rpg/canvas.js:53
 msgid "games_rpg_status_magic"
 msgstr "Magic"
 
-#: static/js/rpg/canvas.js:53
+#: static/js/rpg/canvas.js:54
 msgid "games_rpg_status_magic_max"
 msgstr "Max Magic"
 
-#: static/js/rpg/canvas.js:54
+#: static/js/rpg/canvas.js:55
 msgid "games_rpg_status_speed"
 msgstr "Speed"
 
-#: static/js/rpg/canvas.js:55
+#: static/js/rpg/canvas.js:56
 msgid "games_rpg_status_range"
 msgstr "Range"
 
-#: static/js/rpg/canvas.js:56
+#: static/js/rpg/canvas.js:57
 msgid "games_rpg_status_kills"
 msgstr "Kills"
 
-#: static/js/rpg/canvas.js:57
+#: static/js/rpg/canvas.js:58
 msgid "games_rpg_status_inventory"
 msgstr "Inventory"
 
-#: static/js/rpg/canvas.js:58
+#: static/js/rpg/canvas.js:59
 msgid "games_rpg_status_skills"
 msgstr "Skills"
 
-#: static/js/rpg/canvas.js:59
+#: static/js/rpg/canvas.js:60
 msgid "games_rpg_status_skills_total_levels"
 msgstr "total levels"
 
-#: static/js/rpg/canvas.js:60
+#: static/js/rpg/canvas.js:61
 msgid "games_rpg_status_defense"
 msgstr "%(type)s Defense"
 
-#: static/js/rpg/canvas.js:61
+#: static/js/rpg/canvas.js:62
 msgid "games_rpg_status_damage"
 msgstr "%(type)s Damage"
 
-#: static/js/rpg/canvas.js:73
+#: static/js/rpg/canvas.js:74
 msgid "games_rpg_slot_head"
 msgstr "Head"
 
-#: static/js/rpg/canvas.js:77
+#: static/js/rpg/canvas.js:78
 msgid "games_rpg_slot_face"
 msgstr "Face"
 
-#: static/js/rpg/canvas.js:81
+#: static/js/rpg/canvas.js:82
 msgid "games_rpg_slot_neck"
 msgstr "Neck"
 
-#: static/js/rpg/canvas.js:85
+#: static/js/rpg/canvas.js:86
 msgid "games_rpg_slot_chest"
 msgstr "Chest"
 
-#: static/js/rpg/canvas.js:89
+#: static/js/rpg/canvas.js:90
 msgid "games_rpg_slot_arm"
 msgstr "Arm"
 
-#: static/js/rpg/canvas.js:93
+#: static/js/rpg/canvas.js:94
 msgid "games_rpg_slot_hand"
 msgstr "Hand"
 
-#: static/js/rpg/canvas.js:97
+#: static/js/rpg/canvas.js:98
 msgid "games_rpg_slot_leg"
 msgstr "Leg"
 
-#: static/js/rpg/canvas.js:101
+#: static/js/rpg/canvas.js:102
 msgid "games_rpg_slot_foot"
 msgstr "Foot"
 
-#: static/js/rpg/canvas.js:285 static/js/rpg/canvas.js:357
-#: static/js/rpg/canvas.js:503
+#: static/js/rpg/canvas.js:298 static/js/rpg/canvas.js:370
+#: static/js/rpg/canvas.js:517
 msgid "games_rpg_status_name"
 msgstr "Name"
 
-#: static/js/rpg/canvas.js:285 static/js/rpg/canvas.js:357
-#: static/js/rpg/canvas.js:503
+#: static/js/rpg/canvas.js:298 static/js/rpg/canvas.js:370
+#: static/js/rpg/canvas.js:517
 msgid "games_rpg_status_name_unnamed"
 msgstr "Unnamed"
 
-#: static/js/rpg/canvas.js:287 static/js/rpg/canvas.js:505
+#: static/js/rpg/canvas.js:300 static/js/rpg/canvas.js:519
 msgid "games_rpg_status_description"
 msgstr "Description"
 
-#: static/js/rpg/canvas.js:289
+#: static/js/rpg/canvas.js:302
 msgid "games_rpg_status_on_use"
 msgstr "On use"
 
-#: static/js/rpg/canvas.js:303 static/js/rpg/canvas.js:513
+#: static/js/rpg/canvas.js:316 static/js/rpg/canvas.js:534
 msgid "games_rpg_status_passive"
 msgstr "Passive"
 
-#: static/js/rpg/canvas.js:319
+#: static/js/rpg/canvas.js:332
 msgid "games_rpg_status_equipped"
 msgstr "When equipped"
 
-#: static/js/rpg/canvas.js:325
+#: static/js/rpg/canvas.js:338
 msgid "games_rpg_status_equip_slot"
 msgstr "Equipment slot %(slot)s"
 
-#: static/js/rpg/canvas.js:358
+#: static/js/rpg/canvas.js:371
 msgid "games_rpg_status_faction"
 msgstr "Faction"
 
-#: static/js/rpg/canvas.js:380
+#: static/js/rpg/canvas.js:393
 msgid "defense"
 msgstr ""
 
-#: static/js/rpg/canvas.js:387
+#: static/js/rpg/canvas.js:400
 msgid "damage"
 msgstr ""
 
-#: static/js/rpg/canvas.js:407
+#: static/js/rpg/canvas.js:420
 msgid "games_rpg_status_items"
 msgstr "items"
 
-#: static/js/rpg/canvas.js:407
+#: static/js/rpg/canvas.js:420
 msgid "games_rpg_status_item"
 msgstr "item"
 
-#: static/js/rpg/canvas.js:508
+#: static/js/rpg/canvas.js:522
 msgid "games_rpg_status_cost"
 msgstr "Cost"
 
-#: static/js/rpg/canvas.js:527
+#: static/js/rpg/canvas.js:528
+msgid "games_rpg_status_level_cost"
+msgstr "Level-up Cost"
+
+#: static/js/rpg/canvas.js:548
 msgid "games_rpg_status_on_use_self"
 msgstr "On use on self"
 
-#: static/js/rpg/canvas.js:541
+#: static/js/rpg/canvas.js:562
 msgid "games_rpg_status_on_use_target"
 msgstr "On use on a target"
 
@@ -882,7 +886,7 @@ msgstr "Health color"
 msgid "games_rpg_theme_background_entity_missing_health_color"
 msgstr "Missing health color"
 
-#: static/js/rpg/entity.js:238
+#: static/js/rpg/entity.js:236
 msgid "games_rpg_faction_null"
 msgstr "Unaffiliated"
 
@@ -894,59 +898,59 @@ msgstr "Player"
 msgid "games_rpg_faction_anti_player"
 msgstr "Anti player"
 
-#: static/js/rpg/item.js:274
+#: static/js/rpg/item.js:287
 msgid "games_rpg_items_no"
 msgstr "No"
 
-#: static/js/rpg/item.js:282
+#: static/js/rpg/item.js:295
 msgid "games_rpg_items_yes"
 msgstr "Yes"
 
-#: static/js/rpg/item.js:293
+#: static/js/rpg/item.js:306
 msgid "games_rpg_items_cake"
 msgstr "Cake"
 
-#: static/js/rpg/item.js:298
+#: static/js/rpg/item.js:311
 msgid "games_rpg_items_bricks"
 msgstr "Bricks"
 
-#: static/js/rpg/item.js:313
+#: static/js/rpg/item.js:326
 msgid "games_rpg_items_sparks"
 msgstr "Sparks"
 
-#: static/js/rpg/item.js:322
+#: static/js/rpg/item.js:335
 msgid "games_rpg_items_flag"
 msgstr "Flag"
 
-#: static/js/rpg/item.js:331
+#: static/js/rpg/item.js:344
 msgid "games_rpg_items_gift"
 msgstr "Gift"
 
-#: static/js/rpg/item.js:336
+#: static/js/rpg/item.js:349
 msgid "games_rpg_items_clover"
 msgstr "Clover"
 
-#: static/js/rpg/item.js:344
+#: static/js/rpg/item.js:357
 msgid "games_rpg_items_fire"
 msgstr "Fire"
 
-#: static/js/rpg/item.js:349
+#: static/js/rpg/item.js:362
 msgid "games_rpg_items_cash"
 msgstr "Cash"
 
-#: static/js/rpg/item.js:356
+#: static/js/rpg/item.js:369
 msgid "games_rpg_items_video_game"
 msgstr "Video Game"
 
-#: static/js/rpg/skills.js:336
+#: static/js/rpg/skills.js:364
 msgid "games_rpg_skills_rest"
 msgstr "Rest"
 
-#: static/js/rpg/skills.js:348
+#: static/js/rpg/skills.js:377
 msgid "games_rpg_skills_see"
 msgstr "Look around"
 
-#: static/js/rpg/skills.js:361
+#: static/js/rpg/skills.js:391
 msgid "games_rpg_skills_stab"
 msgstr "Stab"
 
