@@ -1597,7 +1597,7 @@ export class AutonomousEntity extends Entity {
                     Object.entries(total_costs).forEach(([item_id, amount]) => {
                         let i = this.inventory.findIndex(([i]) => i.id == item_id);
 
-                        can_afford &&= this.inventory[i][1] >= amount;
+                        can_afford &&= i in this.inventory && this.inventory[i][1] >= amount;
                     });
 
                     max_level += can_afford;
