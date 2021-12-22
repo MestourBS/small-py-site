@@ -20,9 +20,6 @@ import globals from './globals.js';
  *  * maps:
  *      - no hallways, everything touches another room
  *
- *  * merge:
- *      - shove it all in a single array and remove dupes
- *
  *  ? room decorating?
  */
 
@@ -633,6 +630,7 @@ export class Room {
             return map;
         },
         //#region huge map
+        //! Removed for being too laggy both in generations and with smart pathfinding
         /*'huge': (room_amount=null, spawn_player=true) => {
             /** @type {Room<Tile>[]} /
             let rooms = [];
@@ -735,32 +733,26 @@ export class Room {
         /** @type {Tile[]} */
         let master_grid = rooms.map(r => r.grid).flat();
 
-        [...master_grid].forEach(tile => {
-            if (!master_grid.includes(tile)) return;
+        [...master_grid].forEach((tile, i) => {
+            if (master_grid[i] == null) return;
 
-            let shared = master_grid.filter(t => t.x == tile.x && t.y == tile.y);
+            let shared = master_grid.filter(t => t?.x == tile.x && t?.y == tile.y);
             if (shared.length <= 1) return;
 
             let floors = shared.filter(t => !t.solid);
-            let walls = shared.filter(t => t.solid);
+            /** @type {Tile} */
+            let chosen;
             if (floors.length) {
-                let chosen = Random.array_element(floors);
-                floors.splice(floors.indexOf(chosen), 1);
-                floors.forEach(t => {
-                    let i = master_grid.indexOf(t);
-                    master_grid[i] = null;
-                });
+                chosen = Random.array_element(floors);
             } else {
-                let chosen = Random.array_element(walls);
-                walls.splice(walls.indexOf(chosen), 1);
+                let walls = shared.filter(t => t.solid);
+                chosen = Random.array_element(walls);
             }
-            walls.forEach(t => {
-                let i = master_grid.indexOf(t);
-                master_grid[i] = null;
+            shared.forEach(t => {
+                if (t != chosen) master_grid[master_grid.indexOf(t)] = null;
             });
-
-            master_grid = master_grid.filter(t => t != null);
         });
+        master_grid = master_grid.filter(t => t != null);
 
         return new Room({grid: master_grid});
     }
@@ -970,41 +962,29 @@ export class Room {
             // Make the hallway, screw anything in the way
             coords.forEach(([x, y]) => {
                 grid.push(...surrounding_square(x, y, hallway_radius)
-                    .filter(c => !grid.some(t => t.x == c[0] && t.y == c[1]))
+                    //.filter(c => !grid.some(t => t.x == c[0] && t.y == c[1]))
                     .map(([x, y]) => new Tile({x, y, z:0, content: hall_floors, insert: false})));
             });
 
             // Convert edges into walls
             let hall_walls = walls ?? ascii_contents[Random.array_element(ascii_symbols.solids)];
             grid.forEach(/**@this {Tile[]}*/function(tile) {
-                /** @type {Tile?[]} */
-                let neighbours = [
-                    this.find(t => t.x == tile.x-1 && t.y == tile.y),
-                    this.find(t => t.x == tile.x+1 && t.y == tile.y),
-                    this.find(t => t.x == tile.x && t.y == tile.y-1),
-                    this.find(t => t.x == tile.x && t.y == tile.y+1),
-                ];
-
-                if (neighbours.some(t => typeof t == 'undefined')) {
+                let dirs = [Direction.up, Direction.down, Direction.left, Direction.right];
+                if (!dirs.every(dir => grid.some(t => t.x == tile.x+dir[0] && t.y == tile.y+dir[1]))) {
                     tile.solid = true;
                     tile.content = hall_walls;
                 }
-            }, grid);
+            });
 
             if (grid.length == 0) {
-                let mode;
-                for (let [id, func] of Object.entries(this.PATHS)) {
-                    if (func == path) {
-                        mode = id;
-                        break;
-                    }
-                }
+                let mode = Object.entries(this.PATHS).find(p => p[1] == path)[0];
                 console.error(`Could not link rooms ${index_from} and ${index_to}. `+
                 `From (x: ${tile_from.x}, y: ${tile_from.y}), to (x: ${tile_to.x}, y: ${tile_to.y}). `+
                 `Mode: ${mode}`);
+                return;
             }
 
-            let hallway = new Room({grid});
+            let hallway = Room.merge(new Room({grid}));
 
             separate_rooms.push(hallway);
         });

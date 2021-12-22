@@ -881,7 +881,6 @@ function contextmenu(x, y) {
                                 let [text, action] = o;
                                 cells[1].innerText = text;
                                 let [a, ...args] = action;
-                                console.log(args);
                                 row.addEventListener('click', e => {
                                     actions[a].func(...args);
                                 });
