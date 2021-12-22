@@ -24,7 +24,23 @@ export const globals = {
      *
      * @type {Entity|{x: number, y: number}}
      */
-    focused_entity: null,
+    get focused_entity() {
+        switch (this.game_state) {
+            case 'inventory':
+            case 'minimap':
+            case 'pause':
+            case 'playing':
+            case 'skills':
+            case 'status':
+            default:
+                return this.player;
+            case 'skill_targeting':
+                return {
+                    get x() { return globals.cursors.skill_target[0]; },
+                    get y() { return globals.cursors.skill_target[1]; },
+                };
+        }
+    },
     /**
      * Current cursors for different screens, as [x, y]
      *

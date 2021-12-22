@@ -1118,6 +1118,8 @@ export class Entity extends Tile {
                     });
                 }
             });
+
+            if (target instanceof Entity && target.health < 0) this.kills++;
         }
     }
     /**
@@ -1618,7 +1620,7 @@ export class AutonomousEntity extends Entity {
             [skill, levels] = levelables[0];
         }
 
-        super.use_skill(skill, levels);
+        super.level_skill(skill, levels);
     }
 }
 /**

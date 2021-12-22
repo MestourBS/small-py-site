@@ -629,6 +629,47 @@ export class Room {
 
             return map;
         },
+        'dense': (room_amount=null, spawn_player=true) => {
+            /** @type {Room<Tile>[]} */
+            let rooms = [];
+            if (spawn_player) {
+                rooms.push(Room.make_spawn());
+            }
+
+            // Add rooms
+            room_amount ??= Math.ceil(Random.range(5, 30));
+
+            if (room_amount > 0) {
+                for (let i = 0; i <= room_amount; i++) {
+                    let connected_room = Random.array_element(rooms) ?? new Room({grid: [['.']]}).to_tiles(0, 0, false);
+
+                    let room = Random.Room.room();
+
+                    let c_tile = Random.array_element(connected_room.grid.filter(t => !t.solid));
+                    let r_tiles = room.grid.map((r,y) => r.map((c, x) => ({c, x, y}))).flat().filter(t => ascii_symbols.nonsolids.includes(t.c));
+                    let r_tile = Random.array_element(r_tiles);
+
+                    let offset_x = c_tile.x - r_tile.x;
+                    let offset_y = c_tile.y - r_tile.y;
+
+                    rooms.push(room.to_tiles(offset_x, offset_y, false));
+                }
+            }
+
+            let map = Room.merge(...rooms);
+            map.insert();
+
+            // Spawn player
+            if (spawn_player) {
+                let target = Random.array_element(rooms[0].grid.filter(t => !t.solid));
+                if (!target) target = Random.array_element(rooms[0].grid);
+                let {x = 0, y = 0} = target;
+                globals.player.x = x;
+                globals.player.y = y;
+            }
+
+            return map;
+        },
         //#region huge map
         //! Removed for being too laggy both in generations and with smart pathfinding
         /*'huge': (room_amount=null, spawn_player=true) => {
@@ -1102,11 +1143,12 @@ export class Room {
      * @param {boolean} [insert] Whether the new tile is inserted
      * @this {Room<Tile>}
      */
-    to_tiles(offset_x, offset_y, insert=true) {
+    to_tiles(offset_x=null, offset_y=null, insert=true) {
         if (this.grid.every(t => t instanceof Tile)) return;
 
-        offset_x ??= this.offset_x;
-        offset_y ??= this.offset_y;
+        // Replaces the room's offsets with the given ones if they are given
+        this.offset_x = (offset_x ??= this.offset_x);
+        this.offset_y = (offset_y ??= this.offset_y);
 
         /** @type {Tile[]} */
         let tiles = [];

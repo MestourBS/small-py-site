@@ -77,6 +77,9 @@ const keybinds = {
         'q': ['drop_inventory_selected'],
         'i': ['hide_inventory'],
         'e': ['toggle_equip_inventory_selected'],
+        'k': ['show_skills'],
+        'o': ['show_status'],
+        'm': ['show_minimap'],
     },
     status: {
         's': ['move_cursor_status_down'],
@@ -86,6 +89,7 @@ const keybinds = {
         'o': ['hide_status'],
         'i': ['show_inventory'],
         'k': ['show_skills'],
+        'm': ['show_minimap'],
     },
     skills: {
         'a': ['move_cursor_skill_select_left'],
@@ -96,11 +100,12 @@ const keybinds = {
         'arrowright': ['move_cursor_skill_select_right'],
         'arrowdown': ['move_cursor_skill_select_down'],
         'arrowup': ['move_cursor_skill_select_up'],
-        'i': ['show_inventory'],
-        'o': ['show_status'],
         ' ': ['select_skill_selected'],
         'k': ['hide_skills'],
         'u': ['level_skill'],
+        'i': ['show_inventory'],
+        'o': ['show_status'],
+        'm': ['show_minimap'],
     },
     skill_targeting: {
         'a': ['move_cursor_skill_target_left'],
@@ -117,6 +122,9 @@ const keybinds = {
     },
     minimap: {
         'm': ['hide_minimap'],
+        'i': ['show_inventory'],
+        'o': ['show_status'],
+        'k': ['show_skills'],
     },
     others: {
         'p': ['game_pause_toggle'],
@@ -376,10 +384,6 @@ const actions = new Proxy(Object.freeze({
         func: () => {
             let skills_per_row = entity_skills_per_row();
             const skill_target = globals.cursors.skill_target;
-            globals.focused_entity = {
-                get x() { return globals.cursors.skill_target[0]; },
-                get y() { return globals.cursors.skill_target[1]; },
-            };
 
             let index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
             let skill = globals.player.skills[index];
@@ -398,10 +402,6 @@ const actions = new Proxy(Object.freeze({
         func: () => {
             let skills_per_row = entity_skills_per_row();
             const skill_target = globals.cursors.skill_target;
-            globals.focused_entity = {
-                get x() { return globals.cursors.skill_target[0]; },
-                get y() { return globals.cursors.skill_target[1]; },
-            };
 
             let index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
             let skill = globals.player.skills[index];
@@ -420,10 +420,6 @@ const actions = new Proxy(Object.freeze({
         func: () => {
             let skills_per_row = entity_skills_per_row();
             const skill_target = globals.cursors.skill_target;
-            globals.focused_entity = {
-                get x() { return globals.cursors.skill_target[0]; },
-                get y() { return globals.cursors.skill_target[1]; },
-            };
 
             let index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
             let skill = globals.player.skills[index];
@@ -442,10 +438,6 @@ const actions = new Proxy(Object.freeze({
         func: () => {
             let skills_per_row = entity_skills_per_row();
             const skill_target = globals.cursors.skill_target;
-            globals.focused_entity = {
-                get x() { return globals.cursors.skill_target[0]; },
-                get y() { return globals.cursors.skill_target[1]; },
-            };
 
             let index = skills_per_row * globals.cursors.skill_select[1] + globals.cursors.skill_select[0];
             let skill = globals.player.skills[index];
@@ -514,10 +506,6 @@ const actions = new Proxy(Object.freeze({
 
             if (Object.keys(skill.on_use_target).length || skill.range > 0) {
                 globals.game_state = 'skill_targeting';
-                globals.focused_entity = {
-                    get x() { return globals.cursors.skill_target[0]; },
-                    get y() { return globals.cursors.skill_target[1]; },
-                };
             } else if (Object.keys(skill.on_use_self).length) {
                 globals.player.use_skill(index ?? sindex);
             }
@@ -540,6 +528,7 @@ const actions = new Proxy(Object.freeze({
                 target ??= Tile.grid.find(t => number_between(t.x, ...range_x) && number_between(t.y, ...range_y));
             }
             globals.player.use_skill(index, target);
+            globals.game_state = 'playing';
         },
     },
     'level_skill': {
@@ -681,8 +670,6 @@ let mouse_position = [0, 0];
  */
 export function keydown(e) {
     if (e.metaKey) return;
-
-    globals.focused_entity = globals.player;
 
     /** @type {{[k: string]: keyof actions}} */
     let to_check = {};
