@@ -630,6 +630,7 @@ const actions = new Proxy(Object.freeze({
         name: gettext('games_rpg_action_show_minimap'),
         func: () => {
             globals.game_state = 'minimap';
+            Tile.visible_grid_mini = false;
         },
     },
     'hide_minimap': {
