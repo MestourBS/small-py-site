@@ -61,6 +61,7 @@ const keybinds = {
         'i': ['show_inventory'],
         'o': ['show_status'],
         'k': ['show_skills'],
+        'm': ['show_minimap'],
     },
     pause: {},
     inventory: {
@@ -113,6 +114,9 @@ const keybinds = {
         'k': ['change_skill'],
         'q': ['cancel_skill'],
         ' ': ['use_skill'],
+    },
+    minimap: {
+        'm': ['hide_minimap'],
     },
     others: {
         'p': ['game_pause_toggle'],
@@ -622,6 +626,18 @@ const actions = new Proxy(Object.freeze({
             globals.game_state = 'playing';
         },
     },
+    'show_minimap': {
+        name: gettext('games_rpg_action_show_minimap'),
+        func: () => {
+            globals.game_state = 'minimap';
+        },
+    },
+    'hide_minimap': {
+        name: gettext('games_rpg_action_hide_minimap'),
+        func: () => {
+            globals.game_state = 'playing';
+        },
+    },
     // Click actions
     'open_context_menu': {
         name: gettext('games_rpg_action_open_context_menu'),
@@ -669,7 +685,7 @@ export function keydown(e) {
 
     /** @type {{[k: string]: keyof actions}} */
     let to_check = {};
-    Object.entries(keybinds[globals.game_state]).forEach(([key, act]) => {
+    Object.entries(keybinds[globals.game_state] ?? {}).forEach(([key, act]) => {
         if (!(key in to_check)) to_check[key] = [];
         to_check[key].push(...act);
     });
@@ -796,13 +812,12 @@ function contextmenu(x, y) {
 
     switch (globals.game_state) {
         case 'playing': {
-            //todo disable when clicking on the mini status
             const focused = globals.focused_entity;
             let target_x = Math.floor(x / tile_size[0] + focused.x - display_size[0] / 2);
             let target_y = Math.floor(y / tile_size[1] + focused.y - display_size[1] / 2);
 
             // Get content at the target
-            let targets = Tile.visible_grid.filter(t => Math.round(t.x) == target_x && Math.round(t.y) == target_y);
+            let targets = Tile.visible_grid_world.filter(t => Math.round(t.x) == target_x && Math.round(t.y) == target_y);
             if (!targets.length) return;
 
             // Show options

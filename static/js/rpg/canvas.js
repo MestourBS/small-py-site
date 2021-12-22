@@ -157,6 +157,9 @@ export function canvas_refresh() {
             show_game();
             show_skill_target(globals.player);
             break;
+        case 'minimap':
+            show_mini();
+            break;
         default:
             console.error(`Unknown game state ${globals.game_state}`);
             break;
@@ -223,13 +226,13 @@ function show_mini_status(entity) {
  * Shows the grid, the player and the entities
  */
 function show_game() {
-    Tile.visible_grid.sort((a, b) => {
+    Tile.visible_grid_world.sort((a, b) => {
         if (a == globals.player) return 1;
         if (b == globals.player) return -1;
         if (a.z != b.z) return a.z - b.z;
         if (b.y != a.y) return b.y - a.y;
         return b.x - a.x;
-    }).forEach(t => t.draw());
+    }).forEach(t => t.draw({mode: 'world'}));
 }
 /**
  * Shows the inventory of an entity
@@ -267,8 +270,8 @@ function show_inventory(entity) {
     }
 
     // Draw items
-    entity.inventory.forEach(([i,a]) => i.draw_inventory(a));
-    Object.values(entity.equipment).filter(i => i != null).forEach(i => i.draw_inventory(1));
+    entity.inventory.forEach(([i,amount]) => i.draw_inventory({amount}));
+    Object.values(entity.equipment).filter(i => i != null).forEach(i => i.draw_inventory({amount: 1}));
 
     // Draw cursor
     let x_start = (globals.cursors.inventory[0] * 3 + 1) * tile_size[0];
@@ -484,7 +487,7 @@ function show_skills(entity) {
     }
 
     // Draw skills
-    entity.skills.forEach(s => s.draw());
+    entity.skills.forEach(s => s.draw({mode: 'storage'}));
 
     // Draw cursor
     const skill_select = globals.cursors.skill_select;
@@ -578,6 +581,18 @@ function show_skill_target(entity) {
     let y_start = (globals.cursors.skill_target[1] - (globals.focused_entity.y - display_size[1] / 2)) * tile_size[1];
     context.strokeStyle = color;
     context.strokeRect(x_start, y_start, tile_size[0], tile_size[1]);
+}
+/**
+ * Shows the grid, the player and the entities
+ */
+function show_mini() {
+    Tile.visible_grid_mini.sort((a, b) => {
+        if (a == globals.player) return 1;
+        if (b == globals.player) return -1;
+        if (a.z != b.z) return a.z - b.z;
+        if (b.y != a.y) return b.y - a.y;
+        return b.x - a.x;
+    }).forEach(t => t.draw({mode: 'mini'}));
 }
 /**
  * Writes a bunch of lines in a box

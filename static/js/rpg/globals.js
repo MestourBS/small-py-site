@@ -4,7 +4,7 @@ export const globals = {
     /**
      * Current game state
      *
-     * @type {'playing'|'inventory'|'pause'|'status'|'skills'|'skill_targeting'}
+     * @type {'playing'|'inventory'|'pause'|'status'|'skills'|'skill_targeting'|'minimap'}
      */
     game_state: 'playing',
     /**

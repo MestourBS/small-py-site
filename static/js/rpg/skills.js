@@ -3,10 +3,14 @@ import { Entity } from './entity.js';
 import { context as canvas_context } from './canvas.js';
 import { entity_skills_per_row, tile_size, get_theme_value } from './display.js';
 import { Item } from './item.js';
-/** @typedef {import('./color.js').Color} Color */
+/**
+ * @typedef {import('./color.js').Color} Color
+ *
+ * @typedef {(options: {x: number, y: number, context: CanvasRenderingContext2D, mode: DrawMode, level?: number}, this: Skill) => void} SkillCustomDraw
+ */
 
 /**
- * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, level?: number, this: Skill<T>) => void} T
+ * @template {Color|string|CanvasImageSource|SkillCustomDraw) => void} T
  */
 export class Skill extends Tile {
     /** @type {{[k: string]: Skill}} */
@@ -230,50 +234,6 @@ export class Skill extends Tile {
     }
 
     /**
-     * @param {number} [x]
-     * @param {number} [y]
-     * @param {CanvasRenderingContext2D} [context]
-     */
-    draw(x = null, y = null, context = null) {
-        context ??= canvas_context;
-
-        let offset_x = tile_size[0];
-        let offset_y = tile_size[1];
-        let x_start = this.x * 3 * tile_size[0] + offset_x;
-        let y_start = this.y * 3 * tile_size[1] + offset_y;
-        /** @type {T} */
-        let content = this.content;
-
-        // Draw skill
-        if (typeof content == 'function') {
-            content.call(this, x ?? x_start, y ?? y_start, context, this.#level);
-        } else if (typeof content == 'string') {
-            context.textAlign = 'center';
-            context.fillStyle = '#000';
-            context.font = `${tile_size[1] * 2}px ${get_theme_value('text_font')}`;
-            let x = x_start + tile_size[0];
-            let y = y_start + tile_size[1] * 1.75;
-
-            context.fillText(content, x, y);
-        } else if (content instanceof Color) {
-            context.fillStyle = content.toString();
-            context.fillRect(x_start, y_start, tile_size[0] * 2, tile_size[1] * 2);
-        } else if (isinstance(content, HTMLCanvasElement, HTMLImageElement, SVGImageElement, HTMLVideoElement, ImageBitmap)) {
-            context.drawImage(content, x_start, y_start, tile_size[0] * 2, tile_size[1] * 2);
-        } else {
-            console.error(`Unknown tile content type ${content}`);
-        }
-
-        // Draw level
-        context.textAlign = 'right';
-        context.fillStyle = get_theme_value('text_skill_level_color');
-        context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
-        let _x = x_start + tile_size[0] * 2;
-        let _y = y_start + tile_size[1] * 2;
-
-        context.fillText(this.level, _x, _y);
-    }
-    /**
      * Creates a copy of the skill
      *
      * @template {T} U
@@ -355,7 +315,7 @@ export class Skill extends Tile {
 export function create_skills() {
     /**
      * @type {{
-     *  content: Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, level?: number, this: Skill<T>) => void,
+     *  content: Color|string|CanvasImageSource|SkillCustomDraw,
      *  id: string,
      *  name?: string,
      *  description?: string,

@@ -26,6 +26,7 @@ import globals from './globals.js';
  * @prop {string} background_skills_color
  * @prop {string} background_tooltip_color
  * @prop {string} background_playing_color
+ * @prop {string} background_minimap_color
  * @prop {string} background_inventory_color
  * @prop {string} background_context_menu_color
  * @prop {string} background_entity_magic_color
@@ -86,6 +87,7 @@ const themes = {
         background_skills_color: '#79b',
         background_tooltip_color: '#ccc',
         background_playing_color: '#fff',
+        background_minimap_color: '#fff',
         background_inventory_color: '#ccc',
         background_context_menu_color: '#ccc',
         background_entity_magic_color: '#00f',

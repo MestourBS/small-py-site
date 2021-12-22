@@ -1,12 +1,17 @@
 import { context as canvas_context } from './canvas.js';
-import { isinstance } from './primitives.js';
+import { isinstance, number_between } from './primitives.js';
 import { tile_size, display_size, get_theme_value } from './display.js';
 import Color from './color.js';
 import globals from './globals.js';
-/** @typedef {import('./entity.js').Entity} Entity */
+/**
+ * @typedef {import('./entity.js').Entity} Entity
+ *
+ * @typedef {'world'|'storage'|'mini'} DrawMode
+ * @typedef {(options: {x: number, y: number, context: CanvasRenderingContext2D, mode: DrawMode}, this: Tile) => void} TileCustomDraw
+ */
 
 /**
- * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, this: Tile<T>) => void} T
+ * @template {Color|string|CanvasImageSource|TileCustomDraw) => void} T
  */
 export class Tile {
     /**
@@ -16,11 +21,13 @@ export class Tile {
      */
     static grid = [];
     /** @type {Tile[]|false} */
-    static #visible_grid = false;
+    static #visible_grid_world = false;
+    /** @type {Tile[]|false} */
+    static #visible_grid_mini = false;
     /** @type {Tile[]|false} */
     static #solid_tiles = false;
-    static focused_x;
-    static focused_y;
+    static #focused_x;
+    static #focused_y;
     /** @type {((content: string) => T)[]} */
     static #converters = [
         Color.from_hex,
@@ -29,28 +36,52 @@ export class Tile {
     ];
 
     /** @type {Tile[]} */
-    static get visible_grid() {
-        if (this.focused_x != globals.focused_entity.x || this.focused_y != globals.focused_entity.y) {
-            this.#visible_grid = false;
-            this.focused_x = globals.focused_entity.x;
-            this.focused_y = globals.focused_entity.y;
+    static get visible_grid_world() {
+        if (this.#focused_x != globals.focused_entity.x || this.#focused_y != globals.focused_entity.y) {
+            this.#visible_grid_world = false;
+            this.#focused_x = globals.focused_entity.x;
+            this.#focused_y = globals.focused_entity.y;
         }
-        if (this.#visible_grid === false) {
-            this.#visible_grid = this.grid.filter(t => t.is_visible);
+        if (this.#visible_grid_world === false) {
+            this.#visible_grid_world = this.grid.filter(t => t.is_visible_world);
         }
-        return this.#visible_grid;
+        return this.#visible_grid_world;
     }
     /** @param {Tile[]|false} value */
-    static set visible_grid(value) {
+    static set visible_grid_world(value) {
         if (value === false) {
-            this.#visible_grid = false;
+            this.#visible_grid_world = false;
             return;
         }
 
         if (!Array.isArray(value)) value = [];
         else if (!value.every(t => t instanceof Tile)) value = value.filter(t => t instanceof Tile);
 
-        this.#visible_grid = value;
+        this.#visible_grid_world = value;
+    }
+    /** @type {Tile[]} */
+    static get visible_grid_mini() {
+        if (this.#focused_x != globals.focused_entity.x || this.#focused_y != globals.focused_entity.y) {
+            this.#visible_grid_mini = false;
+            this.#focused_x = globals.focused_entity.x;
+            this.#focused_y = globals.focused_entity.y;
+        }
+        if (this.#visible_grid_mini === false) {
+            this.#visible_grid_mini = this.grid.filter(t => t.is_visible_mini);
+        }
+        return this.#visible_grid_mini;
+    }
+    /** @param {Tile[]|false} value */
+    static set visible_grid_mini(value) {
+        if (value === false) {
+            this.#visible_grid_mini = false;
+            return;
+        }
+
+        if (!Array.isArray(value)) value = [];
+        else if (!value.every(t => t instanceof Tile)) value = value.filter(t => t instanceof Tile);
+
+        this.#visible_grid_mini = value;
     }
     /** @type {Tile[]} */
     static get solid_tiles() {
@@ -156,7 +187,7 @@ export class Tile {
         return json;
     }
 
-    get is_visible() {
+    get is_visible_world() {
         let x_low = globals.focused_entity.x - display_size[0] / 2 - 1;
         let x_high = globals.focused_entity.x + display_size[0] / 2;
         let y_low = globals.focused_entity.y - display_size[1] / 2 - 1;
@@ -164,35 +195,68 @@ export class Tile {
 
         return this.x >= x_low && this.x <= x_high && this.y >= y_low && this.y <= y_high;
     }
+    get is_visible_mini() {
+        let x_low = globals.focused_entity.x - display_size[0] * 2 - 1;
+        let x_high = globals.focused_entity.x + display_size[0] * 2;
+        let y_low = globals.focused_entity.y - display_size[1] * 2 - 1;
+        let y_high = globals.focused_entity.y + display_size[1] * 2;
+
+        return number_between(this.x, x_low, x_high) && number_between(this.y, y_low, y_high);
+    }
 
     /**
-     * @param {number} [x]
-     * @param {number} [y]
-     * @param {CanvasRenderingContext2D} [context]
+     * @param {Object} params
+     * @param {number} [params.x]
+     * @param {number} [params.y]
+     * @param {CanvasRenderingContext2D} [params.context]
+     * @param {DrawMode} [params.mode]
      */
-    draw(x = null, y = null, context = null) {
+    draw({x = null, y = null, context = null, mode = 'world'} = {}) {
         context ??= canvas_context;
+        let x_start, y_start, width, height;
 
-        let x_start = x ?? (this.x - (globals.focused_entity.x - display_size[0] / 2)) * tile_size[0];
-        let y_start = y ?? (this.y - (globals.focused_entity.y - display_size[1] / 2)) * tile_size[1];
+        switch (mode) {
+            case 'world':
+                x_start = x ?? (this.x - (globals.focused_entity.x - display_size[0] / 2)) * tile_size[0];
+                y_start = y ?? (this.y - (globals.focused_entity.y - display_size[1] / 2)) * tile_size[1];
+                width = tile_size[0];
+                height = tile_size[1];
+                break;
+            case 'storage':
+                x_start = (this.x * 3 + 1) * tile_size[0];
+                y_start = (this.y * 3 + 1) * tile_size[1];
+                width = tile_size[0] * 2;
+                height = tile_size[1] * 2;
+                break;
+            case 'mini':
+                x_start = x ?? (this.x - globals.focused_entity.x) * tile_size[0] / 4 + display_size[0] * tile_size[0] / 2;
+                y_start = y ?? (this.y - globals.focused_entity.y) * tile_size[1] / 4 + display_size[1] * tile_size[1] / 2;
+                width = tile_size[0] / 4;
+                height = tile_size[1] / 4;
+                break;
+            default:
+                console.error(`Unknown mode ${mode}`);
+                return;
+        }
+
         let content = this.#content;
 
         if (typeof content == 'function') {
-            content.call(this, x ?? x_start, y ?? y_start, context);
+            content.call(this, {x: x ?? x_start, y: y ?? y_start, context, mode});
         } else if (typeof content == 'string') {
             context.textAlign = 'center';
             context.fillStyle = get_theme_value('text_default_tile_color');
-            context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
-            x_start += tile_size[0] / 2;
-            y_start += tile_size[1] - 5;
+            context.font = `${height}px ${get_theme_value('text_font')}`;
+            x_start += width / 2;
+            y_start += height * .85;
 
             context.fillText(content, x_start, y_start);
         } else if (content instanceof Color) {
             context.fillStyle = content.toString();
-            // Add .5 to the dimensions to prevent white lines from appearing at some player speeds
-            context.fillRect(x_start, y_start, tile_size[0] + .5, tile_size[1] + .5);
+            // Add a little to the dimensions to prevent white lines from appearing at some player speeds
+            context.fillRect(x_start, y_start, width * 1.025, height * 1.025);
         } else if (isinstance(content, HTMLCanvasElement, HTMLImageElement, SVGImageElement, HTMLVideoElement, ImageBitmap)) {
-            context.drawImage(content, x_start, y_start, tile_size[0] + .5, tile_size[1] + .5);
+            context.drawImage(content, x_start, y_start, width  * 1.025, height  * 1.025);
         } else {
             console.error(`Unknown tile content type ${content}`);
         }
@@ -210,7 +274,8 @@ export class Tile {
             else Tile.grid.push(this);
         }
         globals.can_walked = {};
-        Tile.#visible_grid = false;
+        Tile.#visible_grid_world = false;
+        Tile.#visible_grid_mini = false;
         Tile.#solid_tiles = false;
     }
     /**

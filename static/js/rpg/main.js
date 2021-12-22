@@ -49,17 +49,20 @@ function init() {
     loop_last = Date.now();
     canvas_reset();
     /**
-     * @param {number} x
-     * @param {number} y
-     * @param {CanvasRenderingContext2D} context
-     * @this {Entity}
+     * @type {import('./entity.js').EntityCustomDraw}
      */
-    function draw_player(x, y, context) {
+    function draw_player({x, y, context, mode}) {
+        /** @type {[number, number]} */
+        let [width, height] = {
+            'mini': tile_size.map(n => n / 4),
+            'storage': tile_size.map(n => n * 2),
+            'world': [...tile_size],
+        }[mode];
         context.textAlign = 'center';
         context.fillStyle = '#f00';
-        context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
-        x += tile_size[0] / 2;
-        y += tile_size[1] - 5;
+        context.font = `${height}px ${get_theme_value('text_font')}`;
+        x += width / 2;
+        y += height * .75;
 
         context.fillText('☺', x, y);
     };

@@ -8,6 +8,10 @@ import { Direction, surrounding_square, coords_distance, can_walk } from './coor
 import Random from './random.js';
 import globals from './globals.js';
 import Color from './color.js';
+/**
+ * @typedef {(options: {x: number, y: number, context: CanvasRenderingContext2D, mode: DrawMode}, this: Entity) => void} EntityCustomDraw
+ * @typedef {(options: {x: number, y: number, context: CanvasRenderingContext2D, mode: DrawMode}, this: AutonomousEntity) => void} AutonomousEntityCustomDraw
+ */
 
 /**
  * TODO LIST
@@ -250,7 +254,7 @@ export const factions = {
 };
 
 /**
- * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, this: Entity<T>) => void} T
+ * @template {Color|string|CanvasImageSource|EntityCustomDraw} T
  */
 export class Entity extends Tile {
     /** @type {Entity[]} */
@@ -619,14 +623,14 @@ export class Entity extends Tile {
             this.x += amounts[0];
             this.y += amounts[1];
 
-            if (this.is_visible != Tile.visible_grid.includes(this)) {
-                if (this.is_visible) {
+            if (this.is_visible_world != Tile.visible_grid_world.includes(this)) {
+                if (this.is_visible_world) {
                     // Not in the visible grid, but should be
-                    Tile.visible_grid.push(this);
+                    Tile.visible_grid_world.push(this);
                 } else {
                     // In the visible grid, but should not be
-                    let i = Tile.visible_grid.indexOf(this);
-                    Tile.visible_grid.splice(i, 1);
+                    let i = Tile.visible_grid_world.indexOf(this);
+                    Tile.visible_grid_world.splice(i, 1);
                 }
             }
         }
@@ -937,7 +941,7 @@ export class Entity extends Tile {
             item.insert();
         }
 
-        Tile.visible_grid = false;
+        Tile.visible_grid_world = false;
     }
     /**
      * Equips an item in the inventory
@@ -1164,6 +1168,7 @@ export class Entity extends Tile {
                     if (amount >= real_amount) {
                         item.owner = null;
                         this.#inventory.splice(index, 1);
+                        this.#inventory.filter((_, i) => i >= index).forEach(([i]) => i.re_position());
                     } else {
                         this.#inventory[index][1] -= amount;
                     }
@@ -1187,7 +1192,7 @@ export class Entity extends Tile {
     }
 }
 /**
- * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, this: AutonomousEntity<T>) => void} T
+ * @template {Color|string|CanvasImageSource|AutonomousEntityCustomDraw} T
  */
 export class AutonomousEntity extends Entity {
     /** @type {Tile|null} */

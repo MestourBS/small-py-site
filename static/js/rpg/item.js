@@ -5,9 +5,12 @@ import { number_between, isinstance } from './primitives.js';
 import { get_theme_value, tile_size, inventory_items_per_row } from './display.js';
 import Color from './color.js';
 import Random from './random.js';
+/**
+ * @typedef {(options: {x: number, y: number, context: CanvasRenderingContext2D, mode: DrawMode, inventory?: 0|1|2}, this: Item) => void} ItemCustomDraw
+ */
 
 /**
- * @template {Color|string|CanvasImageSource|(x: number, y: number, context?: CanvasRenderingContext2D, inventory?: 0|1|2, this: Item<T>) => void} T
+ * @template {Color|string|CanvasImageSource|ItemCustomDraw} T
  */
 export class Item extends Tile {
     /** @type {{[k: string]: Item}} */
@@ -91,9 +94,9 @@ export class Item extends Tile {
                 let i = Tile.grid.indexOf(this);
                 Tile.grid.splice(i, 1);
             }
-            if (Tile.visible_grid.includes(this)) {
-                let i = Tile.visible_grid.indexOf(this);
-                Tile.visible_grid.splice(i, 1);
+            if (Tile.visible_grid_world.includes(this)) {
+                let i = Tile.visible_grid_world.indexOf(this);
+                Tile.visible_grid_world.splice(i, 1);
             }
         }});
 
@@ -110,8 +113,11 @@ export class Item extends Tile {
         if (!(id in Item.#items)) Item.#items[id] = this;
     }
 
-    get is_visible() {
-        return !this.owner && super.is_visible;
+    get is_visible_world() {
+        return !this.owner && super.is_visible_world;
+    }
+    get is_visible_mini() {
+        return !this.owner && super.is_visible_mini;
     }
     get is_visible_inventory() {
         if (!this.owner) return false;
@@ -196,23 +202,26 @@ export class Item extends Tile {
         }
     }
     /**
-     * @param {number} [amount]
-     * @param {CanvasRenderingContext2D} [context]
+     * @param {Object} params
+     * @param {number} [params.x]
+     * @param {number} [params.y]
+     * @param {CanvasRenderingContext2D} [params.context]
+     * @param {number} [params.amount]
      */
-    draw_inventory(amount=1, context = null) {
+    draw_inventory({x = null, y = null, context = null, amount=1}) {
         context ??= canvas_context;
 
         let offset_x = tile_size[0];
         let offset_y = tile_size[1];
-        let x_start = this.x * 3 * tile_size[0] + offset_x;
-        let y_start = this.y * 3 * tile_size[1] + offset_y;
+        let x_start = x ?? this.x * 3 * tile_size[0] + offset_x;
+        let y_start = y ?? this.y * 3 * tile_size[1] + offset_y;
         /** @type {T} */
         let content = this.content;
 
         if (typeof content == 'function') {
             let inventory = +!!this.owner;
             if (this.owner && this.owner.equipment[this.equip_slot] == this) inventory++;
-            content.call(this, this.x, this.y, context, inventory);
+            content.call(this, {x: this.x, y: this.y, context, inventory});
         } else if (typeof content == 'string') {
             context.textAlign = 'center';
             context.fillStyle = get_theme_value('text_default_tile_color');
