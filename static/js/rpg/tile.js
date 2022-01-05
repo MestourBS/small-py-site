@@ -11,6 +11,17 @@ import globals from './globals.js';
  */
 
 /**
+ * Z layers for the different things
+ */
+export const Z_LAYERS = Object.freeze({
+    'tile': 0,
+    'dead_entities': 1,
+    'item': 2,
+    'autonomous_entity': 9,
+    'player': 10,
+});
+
+/**
  * @template {Color|string|CanvasImageSource|TileCustomDraw) => void} T
  */
 export class Tile {
@@ -112,16 +123,17 @@ export class Tile {
      * @param {Object} params
      * @param {number} params.x
      * @param {number} params.y
-     * @param {number} params.z
+     * @param {number|keyof Z_LAYERS} params.z
      * @param {T} params.content
      * @param {boolean} [params.solid=false]
      * @param {boolean} [params.insert=true]
      * @param {(entity: Entity, this: Tile<T>) => void} [params.interacted]
      * @param {boolean} [params.override=true]
      */
-    constructor({x, y, z, content, solid=false, insert=true, interacted=null, override=true}) {
+    constructor({x, y, z=Z_LAYERS.tile, content, solid=false, insert=true, interacted=null, override=true}) {
         override &&= insert;
 
+        if (z in Z_LAYERS) z = Z_LAYERS[z];
         if (typeof x != 'number') throw new TypeError(`Invalid Tile parameter x: ${x}`);
         if (typeof y != 'number') throw new TypeError(`Invalid Tile parameter y: ${y}`);
         if (typeof z != 'number') throw new TypeError(`Invalid Tile parameter z: ${z}`);
@@ -168,24 +180,6 @@ export class Tile {
         this.#content = content;
     }
     get can_interact() { return !!this.#interacted; }
-
-    toJSON() {
-        let json = {
-            x: this.x,
-            y: this.y,
-            z: this.z,
-            solid: this.solid,
-            content: '',
-        };
-
-        if (this.#content instanceof Color) {
-            json.content = this.#content.toJSON();
-        } else if ('src' in this.#content) {
-            json.content = this.#content.src;
-        }
-
-        return json;
-    }
 
     get is_visible_world() {
         let x_low = globals.focused_entity.x - display_size[0] / 2 - 1;

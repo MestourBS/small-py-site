@@ -1,8 +1,6 @@
 import { Tile } from './tile.js';
 import { Entity } from './entity.js';
-import { context as canvas_context } from './canvas.js';
-import { entity_skills_per_row, tile_size, get_theme_value } from './display.js';
-import { Item } from './item.js';
+import { entity_skills_per_row } from './display.js';
 /**
  * @typedef {import('./color.js').Color} Color
  *
@@ -106,7 +104,7 @@ export class Skill extends Tile {
             y = Math.floor(index / skills_per_row);
         }
 
-        super({x, y, z: 0, content, solid: false, insert: false});
+        super({x, y, content, solid: false, insert: false});
 
         this.#on_use_self = on_use_self;
         this.#on_use_target = on_use_target;

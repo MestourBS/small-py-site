@@ -1,4 +1,4 @@
-import { Tile } from './tile.js';
+import { Tile, Z_LAYERS } from './tile.js';
 import { Entity } from './entity.js';
 import { context as canvas_context } from './canvas.js';
 import { number_between, isinstance } from './primitives.js';
@@ -373,7 +373,7 @@ export function create_items() {
 
         item.x = 0;
         item.y = 0;
-        item.z = 1;
+        item.z = Z_LAYERS.item;
 
         new Item(item);
     });

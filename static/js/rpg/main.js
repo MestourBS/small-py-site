@@ -11,6 +11,7 @@ import { Entity, AutonomousEntity } from './entity.js';
 import { canvas_reset, canvas_refresh } from './canvas.js';
 import globals from './globals.js';
 import './actions.js';
+import { Z_LAYERS } from './tile.js';
 
 /**
  * TODO LIST
@@ -67,7 +68,7 @@ function init() {
         context.fillText('☺', x, y);
     };
     globals.player = new Entity({
-        x: 0, y: 0, z: 10, content: draw_player,
+        x: 0, y: 0, z: Z_LAYERS.player, content: draw_player,
         health: 10, speed: 2, equip_slots: [0, 3, 5], faction: 'player',
     });
 

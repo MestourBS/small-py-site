@@ -1,4 +1,4 @@
-import { Tile } from './tile.js';
+import { Tile, Z_LAYERS } from './tile.js';
 import { Item } from './item.js';
 import { Skill } from './skills.js';
 import { MinHeap } from './minheap.js';
@@ -387,6 +387,7 @@ export class Entity extends Tile {
                 } else if (this.content instanceof Color) {
                     this.content = this.content.darken(.25);
                 }
+                this.z = Z_LAYERS.dead_entities;
             }
         }
     }
@@ -1071,39 +1072,16 @@ export class Entity extends Tile {
             let range = real_skill.range;
             let dist = coords_distance(this, target);
             if (dist > range + .5) {
-                // Get potatial targets, sorted from closest to target to farthest
-                let targets = Tile.grid.filter(t => t != this && coords_distance(t, this) <= dist)
-                    .sort((ta, tb) => coords_distance(ta, target) - coords_distance(tb, target));
-
-                if (!targets.length) {
-                    // We couldn't find a valid target, so we make a fake one
-                    let dist_x = target.x - this.x;
-                    let dist_y = target.y - this.y;
-                    let angle = Math.atan(Math.abs(dist_y) / Math.abs(dist_x));
-
-                    if (Math.sign(dist_y) == -1) {
-                        // Below this
-                        angle += Math.PI;
-                    }
-                    if (dist_x && dist_y && Math.sign(dist_y) != Math.sign(dist_x)) {
-                        // 2nd quadrant of the half
-                        angle += Math.PI / 2;
-                    }
-
-                    // The new target tile for the skill
-                    target = {
-                        x: Math.round(Math.cos(angle) * range),
-                        y: Math.round(Math.sin(angle) * range),
-                    };
-                } else {
-                    // Get the nearest target
-                    target = targets[0];
-                }
+                let dist_x = this.x - target.x;
+                let dist_y = this.y - target.y;
+                let ratio = range / dist;
+                target.x = this.x + dist_x * ratio;
+                target.y = this.y + dist_y * ratio;
             }
             let radius = real_skill.radius;
-            let x_range = [Math.round(target.x - radius - .1), Math.round(target.x + radius + .1)];
-            let y_range = [Math.round(target.y - radius - .1), Math.round(target.y + radius + .1)];
-            let affected = Entity.entities.filter(e => e.#health > 0 && number_between(e.x, ...x_range) && number_between(e.y, ...y_range));
+            let x_range = [Math.round(target.x - radius - .5), Math.round(target.x + radius + .5)];
+            let y_range = [Math.round(target.y - radius - .5), Math.round(target.y + radius + .5)];
+            let affected = Entity.entities.filter(e => e != this && e.#health > 0 && number_between(e.x, ...x_range) && number_between(e.y, ...y_range));
             Object.entries(real_skill.on_use_target).forEach(([attr, change]) => {
                 if (`base_${attr}` in this) {
                     attr = `base_${attr}`;
@@ -1119,7 +1097,7 @@ export class Entity extends Tile {
                 }
             });
 
-            if (target instanceof Entity && target.health < 0) this.kills++;
+            this.kills += affected.filter(e => e.#health < 0).length;
         }
     }
     /**
@@ -1221,18 +1199,20 @@ export class AutonomousEntity extends Entity {
      * @param {number|{[k: string]: number}} [params.damage]
      * @param {number} [params.speed]
      * @param {number} [params.range] Interaction range
+     * @param {number[]} [params.equip_slots]
+     * @param {string} [params.faction]
      * @param {(this: AutonomousEntity) => Tile|null} [params.targeting]
      * @param {(this: AutonomousEntity) => Direction|null} [params.pathfinding]
      */
     constructor({
         x, y, z, content,
-        name=null, health=10, health_max=null, defense=1, damage=1, speed=1, range=.5, faction=null,
+        name=null, health=10, health_max=null, defense=1, damage=1, speed=1, range=.5, faction=null, equip_slots=[],
         targeting=()=>null, pathfinding=()=>null
     }) {
         if (typeof targeting != 'function') throw new TypeError(`Invalid autonomous entity parameter targeting: ${targeting}`);
         if (typeof pathfinding != 'function') throw new TypeError(`Invalid autonomous entity parameter pathfinding: ${pathfinding}`);
 
-        super({x, y, z, content, name, health, health_max, defense, damage, speed, range, faction});
+        super({x, y, z, content, name, health, health_max, defense, damage, speed, range, faction, equip_slots});
 
         this.#targeting = targeting;
         this.#pathfinding = pathfinding;

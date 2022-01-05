@@ -1,4 +1,4 @@
-import { Tile } from './tile.js';
+import { Tile, Z_LAYERS } from './tile.js';
 import { Item } from './item.js';
 import { number_between } from './primitives.js';
 import { AutonomousEntity } from './entity.js';
@@ -1004,7 +1004,7 @@ export class Room {
             coords.forEach(([x, y]) => {
                 grid.push(...surrounding_square(x, y, hallway_radius)
                     //.filter(c => !grid.some(t => t.x == c[0] && t.y == c[1]))
-                    .map(([x, y]) => new Tile({x, y, z:0, content: hall_floors, insert: false})));
+                    .map(([x, y]) => new Tile({x, y, z: Z_LAYERS.tile, content: hall_floors, insert: false})));
             });
 
             // Convert edges into walls
@@ -1059,7 +1059,7 @@ export class Room {
         Item.get_random_items().forEach(id => {
             let target = Random.array_element(map_floors);
             let {x, y} = target;
-            Item.get_item(id, {x, y, z: 1}).insert();
+            Item.get_item(id, {x, y, z: Z_LAYERS.item}).insert();
         });
 
         // Spawn entities
@@ -1069,7 +1069,11 @@ export class Room {
             let {x, y} = target;
             let pathfinding = Random.AutonomousEntity.pathfinding();
             let targeting = Random.AutonomousEntity.targeting();
-            new AutonomousEntity({x, y, z: 9, content: Random.emoji_person(), pathfinding, targeting, faction: Random.Entity.faction()});
+            new AutonomousEntity({
+                x, y, z: Z_LAYERS.autonomous_entity, content: Random.emoji_person(),
+                faction: Random.Entity.faction(), equip_slots: [0, 3, 5],
+                pathfinding, targeting,
+            });
         }
     }
 
@@ -1167,7 +1171,7 @@ export class Room {
                     let content = ascii_contents[cell];
                     x += offset_x;
 
-                    let tile = new Tile({x, y, z:0, content, solid, insert});
+                    let tile = new Tile({x, y, z: Z_LAYERS.tile, content, solid, insert});
                     tiles.push(tile);
                 });
             }

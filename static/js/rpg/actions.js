@@ -515,17 +515,17 @@ const actions = new Proxy(Object.freeze({
         name: gettext('games_rpg_action_use_skill'),
         /**
          * @param {number?} [index]
-         * @param {Entity?} [target]
+         * @param {{x: number, y: number}?} [target]
          */
         func: (index = null, target = null) => {
             let skills_per_row = entity_skills_per_row();
             index ??= globals.cursors.skill_select[1] * skills_per_row + globals.cursors.skill_select[0];
             // If we're further than half a tile from the player, we select a nearby target
             if (coords_distance(globals.player, globals.cursors.skill_target) > .5) {
-                let range_x = [globals.cursors.skill_target[0] - .5, globals.cursors.skill_target[0] + .5];
-                let range_y = [globals.cursors.skill_target[1] - .5, globals.cursors.skill_target[1] + .5];
-
-                target ??= Tile.grid.find(t => number_between(t.x, ...range_x) && number_between(t.y, ...range_y));
+                target ??= {
+                    x: globals.cursors.skill_target[0],
+                    y: globals.cursors.skill_target[1],
+                };
             }
             globals.player.use_skill(index, target);
             globals.game_state = 'playing';
@@ -832,7 +832,7 @@ function contextmenu(x, y) {
                 content.appendChild(row);
 
                 // Draw in the context menu
-                t.draw(0, 0, mini_context);
+                t.draw({x: 0, y: 0, context: mini_context});
                 cell_name.textContent = t.name ?? (t.solid ? 'wall' : 'floor');
                 let has_options = false;
                 if (t instanceof Item) {
