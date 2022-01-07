@@ -246,11 +246,11 @@ export class Tile {
 
             context.fillText(content, x_start, y_start);
         } else if (content instanceof Color) {
-            context.fillStyle = content.toString();
-            // Add a little to the dimensions to prevent white lines from appearing at some player speeds
-            context.fillRect(x_start, y_start, width * 1.025, height * 1.025);
+            context.fillStyle = content;
+            // Add a little to the size to prevent white lines from appearing at some player positions
+            context.fillRect(x_start, y_start, width + .25, height + .25);
         } else if (isinstance(content, HTMLCanvasElement, HTMLImageElement, SVGImageElement, HTMLVideoElement, ImageBitmap)) {
-            context.drawImage(content, x_start, y_start, width  * 1.025, height  * 1.025);
+            context.drawImage(content, x_start, y_start, width + .25, height + .25);
         } else {
             console.error(`Unknown tile content type ${content}`);
         }

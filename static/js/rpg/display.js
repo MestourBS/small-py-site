@@ -12,16 +12,21 @@ import globals from './globals.js';
  * @prop {string} text_item_has_slot_color
  * @prop {string} text_very_low_health_color
  * @prop {string} text_item_has_not_slot_color
+ * @prop {string} border_option_color
  * @prop {string} border_tooltip_color
  * @prop {string} border_skill_cell_color
+ * @prop {string} border_option_error_color
  * @prop {string} border_context_menu_color
  * @prop {string} border_inventory_cell_color
  * @prop {string} border_equipment_cell_color
+ * @prop {string} border_option_selected_color
  * @prop {string} border_inventory_cursor_color
  * @prop {string} border_skill_select_cursor_color
  * @prop {string} border_skill_target_cursor_color
+ * @prop {string} border_option_error_selected_color
  * @prop {string} border_skill_target_out_range_cursor_color
  * @prop {string} background_pause_color
+ * @prop {string} background_option_color
  * @prop {string} background_status_color
  * @prop {string} background_skills_color
  * @prop {string} background_tooltip_color
@@ -36,6 +41,7 @@ import globals from './globals.js';
  * @prop {string} background_equipment_cell_locked_color
  * @prop {string} background_entity_missing_health_color
  * @prop {string} background_skill_cell_uncastable_color
+ * @prop {string} checkmark_color
  */
 
 /**
@@ -72,17 +78,23 @@ const themes = {
         text_very_low_health_color: '#f00',
         text_item_has_not_slot_color: '#f00',
         // Borders
+        border_option_color: '#000',
         border_tooltip_color: '#000',
         border_skill_cell_color: '#f0f',
+        border_option_error_color: '#f00',
         border_context_menu_color: '#000',
         border_inventory_cell_color: '#000',
         border_equipment_cell_color: '#a77',
+        border_option_selected_color: '#00f',
         border_inventory_cursor_color: '#0ff',
         border_skill_select_cursor_color: '#7f0',
         border_skill_target_cursor_color: '#0ff',
+        border_option_error_selected_color: '#f07',
         border_skill_target_out_range_cursor_color: '#f00',
         // Backgrounds
+        background_options_test_color: '#fff', //test
         background_pause_color: '#000',
+        background_option_color: '#fff',
         background_status_color: '#fff',
         background_skills_color: '#79b',
         background_tooltip_color: '#ccc',
@@ -97,39 +109,14 @@ const themes = {
         background_equipment_cell_locked_color: '#ff6',
         background_entity_missing_health_color: '#f00',
         background_skill_cell_uncastable_color: '#737',
+        // Colors
+        checkmark_color: '#000',
     },
     /*
     'light': {
         name: gettext('games_rpg_themes_light'),
     },
     */
-};
-/**
- * Theme names
- *
- * @type {{[k: string]: string}}
- */
-const theme_entries = {
-    // Text
-    text_font: gettext('games_rpg_theme_text_font'),
-    text_color: gettext('games_rpg_theme_text_color'),
-    text_item_amount_color: gettext('games_rpg_theme_text_item_amount_color'),
-    text_very_low_health_color: gettext('games_rpg_theme_text_very_low_health_color'),
-    text_low_health_color: gettext('games_rpg_theme_text_low_health_color'),
-    text_item_equipped_color: gettext('games_rpg_theme_text_item_equipped_color'),
-    text_item_has_slot_color: gettext('games_rpg_theme_text_item_has_slot_color'),
-    text_item_has_not_slot_color: gettext('games_rpg_theme_text_item_has_not_slot_color'),
-    // Borders
-    border_tooltip_color: gettext('games_rpg_theme_border_tooltip_color'),
-    border_inventory_cell_color: gettext('games_rpg_theme_border_inventory_cell_color'),
-    border_equipment_cell_color: gettext('games_rpg_theme_border_equipment_cell_color'),
-    border_inventory_cursor_color: gettext('games_rpg_theme_border_inventory_cursor_color'),
-    // Backgrounds
-    background_tooltip_color: gettext('games_rpg_theme_background_tooltip_color'),
-    background_inventory_color: gettext('games_rpg_theme_background_inventory_color'),
-    background_equipment_cell_locked_color: gettext('games_rpg_theme_background_equipment_cell_locked_color'),
-    background_entity_health_color: gettext('games_rpg_theme_background_entity_health_color'),
-    background_entity_missing_health_color: gettext('games_rpg_theme_background_entity_missing_health_color'),
 };
 
 globals.current_theme = Object.keys(themes)[0];

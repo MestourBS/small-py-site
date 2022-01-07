@@ -5,6 +5,7 @@ import { AutonomousEntity } from './entity.js';
 import { average, beautify, capitalize, number_between } from './primitives.js';
 import { tile_size, display_size, get_theme_value, inventory_items_per_row, entity_skills_per_row } from './display.js';
 import globals from './globals.js';
+import { BaseCanvasOption } from './options.js';
 /**
  * @typedef {import('./entity.js').Entity} Entity
  */
@@ -158,7 +159,10 @@ export function canvas_refresh() {
             show_skill_target(globals.player);
             break;
         case 'minimap':
-            show_mini();
+            show_minimap();
+            break;
+        case 'options_test':
+            show_options_test();
             break;
         default:
             console.error(`Unknown game state ${globals.game_state}`);
@@ -327,7 +331,7 @@ function show_inventory(entity) {
 
             let title = gettext('games_rpg_status_equipped');
             if (globals.cursors.inventory[0] == items_per_row)
-                title = `{color:${get_theme_value('text_item_equipped_color')}}${title}{color:reset}}`;
+                title = `{color:${get_theme_value('text_item_equipped_color')}}${title}{color:reset}`;
             lines.push(title);
 
             let has_slot = item.equip_slot in entity.equipment ? 'text_item_has_slot_color' : 'text_item_has_not_slot_color';
@@ -427,7 +431,7 @@ function show_status(entity) {
 
     // Write
     let left = 2 * tile_size[0];
-    let base_top = (2 - globals.cursors.status[1]) * tile_size[1];
+    let base_top = (2 - globals.cursors.status[0]) * tile_size[1];
     context.textAlign = 'left';
     context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
     context.fillStyle = '#000';
@@ -440,7 +444,7 @@ function show_status(entity) {
     }
 
     // Scroll arrows
-    let can_scroll_up = globals.cursors.status[1] > 0;
+    let can_scroll_up = globals.cursors.status[0] > 0;
     let can_scroll_down = lines.length + 4 > display_size[1];
     if (can_scroll_up) {
         context.textAlign = 'right';
@@ -585,7 +589,7 @@ function show_skill_target(entity) {
 /**
  * Shows the grid, the player and the entities
  */
-function show_mini() {
+function show_minimap() {
     Tile.visible_grid_mini.sort((a, b) => {
         if (a == globals.player) return 1;
         if (b == globals.player) return -1;
@@ -593,6 +597,12 @@ function show_mini() {
         if (b.y != a.y) return b.y - a.y;
         return b.x - a.x;
     }).forEach(t => t.draw({mode: 'mini'}));
+}
+/**
+ * test
+ */
+function show_options_test() {
+    BaseCanvasOption.options.forEach(o => o.draw());
 }
 /**
  * Writes a bunch of lines in a box
@@ -651,14 +661,17 @@ function mini_status_rows(entity) {
  * @param {number} [context_options.min_left] Minimum distance from the left edge of the canvas
  * @param {number} [context_options.min_right] Minimum distance from the right edge of the canvas
  * @param {CanvasTextAlign} [context_options.text_align]
+ * @param {number} [context_options.font_size]
  */
-export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, text_align = 'left'}={}) {
+export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, text_align = 'left', font_size = null}={}) {
     if (!Array.isArray(lines)) lines = [lines];
     if (!lines.length) return;
 
+    lines = lines.map(l => l.toString());
+
     // Set text vars
     context.textAlign = text_align;
-    context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
+    context.font = `${font_size ?? tile_size[1]}px ${get_theme_value('text_font')}`;
     context.fillStyle = get_theme_value('text_color');
 
     // Split lines that are too long

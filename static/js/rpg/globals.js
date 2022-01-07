@@ -4,7 +4,7 @@ export const globals = {
     /**
      * Current game state
      *
-     * @type {'playing'|'inventory'|'pause'|'status'|'skills'|'skill_targeting'|'minimap'}
+     * @type {'playing'|'inventory'|'pause'|'status'|'skills'|'skill_targeting'|'minimap'|'options_test'}
      */
     game_state: 'playing',
     /**
@@ -43,19 +43,18 @@ export const globals = {
     },
     /**
      * Current cursors for different screens, as [x, y]
-     *
-     * @type {{
-     *  inventory: [number, number],
-     *  status: [number, number],
-     *  skill_select: [number, number],
-     *  skill_target: [number, number],
-     * }}
      */
     cursors: {
+        /** @type {[number, number]} [x, y] */
         inventory: [0, 0],
-        status: [0, 0],
+        /** @type {[number]} [y] */
+        status: [0],
+        /** @type {[number, number]} [x, y] */
         skill_select: [0, 0],
+        /** @type {[number, number]} [x, y] */
         skill_target: [0, 0],
+        /** @type {[number, number]} [x, y] */
+        options: [0, 0],
     },
     /**
      * Whether the status shows as much as possible or not

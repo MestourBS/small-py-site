@@ -21,6 +21,7 @@ import { canvas, mini_status_rows_sizes } from './canvas.js';
 import { coords_between, coords_distance, Direction } from './coords.js';
 import { number_between } from './primitives.js';
 import { display_size, entity_skills_per_row, get_theme_value, inventory_items_per_row, tile_size } from './display.js';
+import { BaseCanvasOption } from './options.js';
 import globals from './globals.js';
 /**
  * @typedef {import('./skills.js').Skill} Skill
@@ -35,17 +36,18 @@ import globals from './globals.js';
  * Longer composites take precedence over shorter ones, so alt+ctrl+key > alt+key.
  * Composite building is also done in an alphabetical way, so alt+ctrl+key is correct, unlike ctrl+alt+key.
  *
+ * Using `*` for a key will call on any key, but will also pass the event to the action
+ *
  * - Actions are in-game actions (movement, attack, etc.)
- * - Others are other global actions (pause, resume, inventory, etc.)
  *
  * @type {{
- *  playing: {[k: string]: (keyof actions)[]},
- *  pause: {[k: string]: (keyof actions)[]},
- *  inventory: {[k: string]: (keyof actions)[]},
- *  status: {[k: string]: (keyof actions)[]},
- *  skills: {[k: string]: (keyof actions)[]},
- *  skill_targeting: {[k: string]: (keyof actions)[]},
- *  others: {[k: string]: (keyof actions)[]},
+ *  playing: {[key: string]: (keyof actions)[]},
+ *  pause: {[key: string]: (keyof actions)[]},
+ *  inventory: {[key: string]: (keyof actions)[]},
+ *  status: {[key: string]: (keyof actions)[]},
+ *  skills: {[key: string]: (keyof actions)[]},
+ *  skill_targeting: {[key: string]: (keyof actions)[]},
+ *  options_test: {[key: string]: (keyof actions)[]},
  * }}
  */
 const keybinds = {
@@ -62,8 +64,16 @@ const keybinds = {
         'o': ['show_status'],
         'k': ['show_skills'],
         'm': ['show_minimap'],
+        'p': ['game_pause'],
+        '0': ['show_options_test'],
     },
-    pause: {},
+    pause: {
+        'i': ['show_inventory'],
+        'o': ['show_status'],
+        'k': ['show_skills'],
+        'm': ['show_minimap'],
+        'p': ['game_resume'],
+    },
     inventory: {
         'a': ['move_cursor_inventory_left'],
         'd': ['move_cursor_inventory_right'],
@@ -80,6 +90,7 @@ const keybinds = {
         'k': ['show_skills'],
         'o': ['show_status'],
         'm': ['show_minimap'],
+        'p': ['game_pause'],
     },
     status: {
         's': ['move_cursor_status_down'],
@@ -90,6 +101,7 @@ const keybinds = {
         'i': ['show_inventory'],
         'k': ['show_skills'],
         'm': ['show_minimap'],
+        'p': ['game_pause'],
     },
     skills: {
         'a': ['move_cursor_skill_select_left'],
@@ -106,6 +118,7 @@ const keybinds = {
         'i': ['show_inventory'],
         'o': ['show_status'],
         'm': ['show_minimap'],
+        'p': ['game_pause'],
     },
     skill_targeting: {
         'a': ['move_cursor_skill_target_left'],
@@ -119,16 +132,19 @@ const keybinds = {
         'k': ['change_skill'],
         'q': ['cancel_skill'],
         ' ': ['use_skill'],
+        'p': ['game_pause'],
     },
     minimap: {
         'm': ['hide_minimap'],
         'i': ['show_inventory'],
         'o': ['show_status'],
         'k': ['show_skills'],
+        'p': ['game_pause'],
     },
-    others: {
-        'p': ['game_pause_toggle'],
-        //'contextmenu': ['open_context_menu'], //!still shows the context menu
+    options_test: {
+        'arrowdown': ['move_cursor_options_down'],
+        'arrowup': ['move_cursor_options_up'],
+        '*': ['call_option'],
     },
 };
 /**
@@ -300,19 +316,15 @@ const actions = new Proxy(Object.freeze({
             rows += Object.keys(globals.player.damage).length;
             if (rows + 4 <= DISPLAY_SIZE[1]) return;
 
-            let dir = Direction.down;
-            globals.cursors.status[0] += dir[0];
-            globals.cursors.status[1] += dir[1];
+            globals.cursors.status[0]++;
         },
     },
     'move_cursor_status_up': {
         name: gettext('games_rpg_action_move_cursor_status_up'),
         func: () => {
-            if (globals.cursors.status[1] <= 0) return;
+            if (globals.cursors.status[0] <= 0) return;
 
-            let dir = Direction.up;
-            globals.cursors.status[0] += dir[0];
-            globals.cursors.status[1] += dir[1];
+            globals.cursors.status[0]--;
         },
     },
     'move_cursor_skill_select_up': {
@@ -451,6 +463,34 @@ const actions = new Proxy(Object.freeze({
             }
         },
     },
+    'move_cursor_options_up': {
+        name: gettext('games_rpg_action_move_cursor_options_up'),
+        func: () => {
+            if (globals.cursors.options[1] <= 0) return;
+
+            globals.cursors.options[1]--;
+        },
+    },
+    'move_cursor_options_down': {
+        name: gettext('games_rpg_action_move_cursor_options_down'),
+        func: () => {
+            if (globals.cursors.options[1] >= BaseCanvasOption.options.length - 1) return;
+
+            globals.cursors.options[1]++;
+        },
+    },
+    'move_cursor_options_left': {
+        name: gettext('games_rpg_action_move_cursor_options_left'),
+        func: () => {
+            //todo
+        },
+    },
+    'move_cursor_options_right': {
+        name: gettext('games_rpg_action_move_cursor_options_right'),
+        func: () => {
+            //todo
+        },
+    },
     // Cursor-position based actions
     'use_inventory_selected': {
         name: gettext('games_rpg_action_use_inventory_selected'),
@@ -540,6 +580,15 @@ const actions = new Proxy(Object.freeze({
             globals.player.level_skill(index);
         },
     },
+    'call_option': {
+        name: gettext('games_rpg_action_call_option'),
+        /** @param {KeyboardEvent} e */
+        func: e => {
+            let i = globals.cursors.options[1];
+            let o = BaseCanvasOption.options[i];
+            o.keydown(e);
+        },
+    },
     // Game state actions
     'game_pause': {
         name: gettext('games_rpg_action_game_pause'),
@@ -578,7 +627,6 @@ const actions = new Proxy(Object.freeze({
         func: () => {
             globals.game_state = 'status';
             globals.cursors.status[0] = 0;
-            globals.cursors.status[1] = 0;
         },
     },
     'hide_status': {
@@ -626,6 +674,33 @@ const actions = new Proxy(Object.freeze({
         name: gettext('games_rpg_action_hide_minimap'),
         func: () => {
             globals.game_state = 'playing';
+        },
+    },
+    'show_options_test': {
+        name: gettext('games_rpg_action_show_options_test'),
+        func: () => {
+            let test_obj = {
+                _t_num: 3,
+                get num() {return this._t_num;},
+                set num(num) {console.log(this._t_num = num);},
+
+                _t_str: 'test',
+                get str() {return this._t_str;},
+                set str(str) {console.log(this._t_str = str);},
+
+                _t_bool: false,
+                get bool() {return this._t_bool;},
+                set bool(bool) {console.log(this._t_bool = bool);},
+            };
+
+            let op_num = BaseCanvasOption.make_option_type({target: test_obj, target_property: 'num', type: 'number'});
+            let op_str = BaseCanvasOption.make_option_type({target: test_obj, target_property: 'str', type: 'string'});
+            let op_bool = BaseCanvasOption.make_option_type({target: test_obj, target_property: 'bool', type: 'boolean'});
+            BaseCanvasOption.options.push(op_num, op_str, op_bool);
+
+            globals.game_state = 'options_test';
+            globals.cursors.options[0] = 0;
+            globals.cursors.options[1] = 0;
         },
     },
     // Click actions
@@ -677,10 +752,6 @@ export function keydown(e) {
         if (!(key in to_check)) to_check[key] = [];
         to_check[key].push(...act);
     });
-    Object.entries(keybinds.others).forEach(([key, act]) => {
-        if (!(key in to_check)) to_check[key] = [];
-        to_check[key].push(...act);
-    });
 
     // Get the key
     let key = e.key.toLowerCase();
@@ -704,6 +775,9 @@ export function keydown(e) {
     if (key_actions?.length) {
         e.preventDefault();
         key_actions.forEach(a => actions[a].func());
+    }
+    if ('*' in to_check) {
+        actions[to_check['*']].func(e);
     }
 }
 /**
