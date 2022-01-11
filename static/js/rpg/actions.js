@@ -144,6 +144,7 @@ const keybinds = {
     options_test: {
         'arrowdown': ['move_cursor_options_down'],
         'arrowup': ['move_cursor_options_up'],
+        'escape': ['exit_options'],
         '*': ['call_option'],
     },
 };
@@ -469,6 +470,7 @@ const actions = new Proxy(Object.freeze({
             if (globals.cursors.options[1] <= 0) return;
 
             globals.cursors.options[1]--;
+            globals.cursors.options[0] = 0;
         },
     },
     'move_cursor_options_down': {
@@ -477,12 +479,15 @@ const actions = new Proxy(Object.freeze({
             if (globals.cursors.options[1] >= BaseCanvasOption.options.length - 1) return;
 
             globals.cursors.options[1]++;
+            globals.cursors.options[0] = 0;
         },
     },
     'move_cursor_options_left': {
         name: gettext('games_rpg_action_move_cursor_options_left'),
         func: () => {
-            //todo
+            if (globals.cursors.options[0] <= 0) return;
+
+            globals.cursors.options[0]--;
         },
     },
     'move_cursor_options_right': {
@@ -585,6 +590,9 @@ const actions = new Proxy(Object.freeze({
         /** @param {KeyboardEvent} e */
         func: e => {
             let i = globals.cursors.options[1];
+
+            if (!(i in BaseCanvasOption.options)) return;
+
             let o = BaseCanvasOption.options[i];
             o.keydown(e);
         },
@@ -676,26 +684,25 @@ const actions = new Proxy(Object.freeze({
             globals.game_state = 'playing';
         },
     },
+    'exit_options': {
+        name: gettext('games_rpg_action_show_options_test'),
+        func: () => {
+            BaseCanvasOption.options.length = 0;
+            globals.game_state = 'playing';
+        },
+    },
     'show_options_test': {
         name: gettext('games_rpg_action_show_options_test'),
         func: () => {
-            let test_obj = {
-                _t_num: 3,
-                get num() {return this._t_num;},
-                set num(num) {console.log(this._t_num = num);},
-
-                _t_str: 'test',
-                get str() {return this._t_str;},
-                set str(str) {console.log(this._t_str = str);},
-
-                _t_bool: false,
-                get bool() {return this._t_bool;},
-                set bool(bool) {console.log(this._t_bool = bool);},
+            let target = {
+                num: 3,
+                str: 'test',
+                bool: false,
             };
 
-            let op_num = BaseCanvasOption.make_option_type({target: test_obj, target_property: 'num', type: 'number'});
-            let op_str = BaseCanvasOption.make_option_type({target: test_obj, target_property: 'str', type: 'string'});
-            let op_bool = BaseCanvasOption.make_option_type({target: test_obj, target_property: 'bool', type: 'boolean'});
+            let op_num = BaseCanvasOption.make_option_type({target, target_property: 'num', label: 'num', type: 'number'});
+            let op_str = BaseCanvasOption.make_option_type({target, target_property: 'str', label: 'str', type: 'string'});
+            let op_bool = BaseCanvasOption.make_option_type({target, target_property: 'bool', label: 'bool', type: 'boolean'});
             BaseCanvasOption.options.push(op_num, op_str, op_bool);
 
             globals.game_state = 'options_test';

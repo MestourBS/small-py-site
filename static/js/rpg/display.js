@@ -42,6 +42,7 @@ import globals from './globals.js';
  * @prop {string} background_entity_missing_health_color
  * @prop {string} background_skill_cell_uncastable_color
  * @prop {string} checkmark_color
+ * @prop {string} write_cursor_color
  */
 
 /**
@@ -89,7 +90,7 @@ const themes = {
         border_inventory_cursor_color: '#0ff',
         border_skill_select_cursor_color: '#7f0',
         border_skill_target_cursor_color: '#0ff',
-        border_option_error_selected_color: '#f07',
+        border_option_error_selected_color: '#f0f',
         border_skill_target_out_range_cursor_color: '#f00',
         // Backgrounds
         background_options_test_color: '#fff', //test
@@ -111,6 +112,7 @@ const themes = {
         background_skill_cell_uncastable_color: '#737',
         // Colors
         checkmark_color: '#000',
+        write_cursor_color: '#000',
     },
     /*
     'light': {

@@ -6,6 +6,8 @@ import { average, beautify, capitalize, number_between } from './primitives.js';
 import { tile_size, display_size, get_theme_value, inventory_items_per_row, entity_skills_per_row } from './display.js';
 import globals from './globals.js';
 import { BaseCanvasOption } from './options.js';
+import Random from './random.js';
+import Color from './color.js';
 /**
  * @typedef {import('./entity.js').Entity} Entity
  */
@@ -657,28 +659,83 @@ function mini_status_rows(entity) {
  *  Any amount of backslashes will disable colors. If color is `reset`, the color is reset back to its default value.
  * @param {number} left Distance from left edge
  * @param {number} top Distance from top edge
- * @param {Object} context_options
+ * @param {Object} [context_options]
  * @param {number} [context_options.min_left] Minimum distance from the left edge of the canvas
  * @param {number} [context_options.min_right] Minimum distance from the right edge of the canvas
  * @param {CanvasTextAlign} [context_options.text_align]
  * @param {number} [context_options.font_size]
+ * @param {CanvasRenderingContext2D} [context_options.context]
  */
-export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, text_align = 'left', font_size = null}={}) {
-    if (!Array.isArray(lines)) lines = [lines];
+export function canvas_write(lines, left, top, {
+    min_left = 10, min_right = 10, text_align = 'left',
+    font_size = tile_size[1], context = canvas.getContext('2d'),
+}={}) {
+    [left, lines] = cut_lines(lines, left, {min_left, min_right, font_size, context});
     if (!lines.length) return;
 
-    lines = lines.map(l => l.toString());
-
-    // Set text vars
     context.textAlign = text_align;
-    context.font = `${font_size ?? tile_size[1]}px ${get_theme_value('text_font')}`;
     context.fillStyle = get_theme_value('text_color');
 
-    // Split lines that are too long
+    const base_x = Math.max(left, min_left);
+
+    // Draw text
+    for (let i = 0; i < lines.length; i++) {
+        const y = top + (i + 1) * font_size;
+        if (y <= 0) continue;
+        let x = base_x;
+        let line = lines[i];
+
+        if (line.match(regex_color)) {
+            // Iterate over the pieces
+            let color = false;
+            line.split(regex_color).forEach(chunk => {
+                // Half of the pieces are color setters, the rest is actual text
+                if (color) {
+                    if (chunk.toLowerCase() == 'reset') chunk = get_theme_value('text_color');
+                    if (chunk.toLowerCase() == 'random') chunk = Random.color();
+                    //todo rainbow
+                    context.fillStyle = chunk;
+                } else {
+                    context.fillText(chunk.replace(regex_not_color, n => n.slice(1)), x, y);
+                    x += context.measureText(chunk).width;
+                }
+                color = !color;
+            });
+        } else {
+            context.fillText(line.replace(regex_not_color, n => n.slice(1)), x, y);
+        }
+    }
+}
+/**
+ * Cuts text into lines
+ *
+ * @param {string[]|string} lines Lines to write. Change color by writing `{color:<color>}`.
+ *  Any amount of backslashes will disable colors. If color is `reset`, the color is reset back to its default value.
+ * @param {number} left Distance from left edge
+ * @param {Object} [context_options]
+ * @param {number} [context_options.min_left] Minimum distance from the left edge of the canvas
+ * @param {number} [context_options.min_right] Minimum distance from the right edge of the canvas
+ * @param {number} [context_options.font_size]
+ * @param {CanvasRenderingContext2D} [context_options.context]
+ * @returns {[number, string[]]}
+ */
+export function cut_lines(lines, left, {
+    min_left = 10, min_right = 10, font_size = tile_size[1],
+    context = canvas.getContext('2d'),
+} = {}) {
+    if (!Array.isArray(lines) && lines) lines = [lines];
+    if (!lines?.length) return [0, []];
+
+    lines = lines.map(l => l.toString());
+    left = Math.max(left + tile_size[0], min_left);
+
+    // Set text var
+    context.font = `${font_size}px ${get_theme_value('text_font')}`;
     let longest_line = Math.max(...lines.map(l => context.measureText(l.replace(regex_color, '')).width));
     const canvas_width = tile_size[0] * display_size[0];
     const padding = min_left + min_right;
-    if (left + longest_line + padding > canvas_width) {
+
+    if (left + longest_line + min_right > canvas_width) {
         // Move left to the lowest possible, or 0
         if (longest_line + padding <= canvas_width) {
             left = canvas_width - longest_line;
@@ -688,6 +745,11 @@ export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, t
             let own_splits = pre_split[context.font];
 
             lines = lines.map(line => {
+                // If we have already split the line, we just skip the whole process
+                if (line in own_splits) return own_splits[line];
+
+                // Store colors and positions before removing them from the line
+                // If they were kept, they would cause problems in both cutting and applying
                 let colors_matches = [...line.matchAll(regex_color)];
                 /** @type {[number, string][]} [index, fullcolor][] */
                 let colors = [];
@@ -698,12 +760,12 @@ export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, t
                 });
 
                 line = line.replace(regex_color, '');
-                if (line in own_splits) return own_splits[line];
-
                 let length = context.measureText(line).width;
+                /** @type {string[]} */
                 let slices = [];
 
                 if (length + padding <= canvas_width) {
+                    // We don't even need to split it
                     slices = [line];
                 } else {
                     let baseline = line;
@@ -722,7 +784,7 @@ export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, t
                         let slice = line.slice(0, len);
                         let separators = Array.from(new Set(slice.match(regex_not_word)));
                         if (separators.length) {
-                            len = Math.max(separators.map(s => slice.lastIndexOf(s)));
+                            len = Math.max(...separators.map(s => slice.lastIndexOf(s)));
                             slice = line.slice(0, len);
                             //len++; //todo depend on whether separator is whitespace
                         } // Else we just cut at the edge (so slice)
@@ -734,7 +796,7 @@ export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, t
 
                     slices.push(line);
 
-                    own_splits[baseline] = slices;
+                    line = baseline;
                 }
                 // Put the colors back in the line(s)
                 slices = slices.map((slice, index, slices) => {
@@ -744,44 +806,21 @@ export function canvas_write(lines, left, top, {min_left = 10, min_right = 10, t
                     /** @type {[number, string][]} */
                     let slice_colors = colors.filter(c => number_between(c[0], index_start, index_end)).map(c => [...c]).sort((a,b) => b[0]-a[0]);
                     slice_colors.forEach(([i, color]) => {
+                        i -= index_start;
                         slice = slice.slice(0, i) + color + slice.slice(i);
                     });
 
                     return slice;
                 });
+                // Store cut line, so we don't go through the whole process again
+                own_splits[line] = slices;
 
                 return slices;
             }).flat();
         }
     }
 
-    const base_x = left + tile_size[0];
-
-    // Draw text
-    for (let i = 0; i < lines.length; i++) {
-        const y = top + (i + 1) * tile_size[1];
-        if (y <= 0) continue;
-        let x = base_x;
-        let line = lines[i];
-
-        if (line.match(regex_color)) {
-            // Iterate over the pieces
-            let color = false;
-            line.split(regex_color).forEach(chunk => {
-                // Half of the pieces are color setters, the rest is actual text
-                if (color) {
-                    if (chunk.toLowerCase() == 'reset') chunk = get_theme_value('text_color');
-                    context.fillStyle = chunk;
-                } else {
-                    context.fillText(chunk.replace(regex_not_color, n => n.slice(1)), x, y);
-                    x += context.measureText(chunk).width;
-                }
-                color = !color;
-            });
-        } else {
-            context.fillText(line.replace(regex_not_color, n => n.slice(1)), x, y);
-        }
-    }
+    return [left, lines];
 }
 /**
  * Calculates the sizes of each row for a ministatus
