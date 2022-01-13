@@ -30,13 +30,13 @@ export const context = canvas.getContext('2d');
  *
  * @type {RegExp}
  */
-const regex_color = /(?<!\\)\{color:(.+?)\}/ig;
+const regex_modifier = /(?<!\\)\{(.+?):(.+?)\}/ig;
 /**
  * Regex for escaped color matching
  *
  * @type {RegExp}
  */
-const regex_not_color = /\\(\{color:.+?\})/g;
+const regex_not_modifier = /\\(\{(.+?):.+?\})/g;
 /**
  * Existing damage/defense types
  *
@@ -618,7 +618,7 @@ function canvas_tooltip(lines, left, top) {
 
     context.font = `${tile_size[1]}px ${get_theme_value('text_font')}`;
     let width = lines.map(line => {
-        line = line.replace(regex_color, '');
+        line = line.replace(regex_modifier, '');
         return context.measureText(line).width;
     }).sort((a, b) => b - a)[0] + tile_size[0] * 2;
     let height = tile_size[1] * (lines.length + .5);
@@ -685,24 +685,32 @@ export function canvas_write(lines, left, top, {
         let x = base_x;
         let line = lines[i];
 
-        if (line.match(regex_color)) {
+        if (line.match(regex_modifier)) {
             // Iterate over the pieces
-            let color = false;
-            line.split(regex_color).forEach(chunk => {
-                // Half of the pieces are color setters, the rest is actual text
-                if (color) {
-                    if (chunk.toLowerCase() == 'reset') chunk = get_theme_value('text_color');
-                    if (chunk.toLowerCase() == 'random') chunk = Random.color();
-                    //todo rainbow
-                    context.fillStyle = chunk;
+            let modifier = false;
+            let chunks = line.split(regex_modifier);
+            for (let i = 0; i < chunks.length; i++) {
+                if (modifier) {
+                    let type = chunks[i];
+                    let value = chunks[++i];
+
+                    switch (type) {
+                        case 'color':
+                            if (value.toLowerCase() == 'reset') value = get_theme_value('text_color');
+                            else if (value.toLowerCase() == 'random') value = Random.color();
+                            //todo rainbow
+                            context.fillStyle = value;
+                            break;
+                    }
                 } else {
-                    context.fillText(chunk.replace(regex_not_color, n => n.slice(1)), x, y);
-                    x += context.measureText(chunk).width;
+                    let text = chunks[i].replace(regex_not_modifier, n => n.slice(1));
+                    context.fillText(text, x, y);
+                    x += context.measureText(text).width;
                 }
-                color = !color;
-            });
+                modifier = !modifier;
+            }
         } else {
-            context.fillText(line.replace(regex_not_color, n => n.slice(1)), x, y);
+            context.fillText(line.replace(regex_not_modifier, n => n.slice(1)), x, y);
         }
     }
 }
@@ -731,7 +739,7 @@ export function cut_lines(lines, left, {
 
     // Set text var
     context.font = `${font_size}px ${get_theme_value('text_font')}`;
-    let longest_line = Math.max(...lines.map(l => context.measureText(l.replace(regex_color, '')).width));
+    let longest_line = Math.max(...lines.map(l => context.measureText(l.replace(regex_modifier, '')).width));
     const canvas_width = tile_size[0] * display_size[0];
     const padding = min_left + min_right;
 
@@ -744,22 +752,22 @@ export function cut_lines(lines, left, {
             if (!(context.font in pre_split)) pre_split[context.font] = {};
             let own_splits = pre_split[context.font];
 
-            lines = lines.map(line => {
+            lines = lines.map(/** @param {string} line */line => {
                 // If we have already split the line, we just skip the whole process
                 if (line in own_splits) return own_splits[line];
 
                 // Store colors and positions before removing them from the line
                 // If they were kept, they would cause problems in both cutting and applying
-                let colors_matches = [...line.matchAll(regex_color)];
+                let modifiers_matches = [...line.matchAll(regex_modifier)];
                 /** @type {[number, string][]} [index, fullcolor][] */
-                let colors = [];
-                colors_matches.forEach(match => {
-                    let less = colors.map(c => c[1].length).reduce((s, n) => s + n, 0);
+                let modifiers = [];
+                modifiers_matches.forEach(match => {
+                    let less = modifiers.map(c => c[1].length).reduce((s, n) => s + n, 0);
                     let index = match.index - less;
-                    colors.push([index, match[0]]);
+                    modifiers.push([index, match[0]]);
                 });
 
-                line = line.replace(regex_color, '');
+                line = line.replace(regex_modifier, '');
                 let length = context.measureText(line).width;
                 /** @type {string[]} */
                 let slices = [];
@@ -804,8 +812,8 @@ export function cut_lines(lines, left, {
                     let index_end = index_start + slice.length;
 
                     /** @type {[number, string][]} */
-                    let slice_colors = colors.filter(c => number_between(c[0], index_start, index_end)).map(c => [...c]).sort((a,b) => b[0]-a[0]);
-                    slice_colors.forEach(([i, color]) => {
+                    let slice_modifiers = modifiers.filter(c => number_between(c[0], index_start, index_end)).map(c => [...c]).sort((a,b) => b[0]-a[0]);
+                    slice_modifiers.forEach(([i, color]) => {
                         i -= index_start;
                         slice = slice.slice(0, i) + color + slice.slice(i);
                     });
