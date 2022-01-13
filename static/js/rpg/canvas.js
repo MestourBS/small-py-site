@@ -7,7 +7,6 @@ import { tile_size, display_size, get_theme_value, inventory_items_per_row, enti
 import globals from './globals.js';
 import { BaseCanvasOption } from './options.js';
 import Random from './random.js';
-import Color from './color.js';
 /**
  * @typedef {import('./entity.js').Entity} Entity
  */
@@ -30,7 +29,7 @@ export const context = canvas.getContext('2d');
  *
  * @type {RegExp}
  */
-const regex_modifier = /(?<!\\)\{(.+?):(.+?)\}/ig;
+export const regex_modifier = /(?<!\\)\{(.+?):(.+?)\}/ig;
 /**
  * Regex for escaped color matching
  *
@@ -116,6 +115,8 @@ const equip_slots = {
  * }}}
  */
 const pre_split = {};
+/** @type {string[]} */
+const modifier_types = ['color'];
 
 /**
  * Empties the canvas display
@@ -677,6 +678,12 @@ export function canvas_write(lines, left, top, {
     context.fillStyle = get_theme_value('text_color');
 
     const base_x = Math.max(left, min_left);
+    /** @type {((type: string) => (modifier: string) => boolean)[]} */
+    const selecting_functions = [
+        type => modifier => modifier == type,
+        type => modifier => modifier.startsWith(type),
+        type => modifier => modifier.indexOf(type) != -1,
+    ];
 
     // Draw text
     for (let i = 0; i < lines.length; i++) {
@@ -691,8 +698,17 @@ export function canvas_write(lines, left, top, {
             let chunks = line.split(regex_modifier);
             for (let i = 0; i < chunks.length; i++) {
                 if (modifier) {
-                    let type = chunks[i];
+                    let type = chunks[i].toLowerCase();
                     let value = chunks[++i];
+
+                    let possibles = [];
+                    for (let f = 0; f < selecting_functions.length && !possibles.length; f++) {
+                        let selector = selecting_functions[f];
+                        possibles = modifier_types.filter(selector(type));
+                    }
+                    if (possibles.length == 1) {
+                        type = possibles[0];
+                    }
 
                     switch (type) {
                         case 'color':
