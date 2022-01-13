@@ -482,20 +482,6 @@ const actions = new Proxy(Object.freeze({
             globals.cursors.options[0] = 0;
         },
     },
-    'move_cursor_options_left': {
-        name: gettext('games_rpg_action_move_cursor_options_left'),
-        func: () => {
-            if (globals.cursors.options[0] <= 0) return;
-
-            globals.cursors.options[0]--;
-        },
-    },
-    'move_cursor_options_right': {
-        name: gettext('games_rpg_action_move_cursor_options_right'),
-        func: () => {
-            //todo
-        },
-    },
     // Cursor-position based actions
     'use_inventory_selected': {
         name: gettext('games_rpg_action_use_inventory_selected'),
@@ -700,10 +686,11 @@ const actions = new Proxy(Object.freeze({
                 bool: false,
             };
 
-            let op_num = BaseCanvasOption.make_option_type({target, target_property: 'num', label: 'num', type: 'number'});
-            let op_str = BaseCanvasOption.make_option_type({target, target_property: 'str', label: 'str', type: 'string'});
-            let op_bool = BaseCanvasOption.make_option_type({target, target_property: 'bool', label: 'bool', type: 'boolean'});
-            BaseCanvasOption.options.push(op_num, op_str, op_bool);
+            BaseCanvasOption.options.push(
+                BaseCanvasOption.make_option_type({target, target_property: 'num', label: 'num', type: 'number'}),
+                BaseCanvasOption.make_option_type({target, target_property: 'str', label: 'str', type: 'string'}),
+                BaseCanvasOption.make_option_type({target, target_property: 'bool', label: 'bool', type: 'boolean'}),
+            );
 
             globals.game_state = 'options_test';
             globals.cursors.options[0] = 0;

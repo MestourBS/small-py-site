@@ -1,4 +1,4 @@
-import { canvas_write, context as canvas_context, cut_lines } from './canvas.js';
+import { canvas_write, context as canvas_context, cut_lines, regex_modifier } from './canvas.js';
 import { display_size, get_theme_value, tile_size } from './display.js';
 import globals from './globals.js';
 import { number_between } from './primitives.js';
@@ -55,8 +55,9 @@ function optionLSNHeight({context=canvas_context, value=this.value}={}) {
 function optionSNDraw({context=canvas_context, value=this.value}={}) {
     let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
         .map(o => o.height({context}) + 1)
-        .reduce((s, h) => s + h, 0) - Math.max(0, globals.cursors.options[1] - display_size[1] / 2);
+        .reduce((s, h) => s + h, 0);
     y_start *= option_sizes[1];
+    y_start -= Math.max(0, BaseCanvasOption.selected.cursor_position({context})[1] - display_size[1] / 2 * tile_size[1]);
     let height = (this.height({context}) + .5) * option_sizes[1];
 
     // Option is not visible
@@ -100,8 +101,21 @@ function optionSNDraw({context=canvas_context, value=this.value}={}) {
         let line = lines[lines.length - 1] ?? '';
         line = line.slice(0, cursor[0]);
         left += context.measureText(line).width + option_sizes[0] * 1.5;
+        let in_modifier = false;
 
-        context.strokeStyle = get_theme_value('write_cursor_color');
+        let fullline = cut_lines(value, left, options)[1][lines.length - 1] ?? '';
+        let matches = [...fullline.matchAll(regex_modifier)];
+        matches.forEach(match => {
+            if (match.index > cursor[0]) return;
+            if (match.index + match[0].length > cursor[0]) {
+                match[0] = match[0].slice(0, cursor[0] - match.index - match[0].length);
+                in_modifier = true;
+            }
+            left -= context.measureText(match[0]).width;
+        });
+
+        let color = `write_cursor${'_modifier'.repeat(in_modifier)}_color`;
+        context.strokeStyle = get_theme_value(color);
         context.beginPath();
         context.moveTo(left, y_start);
         context.lineTo(left, y_start + option_sizes[1]);
@@ -109,14 +123,45 @@ function optionSNDraw({context=canvas_context, value=this.value}={}) {
         context.closePath();
     }
 }
+/**
+ * @this {StringCanvasOption|NumberCanvasOption}
+ * @param {Object} [params]
+ * @param {CanvasRenderingContext2D} [params.context]
+ * @param {string} [params.value]
+ */
+function optionSNCursor({context=canvas_context, value=this.value}) {
+    let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
+        .map(o => o.height({context}) + 1)
+        .reduce((s, h) => s + h, 0) * option_sizes[1];
+    let left = option_sizes[0] - tile_size[0];
+    let options = {min_left: option_sizes[0] * 1.5, min_right: option_sizes[0] * 1.5, context, font_size: option_sizes[1]};
+
+    if (this.label) {
+        options.min_left = option_sizes[0];
+        let lbl_lines = cut_lines(this.label, left, options)[1].length + .25;
+        let lbl_height = lbl_lines * option_sizes[1];
+        y_start += lbl_height;
+        options.min_left = option_sizes[0] * 1.5;
+    }
+
+    let cursor = globals.cursors.options;
+    let behind = value.slice(0, cursor[0]) || ' ';
+    let [_, lines] = cut_lines(behind, left, options);
+
+    y_start += ((lines.length || 1) - .75) * option_sizes[1];
+
+    return [left, y_start, 1, option_sizes[1]];
+}
 
 /**
  * @template T
+ * @hideconstructor
  */
 export class BaseCanvasOption {
     /** @type {BaseCanvasOption[]} */
     static #options = [];
     static get options() {return this.#options;}
+    static get selected() {return this.#options.find(o => o.selected);}
 
     /**
      * @template O
@@ -163,10 +208,10 @@ export class BaseCanvasOption {
     get object_value() {return this.#target[this.#prop];}
     get index() {return BaseCanvasOption.#options.indexOf(this);}
     get error() {return false;}
+    get selected() {return this.index == globals.cursors.options[1];}
 
     get value() {return this.#target[this.#prop];}
     set value(value) {this.#target[this.#prop] = value;}
-    get selected() {return this.index == globals.cursors.options[1];}
 
     /**
      * Calculates the height, in lines, of the option
@@ -184,6 +229,23 @@ export class BaseCanvasOption {
      * @param {CanvasRenderingContext2D} [params.context]
      */
     draw({context=canvas_context}={}) {}
+
+    /**
+     * Calculates the cursor's position relative to top of all inputs within the input
+     *
+     * **Does not draw the cursor**
+     *
+     * @param {Object} [params]
+     * @param {CanvasRenderingContext2D} [params.context]
+     * @returns {[number, number, number, number]} [left, top, width, height]
+     */
+    cursor_position({context=canvas_context}={}) {
+        let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
+            .map(o => o.height({context}) + 1)
+            .reduce((s, h) => s + h, 0);
+
+        return [option_sizes[0], y_start, 1, 1];
+    }
 
     /**
      * Applies a key event to the option
@@ -253,13 +315,17 @@ class StringCanvasOption extends BaseCanvasOption {
         optionSNDraw.call(this, {context});
     }
 
+    cursor_position({context=canvas_context}) {
+        return optionSNCursor.call(this, {context});
+    }
+
     /**
      * @inheritdoc
      * @param {KeyboardEvent} event
      */
     keydown(event) {
         if (event.altKey || event.ctrlKey || event.metaKey) return;
-        event.preventDefault();
+        let prev_def = true;
         let cursor = globals.cursors.options;
         let index = cursor[0];
 
@@ -298,10 +364,15 @@ class StringCanvasOption extends BaseCanvasOption {
             case 'End':
                 cursor[0] = this.value.length;
                 break;
+            default:
+                prev_def = false;
+                break;
         }
         if (!event.code.startsWith(event.key) || event.key.length == 1) {
             this.value = this.value.slice(0, index) + event.key + this.value.slice(index);
             cursor[0]++;
+        } else {
+            if (prev_def) event.preventDefault();
         }
     }
 }
@@ -368,13 +439,17 @@ class NumberCanvasOption extends BaseCanvasOption {
         optionSNDraw.call(this, {context});
     }
 
+    cursor_position({context=canvas_context}) {
+        return optionSNCursor.call(this, {context});
+    }
+
     /**
      * @inheritdoc
      * @param {KeyboardEvent} event
      */
     keydown(event) {
         if (event.altKey || event.ctrlKey || event.metaKey) return;
-        event.preventDefault();
+        let prev_def = true;
         let cursor = globals.cursors.options;
         let index = cursor[0];
 
@@ -416,6 +491,9 @@ class NumberCanvasOption extends BaseCanvasOption {
             case 'End':
                 cursor[0] = this.value.length;
                 break;
+            default:
+                prev_def = false;
+                break;
         }
 
         //todo add comma support
@@ -423,6 +501,8 @@ class NumberCanvasOption extends BaseCanvasOption {
         if (!isNaN(event.key)) {
             this.value = this.value.slice(0, index) + event.key + this.value.slice(index);
             cursor[0]++;
+        } else {
+            if (prev_def) event.preventDefault();
         }
         this.value = NumberCanvasOption.#trimmers.reduce((v, [t, s]) => v.replace(t, s), this.value);
     }
@@ -467,8 +547,9 @@ class BooleanCanvasOption extends BaseCanvasOption {
     draw({context=canvas_context}={}) {
         let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
             .map(o => o.height({context}) + 1)
-            .reduce((s, h) => s + h, 0) - Math.max(0, globals.cursors.options[1] - display_size[1] / 2);
+            .reduce((s, h) => s + h, 0);
         y_start *= option_sizes[1];
+        y_start -= Math.max(0, BaseCanvasOption.selected.cursor_position({context})[1] - display_size[1] / 2 * tile_size[1]);
         let height = this.height({context}) * option_sizes[1];
 
         // Option is not visible
@@ -505,16 +586,47 @@ class BooleanCanvasOption extends BaseCanvasOption {
         }
     }
 
+    cursor_position({context=canvas_context}) {
+        let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
+            .map(o => o.height({context}) + 1)
+            .reduce((s, h) => s + h, 0) * option_sizes[1];
+        let x_start = option_sizes[0];
+        let width = option_sizes[0];
+        let height = this.height({context}) * option_sizes[1];
+
+        if (this.label) {
+            let options = {min_left: option_sizes[0], min_right: option_sizes[0] * 1.5, context, font_size: option_sizes[1]};
+            let lbl_lines = cut_lines(this.label, x_start - tile_size[0], options)[1].length + .25;
+            let lbl_height = lbl_lines * option_sizes[1];
+            y_start += lbl_height;
+            height -= lbl_height;
+        }
+
+        return [x_start, y_start, width, height];
+    }
+
     /**
      * @inheritdoc
      * @param {KeyboardEvent} event
      */
     keydown(event) {
         if (event.altKey || event.ctrlKey || event.metaKey) return;
-        event.preventDefault();
+        let prev_def = true;
 
-        if (['Enter', ' ', 'Spacebar'].includes(event.key)) {
-            this.value = !this.value;
+        switch (event.key) {
+            case 'Enter': case ' ': case 'Spacebar':
+                this.value = !this.value;
+                break;
+            case 'Backspace': case 'Delete': case 'Del':
+                this.value = false;
+                break;
+            default:
+                prev_def = false;
+                break;
+        }
+
+        if (prev_def) {
+            event.preventDefault();
         }
     }
 }

@@ -43,6 +43,7 @@ import globals from './globals.js';
  * @prop {string} background_skill_cell_uncastable_color
  * @prop {string} checkmark_color
  * @prop {string} write_cursor_color
+ * @prop {string} write_cursor_modifier_color
  */
 
 /**
@@ -113,6 +114,7 @@ const themes = {
         // Colors
         checkmark_color: '#000',
         write_cursor_color: '#000',
+        write_cursor_modifier_color: '#777',
     },
     /*
     'light': {
