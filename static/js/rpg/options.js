@@ -11,6 +11,7 @@ import { Color } from './color.js';
  * @prop {BooleanCanvasOption<T>} boolean
  * @prop {ListCanvasOption<T>} list
  * @prop {ColorCanvasOption<T>} color
+ * @prop {KeyCanvasOption<T>} key
  */
 
 /**
@@ -35,7 +36,7 @@ const option_sizes = new Proxy([20, 20], {
  * @param {CanvasRenderingContext2D} [params.context]
  * @param {string} [params.value]
  */
-function optionCSNHeight({context=canvas_context, value=this.value}={}) {
+function optionCKNSHeight({context=canvas_context, value=this.value}={}) {
     let left = option_sizes[0] - tile_size[0];
     let options = {
         context,
@@ -55,7 +56,7 @@ function optionCSNHeight({context=canvas_context, value=this.value}={}) {
  * @param {CanvasRenderingContext2D} [params.context]
  * @param {string} [params.value]
  */
-function optionSNDraw({context=canvas_context, value=this.value}={}) {
+function optionNSDraw({context=canvas_context, value=this.value}={}) {
     let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
         .map(o => o.height({context}) + 1)
         .reduce((s, h) => s + h, 0);
@@ -132,7 +133,7 @@ function optionSNDraw({context=canvas_context, value=this.value}={}) {
  * @param {CanvasRenderingContext2D} [params.context]
  * @param {string} [params.value]
  */
-function optionSNCursor({context=canvas_context, value=this.value}) {
+function optionNSCursor({context=canvas_context, value=this.value}) {
     let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
         .map(o => o.height({context}) + 1)
         .reduce((s, h) => s + h, 0) * option_sizes[1];
@@ -310,12 +311,12 @@ class StringCanvasOption extends BaseCanvasOption {
         }
     }
 
-    height({context=canvas_context}={}) { return optionCSNHeight.call(this, {context}); }
+    height({context=canvas_context}={}) { return optionCKNSHeight.call(this, {context}); }
 
-    draw({context=canvas_context}={}) { optionSNDraw.call(this, {context}); }
+    draw({context=canvas_context}={}) { optionNSDraw.call(this, {context}); }
 
     cursor_position({context=canvas_context}) {
-        return optionSNCursor.call(this, {context});
+        return optionNSCursor.call(this, {context});
     }
 
     /**
@@ -430,12 +431,12 @@ class NumberCanvasOption extends BaseCanvasOption {
         }
     }
 
-    height({context=canvas_context}={}) { return optionCSNHeight.call(this, {context}); }
+    height({context=canvas_context}={}) { return optionCKNSHeight.call(this, {context}); }
 
-    draw({context=canvas_context}={}) { optionSNDraw.call(this, {context}); }
+    draw({context=canvas_context}={}) { optionNSDraw.call(this, {context}); }
 
     cursor_position({context=canvas_context}) {
-        return optionSNCursor.call(this, {context});
+        return optionNSCursor.call(this, {context});
     }
 
     /**
@@ -846,7 +847,7 @@ class ColorCanvasOption extends BaseCanvasOption {
         try {
             color = new Color(color ?? object[property]);
         } catch {
-            throw new TypeError(`Invalid color options argument color: ${color}`);
+            throw new TypeError(`Invalid color option argument color: ${color}`);
         }
 
         super({object, property, label});
@@ -866,7 +867,7 @@ class ColorCanvasOption extends BaseCanvasOption {
         super.value = value.toString();
     }
 
-    height({context=canvas_context}={}) { return optionCSNHeight.call(this, {context}); }
+    height({context=canvas_context}={}) { return optionCKNSHeight.call(this, {context}); }
 
     draw({context=canvas_context}={}) {
         let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
@@ -988,10 +989,173 @@ class ColorCanvasOption extends BaseCanvasOption {
     }
 }
 
+/**
+ * @template T
+ */
+class KeyCanvasOption extends BaseCanvasOption {
+    #capturing = false;
+    /** @type {number} */
+    #max_delay;
+    #key = {
+        alt: false,
+        ctrl: false,
+        shift: false,
+        key: '',
+    };
+
+    /**
+     * @param {Object} params
+     * @param {T} params.object
+     * @param {keyof T} params.property
+     * @param {string} [params.label]
+     * @param {number} [params.max_delay]
+     */
+    constructor({object, property, label=null, max_delay=250}) {
+        if (isNaN(max_delay) || max_delay <= 0) throw new TypeError(`Invalid key option argument max_delay: ${max_delay}`);
+
+        super({object, property, label});
+
+        this.#max_delay = max_delay;
+        /** @type {string} */
+        let fullkey = object[property];
+        let key_pieces = fullkey.split('+');
+        for (let k of ['alt', 'ctrl', 'shift']) {
+            if (key_pieces[0].toLowerCase() == k) {
+                this.#key[k] = true;
+                key_pieces.shift();
+            }
+        }
+        this.#key.key = key_pieces[0];
+    }
+
+    get capturing() { return this.selected && this.#capturing; }
+
+    get value() {
+        return [
+            'alt'.repeat(this.#key.alt),
+            'ctrl'.repeat(this.#key.ctrl),
+            'shift'.repeat(this.#key.shift),
+            this.#key.key,
+        ].filter(s => s?.length > 0).join('+');
+    }
+    set value(value) {
+        let key_pieces = value.split('+');
+        let key = key_pieces.pop();
+        for (let k of ['alt', 'ctrl', 'shift']) {
+            if (key_pieces[0]?.toLowerCase() == k) {
+                this.#key[k] = true;
+                key_pieces.length && key_pieces.shift();
+            }
+        }
+        this.#key.key = key;
+
+        super.value = this.value;
+    }
+
+    height({context=canvas_context}={}) { return optionCKNSHeight.call(this, {context}); }
+
+    draw({context=canvas_context}={}) {
+        let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
+            .map(o => o.height({context}) + 1)
+            .reduce((s, h) => s + h, 0);
+        y_start *= option_sizes[1];
+        y_start -= Math.max(0, BaseCanvasOption.selected.cursor_position({context})[1] - display_size[1] / 2 * tile_size[1]);
+        let height = (this.height({context}) + .5) * option_sizes[1];
+
+        // Option is not visible
+        if (y_start >= display_size[1] * tile_size[1] || y_start + height <= 0) return;
+
+        let x_start = option_sizes[0];
+        let width = display_size[0] * tile_size[0] - option_sizes[0] * 2;
+
+        let options = {min_left: option_sizes[0] * 1.5, min_right: option_sizes[0] * 1.5, context, font_size: option_sizes[1]};
+        let left = x_start - tile_size[0];
+
+        // Write label if it exists
+        if (this.label) {
+            options.min_left = option_sizes[0];
+            canvas_write(this.label, left, y_start, options);
+            let lbl_lines = cut_lines(this.label, left, options)[1].length + .25;
+            let lbl_height = lbl_lines * option_sizes[1];
+            y_start += lbl_height;
+            height -= lbl_height;
+            options.min_left = option_sizes[0] * 1.5;
+        }
+
+        let border_name = `border_option${'_error'.repeat(this.error)}${'_selected'.repeat(this.selected)}_color`;
+        let background_name = 'background_option_color';
+        let value = this.value;
+        if (this.capturing && document.hasFocus() && Math.round(Date.now() / 1000 % 1)) {
+            background_name = 'background_option_selected_color';
+            let color = get_theme_value('text_selected_color');
+            value = `{color:${color}}${value}{color:reset}`;
+        }
+
+        context.fillStyle = get_theme_value(background_name);
+        context.strokeStyle = get_theme_value(border_name);
+        context.fillRect(x_start, y_start, width, height);
+        context.strokeRect(x_start, y_start, width, height);
+
+        canvas_write(value, left, y_start, options);
+    }
+
+    cursor_position({context=canvas_context}={}) {
+        let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
+            .map(o => o.height({context}) + 1)
+            .reduce((s, h) => s + h, 0) * option_sizes[1];
+        let x_start = option_sizes[0] - tile_size[0];
+        let options = {min_left: option_sizes[0] * 1.5, min_right: option_sizes[0] * 1.5, context, font_size: option_sizes[1]};
+
+        if (this.label) {
+            options.min_left = option_sizes[0];
+            let lbl_lines = cut_lines(this.label, x_start, options)[1].length;
+            let lbl_height = lbl_lines * option_sizes[1];
+            y_start += lbl_height;
+            options.min_left = option_sizes[0];
+        }
+
+        let width = display_size[0] * tile_size[0] - option_sizes[0] * 2;
+        let height = (this.height({context}) + .5) * option_sizes[1];
+
+        return [x_start, y_start, width, height];
+    }
+
+    /**
+     * @inheritdoc
+     * @param {KeyboardEvent} event
+     */
+    keydown(event) {
+        if (event.metaKey) {
+            this.#capturing = false;
+            return;
+        }
+        if (!this.capturing) {
+            if (['Enter', 'Spacebar', ' '].includes(event.key)) {
+                event.preventDefault();
+                this.#capturing = true;
+                setTimeout(() => {
+                    // This is to allow ctrl + a, and other composed keys
+                    this.#capturing = false;
+                }, this.#max_delay);
+            }
+        } else {
+            event.preventDefault();
+
+            this.#key.alt = event.altKey && event.key != 'Alt';
+            this.#key.ctrl = event.ctrlKey && event.key != 'Control';
+            this.#key.shift = event.shiftKey && event.key != 'Shift';
+            this.#key.key = event.key.toLowerCase();
+
+            this.value = this.value;
+        }
+    }
+}
+
 const option_types = {
     'string': StringCanvasOption,
     'number': NumberCanvasOption,
     'boolean': BooleanCanvasOption,
     'list': ListCanvasOption,
     'color': ColorCanvasOption,
+    'key': KeyCanvasOption,
 };

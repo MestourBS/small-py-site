@@ -686,6 +686,7 @@ const actions = new Proxy(Object.freeze({
                 bool: false,
                 list: '1',
                 color: '#000',
+                key: 'a',
             };
 
             BaseCanvasOption.options.push(
@@ -694,6 +695,7 @@ const actions = new Proxy(Object.freeze({
                 BaseCanvasOption.make_option_type({target, target_property: 'bool', label: 'bool', type: 'boolean'}),
                 BaseCanvasOption.make_option_type({target, target_property: 'list', label: 'list', type: 'list', list: ['1', 'a', 'α', 'A',]}),
                 BaseCanvasOption.make_option_type({target, target_property: 'color', label: 'color', type: 'color'}),
+                BaseCanvasOption.make_option_type({target, target_property: 'key', label: 'key', type: 'key'}),
             );
 
             globals.game_state = 'options_test';
@@ -770,12 +772,12 @@ export function keydown(e) {
 
     /** @type {string[]} */
     let key_actions = to_check[key];
-    if (key_actions?.length) {
-        e.preventDefault();
-        key_actions.forEach(a => actions[a].func());
-    }
     if ('*' in to_check) {
         actions[to_check['*']].func(e);
+    }
+    if (key_actions?.length && !e.defaultPrevented) {
+        e.preventDefault();
+        key_actions.forEach(a => actions[a].func());
     }
 }
 /**
