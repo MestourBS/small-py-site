@@ -46,10 +46,37 @@ export class Color {
      * @returns {Color}
      */
     static from_css_rgb(cssrgb) {
-        if (!cssrgb.match(/^rgba?\(/)) throw new TypeError(`${cssrgb} is not in the format 'rgb(<red>, <green>, <blue>)' or 'rgba(<red>, <green>, <blue>, <alpha>)`);
+        if (!cssrgb.match(/^rgba?\((\d+), ?(\d+), ?(\d+)/i)) throw new TypeError(`${cssrgb} is not in the format 'rgb(<red>, <green>, <blue>)' or 'rgba(<red>, <green>, <blue>, <alpha>)`);
 
-        let [,red, green, blue] = cssrgb.match(/rgba?\((\d+), ?(\d+), ?(\d+)/);
+        let [,red, green, blue] = cssrgb.match(/^rgba?\((\d+), ?(\d+), ?(\d+)/i);
         return new Color(+red, +green, +blue);
+    }
+    /**
+     * Converts a `hsl(hue, saturation, lightness)` into a Color object
+     *
+     * @param {string} csshsl
+     * @returns {Color}
+     */
+    static from_css_hsl(csshsl) {
+        if (!csshsl.match(/^hsla?\((\d+), ?(\d+)%, ?(\d+)/i)) throw new TypeError(`${csshsl} is not in the format 'hsl(<hue>, <saturation>, <lightness>)' or 'hsla(<hue>, <saturation>, <lightness>, <alpha>)'`);
+
+        let [,hue, saturation, lightness] = csshsl.match(/^hsla?\((\d+), ?(\d+)%, ?(\d+)/i);
+
+        // @see https://stackoverflow.com/a/44134328
+        lightness /= 100;
+        const a = saturation * Math.min(lightness, 1 - lightness) / 100;
+        /** @param {number} n */
+        const f = n => {
+            const k = (n + hue / 30) % 12;
+            const color = lightness - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+            return Math.round(255 * color);
+        };
+
+        let red = f(0);
+        let green = f(8);
+        let blue = f(4);
+
+        return new Color(red, green, blue);
     }
     /**
      * Converts an object with the red, green, and blue properties into a Color object
@@ -103,7 +130,11 @@ export class Color {
     /** @type {number} */
     #blue;
     /** @type {string|false} */
-    #string = false;
+    #string_hex = false;
+    /** @type {string|false} */
+    #string_rgb = false;
+    /** @type {string|false} */
+    #string_hsl = false;
 
     /**
      * @param {Color|string|number|{red: number, green: number, blue: number}} red
@@ -121,11 +152,62 @@ export class Color {
         this.#blue = blue;
     }
 
-    toString() {
-        if (!this.#string) {
-            this.#string = `#${this.#red.toString(16).padStart(2,'0')}${this.#green.toString(16).padStart(2,'0')}${this.#blue.toString(16).padStart(2,'0')}`;
+    /**
+     * @param {'hex'|'rgb'|'hsl'} format
+     */
+    toString(format='hex') {
+        let string;
+        switch (format) {
+            default:
+                console.error(`Unknown mode ${format}, defaulting to rgb`);
+            case 'hex':
+                if (!this.#string_hex) {
+                    this.#string_hex = `#${this.#red.toString(16).padStart(2,'0')}${this.#green.toString(16).padStart(2,'0')}${this.#blue.toString(16).padStart(2,'0')}`;
+                }
+                string = this.#string_hex;
+                break;
+            case 'rgb':
+                if (!this.#string_rgb) {
+                    this.#string_rgb = `rgb(${this.#red}, ${this.#green}, ${this.#blue})`;
+                }
+                string = this.#string_rgb;
+                break;
+            case 'hsl':
+                if (!this.#string_hsl) {
+                    // @see https://stackoverflow.com/a/58426404
+                    let red = this.#red / 255;
+                    let green = this.#green / 255;
+                    let blue = this.#blue / 255;
+
+                    let cmin = Math.min(red, green, blue);
+                    let cmax = Math.max(red, green, blue);
+                    let delta = cmax - cmin;
+                    let h = 0;
+                    let s = 0;
+                    let l = 0;
+
+                    if (delta == 0) h = 0;
+                    else if (cmax == red) h = ((green - blue) / delta) % 6;
+                    else if (cmax == green) h = ((blue - red) / delta) + 2;
+                    else h = ((red - green) / delta) + 4;
+
+                    h = Math.round(h * 60);
+
+                    if (h < 0) h += 360;
+
+                    l = (cmax + cmin) / 2;
+
+                    s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+
+                    s = +(s * 100).toFixed(1);
+                    l = +(l * 100).toFixed(1);
+
+                    this.#string_hsl = `hsl(${h}, ${s}%, ${l}%)`;
+                }
+                string = this.#string_hsl;
+                break;
         }
-        return this.#string;
+        return string;
     }
     toJSON() { return this.toString(); }
     valueOf() { return this.toString(); }
@@ -134,21 +216,27 @@ export class Color {
     set red(red) {
         if (!isNaN(red)) {
             this.#red = Math.min(255, Math.max(0, red));
-            this.#string = false;
+            this.#string_hex = false;
+            this.#string_rgb = false;
+            this.#string_hsl = false;
         }
     }
     get green() { return this.#green; }
     set green(green) {
         if (!isNaN(green)) {
             this.#green = Math.min(255, Math.max(0, green));
-            this.#string = false;
+            this.#string_hex = false;
+            this.#string_rgb = false;
+            this.#string_hsl = false;
         }
     }
     get blue() { return this.#blue; }
     set blue(blue) {
         if (!isNaN(blue)) {
             this.#blue = Math.min(255, Math.max(0, blue));
-            this.#string = false;
+            this.#string_hex = false;
+            this.#string_rgb = false;
+            this.#string_hsl = false;
         }
     }
 

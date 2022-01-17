@@ -7,6 +7,7 @@ import { tile_size, display_size, get_theme_value, inventory_items_per_row, enti
 import globals from './globals.js';
 import { BaseCanvasOption } from './options.js';
 import Random from './random.js';
+import Color from './color.js';
 /**
  * @typedef {import('./entity.js').Entity} Entity
  */
@@ -714,6 +715,7 @@ export function canvas_write(lines, left, top, {
                         case 'color':
                             if (value.toLowerCase() == 'reset') value = get_theme_value('text_color');
                             else if (value.toLowerCase() == 'random') value = Random.color();
+                            else if (value.toLowerCase() == 'rainbow') value = Color.from_css_hsl(`hsl(${Math.floor(Date.now() / 10 % 360)}, 100%, 50%)`);
                             //todo rainbow
                             context.fillStyle = value;
                             break;

@@ -43,6 +43,7 @@ export class Tile {
     static #converters = [
         Color.from_hex,
         Color.from_css_rgb,
+        Color.from_css_hsl,
         Color.from_html_name,
     ];
 

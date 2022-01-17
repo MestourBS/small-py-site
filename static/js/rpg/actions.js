@@ -685,6 +685,7 @@ const actions = new Proxy(Object.freeze({
                 str: 'test',
                 bool: false,
                 list: '1',
+                color: '#000',
             };
 
             BaseCanvasOption.options.push(
@@ -692,6 +693,7 @@ const actions = new Proxy(Object.freeze({
                 BaseCanvasOption.make_option_type({target, target_property: 'str', label: 'str', type: 'string'}),
                 BaseCanvasOption.make_option_type({target, target_property: 'bool', label: 'bool', type: 'boolean'}),
                 BaseCanvasOption.make_option_type({target, target_property: 'list', label: 'list', type: 'list', list: ['1', 'a', 'α', 'A',]}),
+                BaseCanvasOption.make_option_type({target, target_property: 'color', label: 'color', type: 'color'}),
             );
 
             globals.game_state = 'options_test';

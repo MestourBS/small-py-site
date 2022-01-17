@@ -2,6 +2,7 @@ import { canvas_write, context as canvas_context, cut_lines, regex_modifier } fr
 import { display_size, get_theme_value, tile_size } from './display.js';
 import globals from './globals.js';
 import { number_between } from './primitives.js';
+import { Color } from './color.js';
 /**
  * @template T
  * @typedef TypesOption<T>
@@ -9,6 +10,7 @@ import { number_between } from './primitives.js';
  * @prop {NumberCanvasOption<T>} number
  * @prop {BooleanCanvasOption<T>} boolean
  * @prop {ListCanvasOption<T>} list
+ * @prop {ColorCanvasOption<T>} color
  */
 
 /**
@@ -33,7 +35,7 @@ const option_sizes = new Proxy([20, 20], {
  * @param {CanvasRenderingContext2D} [params.context]
  * @param {string} [params.value]
  */
-function optionLSNHeight({context=canvas_context, value=this.value}={}) {
+function optionCSNHeight({context=canvas_context, value=this.value}={}) {
     let left = option_sizes[0] - tile_size[0];
     let options = {
         context,
@@ -134,12 +136,12 @@ function optionSNCursor({context=canvas_context, value=this.value}) {
     let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
         .map(o => o.height({context}) + 1)
         .reduce((s, h) => s + h, 0) * option_sizes[1];
-    let left = option_sizes[0] - tile_size[0];
+    let x_start = option_sizes[0] - tile_size[0];
     let options = {min_left: option_sizes[0] * 1.5, min_right: option_sizes[0] * 1.5, context, font_size: option_sizes[1]};
 
     if (this.label) {
         options.min_left = option_sizes[0];
-        let lbl_lines = cut_lines(this.label, left, options)[1].length + .25;
+        let lbl_lines = cut_lines(this.label, x_start, options)[1].length + .25;
         let lbl_height = lbl_lines * option_sizes[1];
         y_start += lbl_height;
         options.min_left = option_sizes[0] * 1.5;
@@ -147,11 +149,11 @@ function optionSNCursor({context=canvas_context, value=this.value}) {
 
     let cursor = globals.cursors.options;
     let behind = value.slice(0, cursor[0]) || ' ';
-    let [_, lines] = cut_lines(behind, left, options);
+    let [_, lines] = cut_lines(behind, x_start, options);
 
     y_start += ((lines.length || 1) - .75) * option_sizes[1];
 
-    return [left, y_start, 1, option_sizes[1]];
+    return [x_start, y_start, 1, option_sizes[1]];
 }
 
 /**
@@ -269,9 +271,9 @@ class StringCanvasOption extends BaseCanvasOption {
      * @param {Object} params
      * @param {T} params.object
      * @param {keyof T} params.property
+     * @param {string} [params.label]
      * @param {number} [params.max_length] Maximum length of string, defaults to infinity (limitless)
      * @param {RegExp|string|[string, string]} [params.regex] Regex pattern the string must match
-     * @param {string} [params.label]
      */
     constructor({object, property, label=null, max_length=Infinity, regex=/.*/}) {
         if (typeof max_length != 'number' || max_length < 0) throw new TypeError(`Invalid string option parameter max_length: ${max_length}`);
@@ -308,13 +310,9 @@ class StringCanvasOption extends BaseCanvasOption {
         }
     }
 
-    height({context=canvas_context}={}) {
-        return optionLSNHeight.call(this, {context});
-    }
+    height({context=canvas_context}={}) { return optionCSNHeight.call(this, {context}); }
 
-    draw({context=canvas_context}={}) {
-        optionSNDraw.call(this, {context});
-    }
+    draw({context=canvas_context}={}) { optionSNDraw.call(this, {context}); }
 
     cursor_position({context=canvas_context}) {
         return optionSNCursor.call(this, {context});
@@ -432,13 +430,9 @@ class NumberCanvasOption extends BaseCanvasOption {
         }
     }
 
-    height({context=canvas_context}={}) {
-        return optionLSNHeight.call(this, {context});
-    }
+    height({context=canvas_context}={}) { return optionCSNHeight.call(this, {context}); }
 
-    draw({context=canvas_context}={}) {
-        optionSNDraw.call(this, {context});
-    }
+    draw({context=canvas_context}={}) { optionSNDraw.call(this, {context}); }
 
     cursor_position({context=canvas_context}) {
         return optionSNCursor.call(this, {context});
@@ -774,24 +768,24 @@ class ListCanvasOption extends BaseCanvasOption {
         let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
             .map(o => o.height({context}) + 1)
             .reduce((s, h) => s + h, 0) * option_sizes[1];
-        let left = option_sizes[0] - tile_size[0];
+        let x_start = option_sizes[0] - tile_size[0];
         let options = {min_left: option_sizes[0] * 1.5, min_right: option_sizes[0] * 1.5, context, font_size: option_sizes[1]};
 
         if (this.label) {
             options.min_left = option_sizes[0];
-            let lbl_lines = cut_lines(this.label, left, options)[1].length + .25;
+            let lbl_lines = cut_lines(this.label, x_start, options)[1].length + .25;
             let lbl_height = lbl_lines * option_sizes[1];
             y_start += lbl_height;
             options.min_left = option_sizes[0] * 1.5;
         }
 
         y_start += this.#list.filter((_, i) => i < this.#key)
-            .map(([k]) => cut_lines(k, left, options)[1].length)
+            .map(([k]) => cut_lines(k, x_start, options)[1].length)
             .reduce((s, l) => s + l + .5, 0) * option_sizes[1];
         let width = display_size[0] * tile_size[0] - option_sizes[0] * 2;
-        let height = (cut_lines(this.value_key, left, options)[1].length + .5) * option_sizes[1];
+        let height = (cut_lines(this.value_key, x_start, options)[1].length + .5) * option_sizes[1];
 
-        return [left, y_start, width, height];
+        return [x_start, y_start, width, height];
     }
 
     /**
@@ -834,9 +828,170 @@ class ListCanvasOption extends BaseCanvasOption {
     }
 }
 
+/**
+ * @template T
+ */
+class ColorCanvasOption extends BaseCanvasOption {
+    /** @type {Color} */
+    #value;
+
+    /**
+     * @param {Object} params
+     * @param {T} params.object
+     * @param {keyof T} params.property
+     * @param {string} [params.label]
+     * @param {Color|string|number|{red: number, green: number, blue: number}} [params.color]
+     */
+    constructor({object, property, label=null, color=null}) {
+        try {
+            color = new Color(color ?? object[property]);
+        } catch {
+            throw new TypeError(`Invalid color options argument color: ${color}`);
+        }
+
+        super({object, property, label});
+
+        this.#value = color;
+    }
+
+    get value() { return this.#value.toString(); }
+    set value(value) {
+        try {
+            value = new Color(value);
+        } catch {
+            return;
+        }
+
+        this.#value = value;
+        super.value = value.toString();
+    }
+
+    height({context=canvas_context}={}) { return optionCSNHeight.call(this, {context}); }
+
+    draw({context=canvas_context}={}) {
+        let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
+            .map(o => o.height({context}) + 1)
+            .reduce((s, h) => s + h, 0);
+        y_start *= option_sizes[1];
+        y_start -= Math.max(0, BaseCanvasOption.selected.cursor_position({context})[1] - display_size[1] / 2 * tile_size[1]);
+        let height = (this.height({context}) + .5) * option_sizes[1];
+
+        // Option is not visible
+        if (y_start >= display_size[1] * tile_size[1] || y_start + height <= 0) return;
+
+        let x_start = option_sizes[0];
+        let width = display_size[0] * tile_size[0] - option_sizes[0] * 3.5;
+
+        let border_name = `border_option${'_error'.repeat(this.error)}${'_selected'.repeat(this.selected)}_color`;
+
+        let options = {min_left: option_sizes[0] * 1.5, min_right: option_sizes[0] * 1.5, context, font_size: option_sizes[1]};
+        let left = x_start - tile_size[0];
+
+        // Write label if it exists
+        if (this.label) {
+            options.min_left = option_sizes[0];
+            canvas_write(this.label, left, y_start, options);
+            let lbl_lines = cut_lines(this.label, left, options)[1].length + .25;
+            let lbl_height = lbl_lines * option_sizes[1];
+            y_start += lbl_height;
+            height -= lbl_height;
+            options.min_left = option_sizes[0] * 1.5;
+        }
+
+        context.fillStyle = get_theme_value('background_option_color');
+        context.strokeStyle = get_theme_value(border_name);
+        context.fillRect(x_start, y_start, width, height);
+        context.strokeRect(x_start, y_start, width, height);
+
+        let value = this.value;
+        if (this.selected && document.hasFocus() && Math.round(Date.now() / 1000 % 1)) {
+            let cursor = globals.cursors.options;
+            let index = cursor[0] + 1;
+
+            let background_color = get_theme_value(`background_option_selected_color`);
+            let text_color = get_theme_value(`text_selected_color`);
+
+            let behind = value.slice(0, index) || ' ';
+
+            let l = left + context.measureText(behind).width + x_start + option_sizes[0] * .5;
+            let width = context.measureText(value[index]).width;
+
+            context.fillStyle = background_color;
+            context.fillRect(l, y_start, width, height);
+
+            value = `${behind}{color:${text_color}}${value[index]}{color:reset}${value.slice(index + 1)}`;
+        }
+
+        canvas_write(value, left, y_start, options);
+
+        context.fillStyle = this.#value.toString();
+        context.strokeStyle = this.#value.invert();
+        context.fillRect(x_start + width, y_start, option_sizes[0] * 1.5, height);
+        context.strokeRect(x_start + width, y_start, option_sizes[0] * 1.5, height);
+    }
+
+    cursor_position({context=canvas_context}={}) {
+        let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
+            .map(o => o.height({context}) + 1)
+            .reduce((s, h) => s + h, 0) * option_sizes[1];
+        let x_start = option_sizes[0] - tile_size[0];
+        let options = {min_left: option_sizes[0] * 1.5, min_right: option_sizes[0] * 1.5, context, font_size: option_sizes[1]};
+        let index = globals.cursors.options[0] + 1;
+
+        if (this.label) {
+            options.min_left = option_sizes[0];
+            let lbl_lines = cut_lines(this.label, x_start, options)[1].length;
+            let lbl_height = lbl_lines * option_sizes[1];
+            y_start += lbl_height;
+            options.min_left = option_sizes[0];
+        }
+
+        let width = context.measureText(this.value[index]).width;
+        let height = (this.height({context}) + .5) * option_sizes[1];
+
+        return [x_start, y_start, width, height];
+    }
+
+    /**
+     * @inheritdoc
+     * @param {KeyboardEvent} event
+     */
+    keydown(event) {
+        if (event.altKey || event.ctrlKey || event.metaKey) return;
+        let prev_def = true;
+        let cursor = globals.cursors.options;
+        let index = cursor[0] + 1;
+
+        switch (event.key) {
+            case 'ArrowLeft':
+                if (cursor[0] > 0) {
+                    cursor[0]--;
+                }
+                break;
+            case 'ArrowRight':
+                if (cursor[0] < this.value.length - 2) {
+                    cursor[0]++;
+                }
+                break;
+            case 'Backspace': case 'Delete': case 'Del':
+                this.value = this.value.slice(0, index) + '0' + this.value.slice(index + 1);
+                break;
+            default:
+                prev_def = false;
+                break;
+        }
+        if (/^[\da-f]/i.test(event.key)) {
+            this.value = this.value.slice(0, index) + event.key + this.value.slice(index + 1);
+        } else {
+            if (prev_def) event.preventDefault();
+        }
+    }
+}
+
 const option_types = {
     'string': StringCanvasOption,
     'number': NumberCanvasOption,
     'boolean': BooleanCanvasOption,
     'list': ListCanvasOption,
+    'color': ColorCanvasOption,
 };
