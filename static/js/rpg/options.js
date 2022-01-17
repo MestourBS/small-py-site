@@ -8,6 +8,7 @@ import { number_between } from './primitives.js';
  * @prop {StringCanvasOption<T>} string
  * @prop {NumberCanvasOption<T>} number
  * @prop {BooleanCanvasOption<T>} boolean
+ * @prop {ListCanvasOption<T>} list
  */
 
 /**
@@ -368,7 +369,7 @@ class StringCanvasOption extends BaseCanvasOption {
                 prev_def = false;
                 break;
         }
-        if (!event.code.startsWith(event.key) || event.key.length == 1) {
+        if (!event.code.startsWith(event.key) && [event.key.toLowerCase(), event.key.toUpperCase()].includes(event.key)) {
             this.value = this.value.slice(0, index) + event.key + this.value.slice(index);
             cursor[0]++;
         } else {
@@ -631,8 +632,211 @@ class BooleanCanvasOption extends BaseCanvasOption {
     }
 }
 
+/**
+ * @template T
+ */
+class ListCanvasOption extends BaseCanvasOption {
+    /** @type {[string, any][]} */
+    #list;
+    /** @type {number} */
+    #key;
+
+    /**
+     * @param {Object} params
+     * @param {T} params.object
+     * @param {keyof T} params.property
+     * @param {string} [params.label]
+     * @param {string[]|[string, any][]|{[key: string]: any}} params.list
+     */
+    constructor({object, property, label=null, list}) {
+        if (!Array.isArray(list)) {
+            if (typeof list == 'object') list = Object.entries(list);
+            else throw new TypeError(`Invalid list option parameter list: ${list}`);
+        }
+        list = list.map(l => [l[0], l[1] ?? l[0]]);
+        let index = list.findIndex(l => l[1] == object[property]);
+        if (index == -1) throw new TypeError(`Invalid starting object value: ${object[property]}`);
+
+        super({object, property, label});
+
+        this.#list = list;
+        this.#key = index;
+    }
+
+    get error() {return !(this.#key in this.#list);}
+
+    get value() {return this.#list[this.#key][1];}
+    set value(value) {
+        let key = this.#list.findIndex(([,v]) => v == value);
+
+        if (key != -1) {
+            this.#key = key;
+
+            super.value = this.#list[this.#key][1];
+        }
+    }
+
+    get value_key() {return this.#list[this.#key][0];}
+    set value_key(value_key) {
+        let key = this.#list.findIndex(([k]) => k == value_key);
+        if (key != -1) {
+            this.#key = key;
+
+            super.value = this.#list[this.#key][1];
+        }
+    }
+    get key() {return this.#key;}
+    set key(key) {
+        if (!isNaN(key)) {
+            this.#key = Math.max(0, Math.min(this.#list.length, key));
+
+            super.value = this.#list[this.#key][1];
+        }
+    }
+
+    height({context=canvas_context}={}) {
+        let left = option_sizes[0] - tile_size[0];
+        let options = {
+            context,
+            min_left: option_sizes[0] * 1.5,
+            min_right: option_sizes[0] * 1.5,
+        };
+
+        let lines = cut_lines(this.value_key, left, options)[1].length || 1;
+
+        if (this.label) lines += (cut_lines(this.label, left, options)[1].length || -.25) + .25;
+
+        if (this.selected) {
+            lines += this.#list.map(([k]) => cut_lines(k, left, options)[1].length || 1)
+                .reduce((s, l) => s + l + .5, 0);
+        }
+
+        return lines;
+    }
+
+    draw({context=canvas_context}={}) {
+        let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
+            .map(o => o.height({context}) + 1)
+            .reduce((s, h) => s + h, 0);
+        y_start *= option_sizes[1];
+        y_start -= Math.max(0, BaseCanvasOption.selected.cursor_position({context})[1] - display_size[1] / 2 * tile_size[1]);
+        let height = (this.height({context}) + .5) * option_sizes[1];
+
+        // Option is not visible
+        if (y_start >= display_size[1] * tile_size[1] || y_start + height <= 0) return;
+
+        let x_start = option_sizes[0];
+        let width = display_size[0] * tile_size[0] - option_sizes[0] * 2;
+
+        let border_name = `border_option${'_error'.repeat(this.error)}${'_selected'.repeat(this.selected)}_color`;
+
+        let options = {min_left: option_sizes[0] * 1.5, min_right: option_sizes[0] * 1.5, context, font_size: option_sizes[1]};
+        let left = x_start - tile_size[0];
+
+        // Write label if it exists
+        if (this.label) {
+            options.min_left = option_sizes[0];
+            canvas_write(this.label, left, y_start, options);
+            let lbl_lines = cut_lines(this.label, left, options)[1].length + .25;
+            let lbl_height = lbl_lines * option_sizes[1];
+            y_start += lbl_height;
+            options.min_left = option_sizes[0] * 1.5;
+        }
+
+        let value_height = (cut_lines(this.value_key, left, options)[1].length + .5) * option_sizes[1];
+        context.fillStyle = get_theme_value('background_option_color');
+        context.strokeStyle = get_theme_value(border_name);
+        context.fillRect(x_start, y_start, width, value_height);
+        context.strokeRect(x_start, y_start, width, value_height);
+
+        canvas_write(this.value_key, left, y_start, options);
+        y_start += value_height;
+
+        if (this.selected) {
+            // Write options
+            for (let [key] of this.#list) {
+                let height = (cut_lines(key, left, options)[1].length + .5) * option_sizes[1];
+                let selected = this.value_key == key;
+                let background_name = `background_option${'_selected'.repeat(selected)}_color`;
+                context.fillStyle = get_theme_value(background_name);
+                context.strokeStyle = get_theme_value('border_option_color');
+                context.fillRect(x_start, y_start, width, height);
+                context.strokeRect(x_start, y_start, width, height);
+
+                if (selected) key = `{color:${get_theme_value('text_selected_color')}}${key}{color:reset}`;
+                canvas_write(key, left, y_start, options);
+                y_start += height;
+            }
+        }
+    }
+
+    cursor_position({context=canvas_context}={}) {
+        let y_start = BaseCanvasOption.options.filter(o => o.index < this.index && o.height({context}) > 0)
+            .map(o => o.height({context}) + 1)
+            .reduce((s, h) => s + h, 0) * option_sizes[1];
+        let left = option_sizes[0] - tile_size[0];
+        let options = {min_left: option_sizes[0] * 1.5, min_right: option_sizes[0] * 1.5, context, font_size: option_sizes[1]};
+
+        if (this.label) {
+            options.min_left = option_sizes[0];
+            let lbl_lines = cut_lines(this.label, left, options)[1].length + .25;
+            let lbl_height = lbl_lines * option_sizes[1];
+            y_start += lbl_height;
+            options.min_left = option_sizes[0] * 1.5;
+        }
+
+        y_start += this.#list.filter((_, i) => i < this.#key)
+            .map(([k]) => cut_lines(k, left, options)[1].length)
+            .reduce((s, l) => s + l + .5, 0) * option_sizes[1];
+        let width = display_size[0] * tile_size[0] - option_sizes[0] * 2;
+        let height = (cut_lines(this.value_key, left, options)[1].length + .5) * option_sizes[1];
+
+        return [left, y_start, width, height];
+    }
+
+    /**
+     * @inheritdoc
+     * @param {KeyboardEvent} event
+     */
+    keydown(event) {
+        if (event.altKey || event.ctrlKey || event.metaKey) return;
+        let prev_def = true;
+
+        switch (event.key) {
+            case 'ArrowLeft':
+                if (this.#key > 0) {
+                    this.#key--;
+                }
+                break;
+            case 'ArrowRight':
+                if (this.#key < this.#list.length - 1) {
+                    this.#key++;
+                }
+                break;
+            default:
+                prev_def = false;
+                break;
+        }
+
+        if (!event.code.startsWith(event.key) && [event.key.toLowerCase(), event.key.toUpperCase()].includes(event.key)) {
+            let first = this.#list.findIndex(([s]) => s.startsWith(event.key));
+
+            if (first != -1) {
+                let next = this.#list.findIndex(([s], i) => s.startsWith(event.key) && i > this.#key);
+
+                this.#key = (next == -1 ? first : next);
+            }
+        } else {
+            if (prev_def) event.preventDefault();
+        }
+
+        super.value = this.#list[this.#key][1];
+    }
+}
+
 const option_types = {
     'string': StringCanvasOption,
     'number': NumberCanvasOption,
     'boolean': BooleanCanvasOption,
+    'list': ListCanvasOption,
 };

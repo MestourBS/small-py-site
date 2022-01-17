@@ -4,6 +4,7 @@ import globals from './globals.js';
  * @prop {string} name
  * @prop {string} text_font
  * @prop {string} text_color
+ * @prop {string} text_selected_color
  * @prop {string} text_low_health_color
  * @prop {string} text_item_amount_color
  * @prop {string} text_skill_level_color
@@ -36,6 +37,7 @@ import globals from './globals.js';
  * @prop {string} background_context_menu_color
  * @prop {string} background_entity_magic_color
  * @prop {string} background_entity_health_color
+ * @prop {string} background_option_selected_color
  * @prop {string} background_skill_targeting_color
  * @prop {string} background_entity_missing_magic_color
  * @prop {string} background_equipment_cell_locked_color
@@ -71,6 +73,7 @@ const themes = {
         // Text
         text_font: 'monospace',
         text_color: '#000',
+        text_selected_color: '#fff',
         text_low_health_color: 'orange',
         text_item_amount_color: '#fff',
         text_skill_level_color: '#fff',
@@ -106,6 +109,7 @@ const themes = {
         background_context_menu_color: '#ccc',
         background_entity_magic_color: '#77f',
         background_entity_health_color: '#0f0',
+        background_option_selected_color: '#00f',
         background_skill_targeting_color: '#fff',
         background_entity_missing_magic_color: '#f09',
         background_equipment_cell_locked_color: '#ff6',
