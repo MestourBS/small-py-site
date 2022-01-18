@@ -30,13 +30,13 @@ export const context = canvas.getContext('2d');
  *
  * @type {RegExp}
  */
-export const regex_modifier = /(?<!\\)\{(.+?):(.+?)\}/ig;
+export const regex_modifier = /(?<!\\)\{(.+?)\}/ig;
 /**
  * Regex for escaped color matching
  *
  * @type {RegExp}
  */
-const regex_not_modifier = /\\(\{(.+?):.+?\})/g;
+export const regex_not_modifier = /\\\{.+?:.+?\}/g;
 /**
  * Existing damage/defense types
  *
@@ -116,8 +116,12 @@ const equip_slots = {
  * }}}
  */
 const pre_split = {};
-/** @type {string[]} */
-const modifier_types = ['color'];
+/**
+ * List of existing modifier types, for shortened usages
+ *
+ * @type {string[]}
+ */
+const modifier_types = ['color', 'italic', 'bold'];
 
 /**
  * Empties the canvas display
@@ -655,10 +659,17 @@ function mini_status_rows(entity) {
     return rows;
 }
 /**
- * Writes text, with colors if you want, on the canvas
+ * Writes text, with modifiers if you want, on the canvas
  *
- * @param {string[]|string} lines Lines to write. Change color by writing `{color:<color>}`.
- *  Any amount of backslashes will disable colors. If color is `reset`, the color is reset back to its default value.
+ * @param {string[]|string} lines Lines to write. Any amount of backslashes will disable modifiers.
+ * Modifiers, written between curly brackets, are the following:
+ * - `color:<any color accepted by canvas>`: Changes the following text to that color
+ * - `color:reset`: Changes the following text to the default color
+ * - `color:random`: Changes the following text to constantly randomized color
+ * - `color:rainbow:<saturation?>:<lightness?>`: Changes the following text to an everchanging rainbow,
+ *  saturation and lightness can be added to it
+ * - `italic:<true|false|toggle>`: Changes the following text to be or not be italic. Use true/false to force it.
+ * - `bold:<true|false|toggle>`: Changes the following text to be or not be bold. Use true/false to force it.
  * @param {number} left Distance from left edge
  * @param {number} top Distance from top edge
  * @param {Object} [context_options]
@@ -685,6 +696,8 @@ export function canvas_write(lines, left, top, {
         type => modifier => modifier.startsWith(type),
         type => modifier => modifier.indexOf(type) != -1,
     ];
+    /** @type {(args: string[]) => (index: number, def: string) => string} */
+    const argument_getter = args => (index, def) => args[index] || def;
 
     // Draw text
     for (let i = 0; i < lines.length; i++) {
@@ -699,10 +712,11 @@ export function canvas_write(lines, left, top, {
             let chunks = line.split(regex_modifier);
             for (let i = 0; i < chunks.length; i++) {
                 if (modifier) {
-                    let type = chunks[i].toLowerCase();
-                    let value = chunks[++i];
-
+                    let command = chunks[i].split(':');
+                    let [type, ...args] = command;
                     let possibles = [];
+                    /** @param {number} index @param {string} def @returns {string} */
+                    const arg = argument_getter(args);
                     for (let f = 0; f < selecting_functions.length && !possibles.length; f++) {
                         let selector = selecting_functions[f];
                         possibles = modifier_types.filter(selector(type));
@@ -713,11 +727,41 @@ export function canvas_write(lines, left, top, {
 
                     switch (type) {
                         case 'color':
-                            if (value.toLowerCase() == 'reset') value = get_theme_value('text_color');
-                            else if (value.toLowerCase() == 'random') value = Random.color();
-                            else if (value.toLowerCase() == 'rainbow') value = Color.from_css_hsl(`hsl(${Math.floor(Date.now() / 10 % 360)}, 100%, 50%)`);
-                            //todo rainbow
-                            context.fillStyle = value;
+                            let color = arg(0);
+                            if (color.toLowerCase() == 'reset') color = get_theme_value('text_color');
+                            else if (color.toLowerCase() == 'random') color = Random.color();
+                            else if (color.toLowerCase() == 'rainbow') {
+                                let saturation = arg(1);
+                                if (isNaN(saturation)) saturation = '100'
+                                let lightness = arg(1);
+                                if (isNaN(lightness)) lightness = '50'
+                                color = Color.from_css_hsl(`hsl(${Date.now() / 10 % 360}, ${saturation}%, ${lightness}%)`);
+                            }
+                            context.fillStyle = color;
+                            break;
+                        case 'italic':
+                            let italic = arg(0);
+                            if (!['true', 'false', 'toggle'].includes(italic)) italic = 'toggle';
+                            if (italic == 'toggle') {
+                                italic = context.font.includes('italic') ? 'false' : 'true';
+                            }
+                            if (italic == 'true' && !context.font.includes('italic')) {
+                                context.font = `italic ${context.font}`;
+                            } else {
+                                context.font = context.font.replace('italic', '');
+                            }
+                            break;
+                        case 'bold':
+                            let bold = arg(0);
+                            if (!['true', 'false', 'toggle'].includes(bold)) bold = 'toggle';
+                            if (bold == 'toggle') {
+                                bold = context.font.includes('bold') ? 'false' : 'true';
+                            }
+                            if (bold == 'true' && !context.font.includes('bold')) {
+                                context.font = `bold ${context.font}`;
+                            } else {
+                                context.font = context.font.replace('bold', '');
+                            }
                             break;
                     }
                 } else {

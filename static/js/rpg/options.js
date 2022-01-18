@@ -1,4 +1,4 @@
-import { canvas_write, context as canvas_context, cut_lines, regex_modifier } from './canvas.js';
+import { canvas_write, context as canvas_context, cut_lines, regex_modifier, regex_not_modifier } from './canvas.js';
 import { display_size, get_theme_value, tile_size } from './display.js';
 import globals from './globals.js';
 import { number_between } from './primitives.js';
@@ -116,6 +116,15 @@ function optionNSDraw({context=canvas_context, value=this.value}={}) {
                 in_modifier = true;
             }
             left -= context.measureText(match[0]).width;
+        });
+        matches = [...fullline.matchAll(regex_not_modifier)];
+        matches.forEach(match => {
+            if (match.index > cursor[0]) return;
+            if (match.index + 1 > cursor[0]) {
+                match[0] = match[0].slice(0, cursor[0] - match.index - match[0].length);
+            }
+            in_modifier = match.index + 1 == cursor[0];
+            left -= context.measureText(match[0][0] ?? '').width;
         });
 
         let color = `write_cursor${'_modifier'.repeat(in_modifier)}_color`;
