@@ -944,7 +944,6 @@ export class Room {
                     linked_rooms.push(...linked);
                 } else if (!linked_rooms.length) {
                     let link = [current_room, Random.array_element(to_check)];
-                    console.log(`adding a link between ${current_room} and ${link[1]}`);
                     link.sort((a,b)=>a-b);
                     links.push(link);
                     break;
