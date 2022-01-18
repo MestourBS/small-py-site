@@ -567,7 +567,7 @@ export class Room {
                 }
             }
 
-            let map = Room.link({rooms});
+            let map = Room.link(rooms);
             map.insert();
 
             // Spawn player
@@ -615,7 +615,7 @@ export class Room {
                 }
             }
 
-            let map = Room.link({rooms});
+            let map = Room.link(rooms);
             map.insert();
 
             // Spawn player
@@ -800,14 +800,14 @@ export class Room {
     /**
      * Links multiple rooms with hallways
      *
-     * @param {Object} params
-     * @param {Room[]} params.rooms
-     * @param {string} [params.walls]
-     * @param {string} [params.floors]
-     * @param {string[]} [params.hallways]
+     * @param {Room[]} rooms
+     * @param {Object} options
+     * @param {string} [options.walls]
+     * @param {string} [options.floors]
+     * @param {string[]} [options.hallways]
      * @returns {Room<Tile>}
      */
-    static link({rooms, walls=null, floors=null, hallways=[]}) {
+    static link(rooms, {walls=null, floors=null, hallways=[]}={}) {
         if (rooms.length < 1) return null;
 
         rooms.forEach(r => r.to_tiles(null, null, false));
@@ -923,6 +923,35 @@ export class Room {
             let i = links.findIndex(l => l[0] == link[0] && l[1] == link[1]);
             return [index, -1].includes(i);
         });
+        // Make sure all rooms are linked
+        let all_linked = false;
+        while (!all_linked) {
+            let to_check = new Array(rooms.length).fill().map((_,i) => i);
+            let linked_rooms = [to_check.shift()];
+            /** @type {number} */
+            let current_room;
+            /** @type {number[]} */
+            let checked_rooms = [];
+            while (to_check.length) {
+                current_room = linked_rooms.shift();
+                let linked = links.filter(l => l.includes(current_room))
+                    .map(l => l.filter(i => i != current_room)[0])
+                    .filter(i => !checked_rooms.includes(i));
+
+                checked_rooms.push(current_room);
+                if (linked.length) {
+                    to_check = to_check.filter(i => !linked.includes(i));
+                    linked_rooms.push(...linked);
+                } else if (!linked_rooms.length) {
+                    let link = [current_room, Random.array_element(to_check)];
+                    console.log(`adding a link between ${current_room} and ${link[1]}`);
+                    link.sort((a,b)=>a-b);
+                    links.push(link);
+                    break;
+                }
+            }
+            all_linked = !to_check.length;
+        }
         // Connect rooms
         links.forEach((link, i) => {
             // Get only walls to connect
