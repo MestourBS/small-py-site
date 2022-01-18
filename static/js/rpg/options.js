@@ -842,6 +842,14 @@ class ListCanvasOption extends BaseCanvasOption {
  * @template T
  */
 class ColorCanvasOption extends BaseCanvasOption {
+    /** @type {((content: string) => Color)[]} */
+    static #converters = [
+        Color.from_hex,
+        Color.from_css_rgb,
+        Color.from_css_hsl,
+        Color.from_html_name,
+    ];
+
     /** @type {Color} */
     #value;
 
@@ -853,11 +861,16 @@ class ColorCanvasOption extends BaseCanvasOption {
      * @param {Color|string|number|{red: number, green: number, blue: number}} [params.color]
      */
     constructor({object, property, label=null, color=null}) {
-        try {
-            color = new Color(color ?? object[property]);
-        } catch {
-            throw new TypeError(`Invalid color option argument color: ${color}`);
+        color ??= object[property];
+
+        for (let conv of ColorCanvasOption.#converters) {
+            try {
+                let c = conv.call(Color, color);
+                color = c;
+                break;
+            } catch {}
         }
+        if (!(color instanceof Color)) throw new TypeError(`Invalid color option argument color: ${color}`);
 
         super({object, property, label});
 
