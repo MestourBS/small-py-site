@@ -13,3 +13,8 @@ def idle_game():
 @routeGame.route('/rpg')
 def rpg_game():
     return render_template('games/rpg.html')
+
+@routeGame.route('/cidle')
+def cidle_game():
+    return render_template('games/cidle.html')
+
