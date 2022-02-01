@@ -195,7 +195,7 @@ function drag(x, y, x_diff, y_diff, event) {
             drag_world(x, y, x_diff, y_diff, event);
             break;
         case 'inventory':
-            //todo drag panes
+            drag_inventory(x, y, x_diff, y_diff, event);
             break;
     }
 }
@@ -230,6 +230,31 @@ function drag_world(x, y, x_diff, y_diff, event) {
             globals.position[1] -= y_diff;
         },
     };
+}
+/**
+ * Drags a target in the inventory
+ *
+ * @param {number} x Absolute x position where the click was on the canvas
+ * @param {number} y Absolute y position where the click was on the canvas
+ * @param {number} x_diff Difference in x positions since last call
+ * @param {number} y_diff Difference in y positions since last call
+ * @param {MouseEvent} event
+ */
+function drag_inventory(x, y, x_diff, y_diff, event) {
+    x -= display_size.width / 2 - globals.position[0];
+    y -= display_size.height / 2 - globals.position[1];
+
+    if (currently_dragging) {
+        currently_dragging.drag(x, y, x_diff, y_diff, event);
+        return;
+    }
+
+    const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([x, y]));
+
+    if (p) {
+        currently_dragging = p;
+        return;
+    }
 }
 /**
  * Performs a right-click on a target
