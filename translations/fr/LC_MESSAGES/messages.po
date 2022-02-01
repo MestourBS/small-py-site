@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-02-01 11:22+0100\n"
+"POT-Creation-Date: 2022-02-01 13:13+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -62,6 +62,22 @@ msgstr "Erreur: Pas de nom dde groupe"
 #: Controllers/ControllerChat.py:105
 msgid "chat_unknown_user"
 msgstr "Utilisateur inconnu"
+
+#: Controllers/ControllerGame.py:9 templates/home.html:3
+msgid "games_blockus"
+msgstr "Blockus"
+
+#: Controllers/ControllerGame.py:10
+msgid "games_idle"
+msgstr "Idle"
+
+#: Controllers/ControllerGame.py:11
+msgid "games_rpg"
+msgstr "Mini RPG"
+
+#: Controllers/ControllerGame.py:12
+msgid "games_cidle"
+msgstr "Idle Canevas"
 
 #: static/js/blockus.js:53
 msgid "game_blockus_theme_name_dark"
@@ -513,7 +529,7 @@ msgstr ""
 msgid "games_cidle_tab_world"
 msgstr "Monde"
 
-#: static/js/cidle/canvas.js:49
+#: static/js/cidle/canvas.js:53
 msgid "games_cidle_tab_inventory"
 msgstr "Inventaire"
 
@@ -530,11 +546,11 @@ msgstr "Machines"
 msgid "games_cidle_place"
 msgstr "Placer %(obj)s"
 
-#: static/js/cidle/inventory.js:156
+#: static/js/cidle/inventory.js:160
 msgid "games_cidle_make"
 msgstr "Faire %(obj)s"
 
-#: static/js/cidle/inventory.js:166
+#: static/js/cidle/inventory.js:170
 msgid "games_cidle_craft_costs"
 msgstr "Cout de fabrication"
 
@@ -991,10 +1007,6 @@ msgstr "Connecté en tant que %(username)s"
 msgid "logout"
 msgstr "Se déconnecter"
 
-#: templates/home.html:3
-msgid "games_blockus"
-msgstr "Blockus"
-
 #: templates/home.html:6
 msgid "home_view_chat"
 msgstr "Aller aux discussions"
@@ -1062,6 +1074,10 @@ msgstr "Options"
 #: templates/games/blockus.html:7
 msgid "blockus_game_keybinds"
 msgstr "Contrôles"
+
+#: templates/games/list.html:2
+msgid "games"
+msgstr "Jeux"
 
 #~ msgid "games_rpg_theme_text_font"
 #~ msgstr "Police du texte"
