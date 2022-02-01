@@ -443,5 +443,82 @@ function unlock_recipes() {
         }
     });
 }
+/**
+ * Returns an object containing the data to be saved
+ *
+ * @returns {{
+ *  inv: {
+ *      machines: {[id: string]: number},
+ *  },
+ *  rec: {
+ *      machines: {[id: string]: {crafted?: number, unlocked?: boolean}}
+ *  },
+ * }}
+ */
+export function save_data() {
+    const data = {
+        inv: {
+            machines: Object.fromEntries(inventory.machines.contents.map(([id, amount]) => [id, amount])),
+        },
+        rec: {
+            machines: Object.fromEntries(Object.entries(recipes.machines).map(([id, data]) => {
+                const {crafted, unlocked} = data;
+                if (!crafted && typeof unlocked == 'function') return null;
+                const d = {crafted, unlocked};
+                if (typeof d.unlocked == 'function') delete d.unlocked;
+                if (!d.crafted) delete d.crafted;
+
+                return [id, d];
+            }).filter(([_,data]) => data != null)),
+        },
+    };
+
+    Object.entries(data.inv.machines).forEach(([id, amount]) => {
+        if (!amount) delete data.inv.machines[id];
+    });
+
+    return data;
+}
+/**
+ * Loads the saved data
+ *
+ * @param {Object} [data] Saved data
+ * @param {Object} [data.inv]
+ * @param {{[id: string]: number}} [data.inv.machines]
+ * @param {Object} [data.rec]
+ * @param {{[id: string]: {crafted?: number, unlocked?: boolean}}} [data.rec.machines]
+ */
+export function load_data(data={}) {
+    if (!data) return;
+
+    const {inv=null, rec=null} = data;
+
+    if (inv) {
+        const {machines=null} = inv;
+
+        if (machines) {
+            Object.entries(machines).forEach(([machine, amount]) => {
+                let entry = inventory.machines.contents.find(([id]) => id == machine);
+                if (!entry) {
+                    inventory.machines.contents.push([machine, amount, false]);
+                } else {
+                    entry[1] = amount;
+                }
+            });
+        }
+    }
+    if (rec) {
+        const {machines=null} = rec;
+
+        if (machines) {
+            Object.entries(machines).forEach(([machine, data]) => {
+                const {crafted=0, unlocked=null} = data;
+                const recipe = recipes.machines[machine];
+                recipe.crafted = crafted;
+                if (unlocked === true) recipe.unlocked = unlocked;
+            });
+        }
+    }
+}
 
 init();

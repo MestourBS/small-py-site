@@ -75,3 +75,12 @@ export function get_theme_value(key) {
 
     return theme[key];
 }
+/**
+ * Returns whether the theme exists
+ *
+ * @param {string} theme
+ * @returns {boolean}
+ */
+export function is_valid_theme(theme) {
+    return theme in styles;
+}

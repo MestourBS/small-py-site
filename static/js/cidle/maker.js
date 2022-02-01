@@ -33,6 +33,7 @@ export class MakerMachine extends Machine {
      * @param {boolean} [params.insert]
      * @param {boolean} [params.hidden]
      * @param {('fixed'|'scaling')[]} [params.type]
+     * @param {boolean} [params.paused]
      * @param {[string, number][][]?} [params.consumes]
      * @param {[string, number][][]?} [params.produces]
      * @param {[string, number][][]?} [params.requires]
@@ -40,7 +41,7 @@ export class MakerMachine extends Machine {
      */
     constructor({
         id = null, x = null, y = null, name = null, level = 0, image = null, insert = true,
-        hidden=false, type=['fixed'],
+        hidden=false, type=['fixed'], paused=false,
         consumes=[], produces=[], requires=[], upgrade_costs=[],
     }) {
         if (!Array.isArray(consumes) || consumes.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine consumes must be an array of arrays of [resources,numbers] (${consumes})`);
@@ -58,9 +59,10 @@ export class MakerMachine extends Machine {
         this.#upgrade_costs = upgrade_costs;
         this.#hidden = !!hidden;
         this.#type = type;
+        this.#paused = paused;
 
         MakerMachine.#maker_machines.push(this);
-        if (insert && this.is_visible) {
+        if (x != null && y != null && insert && this.is_visible) {
             Machine.visible_machines.push(this);
         }
     }
@@ -131,6 +133,13 @@ export class MakerMachine extends Machine {
             super.level = Math.min(this.#max_level, level);
             this.#upgrade_costs_leveled = null;
         }
+    }
+
+    toJSON() {
+        return Object.assign(super.toJSON(), {
+            hidden: this.#hidden,
+            paused: this.#paused,
+        });
     }
 
     destroy() {
@@ -652,11 +661,12 @@ export class MakerMachine extends Machine {
      * @param {boolean?} [params.insert]
      * @param {boolean?} [params.hidden]
      * @param {('fixed'|'scaling')[]?} [params.type]
+     * @param {boolean} [params.hidden]
      * @param {[string, number][][]?} [params.consumes]
      * @param {[string, number][][]?} [params.produces]
      * @param {[string, number][][]?} [params.requires]
      */
-    clone({x, y, name, level, image, insert, hidden, type, consumes, produces, requires}={}) {
+    clone({x, y, name, level, image, insert, hidden, type, paused, consumes, produces, requires}={}) {
         x ??= this.x;
         y ??= this.y;
         name ??= this.name;
@@ -667,8 +677,9 @@ export class MakerMachine extends Machine {
         produces ??= this.#produces;
         requires ??= this.#requires;
         image ??= this.image;
+        paused ??= this.paused;
         const id = this.id;
-        return new MakerMachine({id, x, y, name, level, hidden, type, consumes, produces, requires, image, insert});
+        return new MakerMachine({id, x, y, name, level, hidden, type, paused, consumes, produces, requires, image, insert});
     }
 
     /**
@@ -678,6 +689,8 @@ export class MakerMachine extends Machine {
      * @param {number} [params.multiplier] Speed multiplier
      */
     can_produce({multiplier=this.#last_multiplier}={}) {
+        if (this.x == null || this.y == null) return false;
+
         const storages = Object.entries(this.#target_storages({multiplier, group_resources: false, group_relations: false}));
         // Check if requirements are met
         const require_met = storages.filter(s => 'require_met' in s[1]).every(s => s[1].require_met);
@@ -818,8 +831,6 @@ export function make_makers() {
     /**
      * @type {{
      *  id?: string,
-     *  x?: number,
-     *  y?: number,
      *  name?: string,
      *  image?: string|HTMLImageElement,
      *  hidden?: boolean,
@@ -834,13 +845,38 @@ export function make_makers() {
         {
             id: 'tree_chopper',
             name: gettext('games_cidle_maker_tree_chopper'),
-            x: -100,
-            y: 0,
             produces: [[['wood', 1]]],
         },
     ];
 
     makers.forEach(m => new MakerMachine(m));
+}
+export function insert_makers() {
+    // Makes sure there is no double maker
+    if (MakerMachine.maker_machines.filter(m => m.x != null && m.y != null).length) return;
+
+    /**
+     * @type {[string, {
+     *  x: number,
+     *  y: number,
+     *  name?: string,
+     *  level?: string,
+     *  imnage?: string|HTMLImageElement,
+     *  insert?: boolean,
+     *  hidden?: boolean,
+     *  type?: ('fixed'|'scaling')[],
+     *  consumes?: [string, number][][],
+     *  produces?: [string, number][][],
+     *  requires?: [string, number][][],
+     * }][]}
+     */
+    const makers = [
+        ['tree_chopper', {x: -100, y: 0}],
+    ];
+
+    makers.forEach(([id, parts]) => {
+        Machine.get_machine_copy(id, parts);
+    });
 }
 
 //todo draw image instead of rhombus

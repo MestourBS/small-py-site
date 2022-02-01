@@ -55,6 +55,7 @@ export class Machine {
         if (!(id in this.#machine_registry)) {
             throw new RangeError(`Unknown machine id (${id})`);
         }
+        if ('id' in parts) delete parts.id;
 
         const machine = this.#machine_registry[id];
         return machine.clone(parts ?? machine);
@@ -117,6 +118,15 @@ export class Machine {
 
     get level() { return this.#level; }
     set level(level) { if (!isNaN(level)) this.#level = Math.max(0, level); }
+
+    toJSON() {
+        return {
+            x: this.#x,
+            y: this.#y,
+            id: this.#id,
+            level: this.#level,
+        };
+    }
 
     /**
      * Removes the machine from the machine list
@@ -230,6 +240,26 @@ export class Machine {
      * Upgrades the machine
      */
     upgrade() {}
+}
+/**
+ * Returns an object containing the data to be saved
+ *
+ * @returns {{x: number, y: number, level: number, id: string}[]}
+ */
+export function save_data() {
+    return Machine.machines.filter(m => m.x != null && m.y != null).map(m => m.toJSON());
+}
+/**
+ * Loads the saved data
+ *
+ * @param {{id: string, ...parts}[]} [data]
+ */
+export function load_data(data=[]) {
+    if (!Array.isArray(data) || !data.length) return;
+
+    data.forEach(({id, ...parts}) => {
+        Machine.get_machine_copy(id, parts);
+    });
 }
 
 export default Machine;

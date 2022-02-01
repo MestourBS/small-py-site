@@ -65,17 +65,17 @@ export class StorageMachine extends Machine {
             if (!('amount' in data)) data.amount = 0;
             if (!('max' in data)) data.max = 1e3;
         }
-        Object.keys(resources).forEach(res => {
+        if (x != null && y != null && insert) Object.keys(resources).forEach(res => {
             const filtered = StorageMachine.#filtered_storages;
 
-            if (insert) (filtered[res] ??= []).push(this);
+            (filtered[res] ??= []).push(this);
         });
 
         this.#resources = resources;
         this.#level_formula = level_formula;
         this.#upgrade_costs = upgrade_costs;
 
-        if (insert) {
+        if (x != null && y != null && insert) {
             StorageMachine.#storages.push(this);
 
             if (this.is_visible) {
@@ -148,6 +148,15 @@ export class StorageMachine extends Machine {
         }
 
         return this.#upgrade_costs_leveled;
+    }
+
+    toJSON() {
+        return Object.assign(super.toJSON(), {
+            resources: Object.fromEntries(Object.entries(this.#resources).map(([res, data]) => {
+                const {amount} = data;
+                return [res, {amount}];
+            }))
+        });
     }
 
     destroy() {
@@ -422,8 +431,6 @@ export function make_storages() {
     /**
      * @type {{
      *  id?: string,
-     *  x?: number,
-     *  y?: number,
      *  name?: string,
      *  image?: string|HTMLImageElement,
      *  level?: number,
@@ -436,8 +443,6 @@ export function make_storages() {
         {
             id: 'wood_storage',
             name: gettext('games_cidle_storage_wood_storage'),
-            x: 0,
-            y: 0,
             resources: {
                 wood: {},
             },
@@ -445,6 +450,31 @@ export function make_storages() {
     ];
 
     storages.forEach(s => new StorageMachine(s));
+}
+export function insert_storages() {
+    // Makes sure there is no double storage
+    if (StorageMachine.storage_machines.filter(m => m.x != null && m.y != null).length) return;
+
+    /**
+     * @type {[string, {
+     *  x: number,
+     *  y: number,
+     *  name?: string,
+     *  level?: number,
+     *  insert?: boolean,
+     *  image?: string|HTMLImageElement,
+     *  resources?: {[id: string]: {amount?: number, max?: number}},
+     *  level_formula?: (level: number) => number,
+     *  empty?: boolean
+     * }][]}
+     */
+    const storages = [
+        ['wood_storage', {x:0, y:0}],
+    ];
+
+    storages.forEach(([id, parts]) => {
+        Machine.get_machine_copy(id, parts);
+    });
 }
 
 //todo draw image instead of circle

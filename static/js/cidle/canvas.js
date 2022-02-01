@@ -455,3 +455,12 @@ export function cut_lines(lines, {
 
     return lines;
 }
+/**
+ * Returns whether the tab exists or not
+ *
+ * @param {string} tab
+ * @returns {tab is GameTab}
+ */
+export function is_valid_tab(tab) {
+    return tab in game_tabs;
+}
