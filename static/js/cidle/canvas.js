@@ -31,11 +31,15 @@ export const display_size = {
 const game_tabs = {
     world: {
         name: gettext('games_cidle_tab_world'),
-        /** @type {false|string[]} */
+        /** @type {false|string[]} @private */
         _cut_name: false,
-        get cut_name() {
-            if (this._cut_name == false) {
-                this._cut_name = cut_lines(this.name);
+        /** @type {false|string} @private */
+        _cut_params: false,
+        cut_name(params) {
+            const p = JSON.stringify(params);
+            if (this._cut_params != p) {
+                this._cut_name = cut_lines(this.name, params);
+                this._cut_params = p;
             }
             return this._cut_name;
         },
@@ -47,11 +51,15 @@ const game_tabs = {
     },
     inventory: {
         name: gettext('games_cidle_tab_inventory'),
-        /** @type {false|string[]} */
+        /** @type {false|string[]} @private */
         _cut_name: false,
-        get cut_name() {
-            if (this._cut_name == false) {
-                this._cut_name = cut_lines(this.name);
+        /** @type {false|string} @private */
+        _cut_params: false,
+        cut_name(params) {
+            const p = JSON.stringify(params);
+            if (this._cut_params != p) {
+                this._cut_name = cut_lines(this.name, params);
+                this._cut_params = p;
             }
             return this._cut_name;
         },
@@ -89,6 +97,7 @@ const pre_split = {};
  * @type {string[]}
  */
 const modifier_types = ['color', 'italic', 'bold'];
+const max_tabs_per_line = 5;
 
 /**
  * Empties the canvas display
@@ -116,10 +125,10 @@ export function canvas_refresh() {
     const {game_tab} = globals;
     canvas_reset();
 
-    //todo draw tabs & highlight current tab & store position from top
+    let top = draw_tabs({context});
 
     if (game_tab in game_tabs) {
-        game_tabs[game_tab].draw({top: 0});
+        game_tabs[game_tab].draw({top});
     } else {
         console.error(`Unknown game tab ${game_tab}`);
     }
@@ -127,12 +136,98 @@ export function canvas_refresh() {
 /**
  * Draws the tabs
  *
+ * @param {Object} [params]
+ * @param {CanvasRenderingContext2D} [params.context]
  * @returns {number}
  */
-function draw_tabs() {
+function draw_tabs({context=canvas.getContext('2d')}={}) {
+    /** @type {GameTab[]} */
     const tabs = Object.keys(game_tabs);
+    if (tabs.length <= 1) return 0;
 
-    //todo
+    const padding = theme('tab_padding');
+    const max_width = (display_size.width - padding * 2) / Math.min(max_tabs_per_line, tabs.length);
+    /** @type {[GameTab, string[]][]} [tab, name (as lines)][] */
+    const cut = tabs.map(tab => [tab, game_tabs[tab].cut_name({context, max_width})]);
+    const y_diff = (Math.max(...cut.map(([_,name]) => name.length)) + .5) * theme('font_size') + padding * 2;
+
+    let x = 0;
+    let y = 0;
+    for (const [id, name] of cut) {
+        const selected = id == globals.game_tab;
+        const text_color = theme(selected ? 'tab_selected_text_color_fill' : 'tab_text_color_fill');
+        const tab_color = theme(selected ? 'tab_selected_color_fill' : 'tab_color_fill');
+        const tab_border = theme('tab_color_border');
+
+        // Draw tab
+        context.fillStyle = tab_color;
+        context.strokeStyle = tab_border;
+        context.beginPath();
+        context.moveTo(x * max_width, y * y_diff);
+        context.lineTo(x * max_width, (y + 1) * y_diff);
+        context.lineTo((x + 1) * max_width, (y + 1) * y_diff);
+        context.lineTo((x + 1) * max_width, y * y_diff);
+        context.lineTo(x * max_width, y * y_diff);
+        context.fill();
+        context.stroke();
+        context.closePath();
+
+        // Draw tab text
+        canvas_write(name, x * max_width + padding, y * y_diff + padding, {base_text_color: text_color, context});
+
+        // Move tab position
+        x = (x + 1) % max_tabs_per_line;
+        y += (x == 0);
+    }
+    y += (x != 0);
+
+    return y * y_diff;
+}
+/**
+ * Computes the tabs heights
+ *
+ * @param {Object} [params]
+ * @param {CanvasRenderingContext2D} [params.context]
+ * @returns {number}
+ */
+export function tabs_heights({context=canvas.getContext('2d')}={}) {
+    /** @type {GameTab[]} */
+    const tabs = Object.keys(game_tabs);
+    if (tabs.length <= 1) return 0;
+
+
+    const padding = theme('tab_padding');
+    const max_width = (display_size.width - padding * 2) / Math.min(max_tabs_per_line, tabs.length);
+    /** @type {[GameTab, string[]][]} [tab, name (as lines)][] */
+    const cut = tabs.map(tab => [tab, game_tabs[tab].cut_name({context, max_width})]);
+    const y_diff = (Math.max(...cut.map(([_,name]) => name.length)) + .5) * theme('font_size') + padding * 2;
+    const tabs_lines = Math.ceil(tabs.length / max_tabs_per_line);
+
+    return y_diff * tabs_lines;
+}
+/**
+ * Performs a click on the tabs
+ *
+ * @param {number} x
+ * @param {number} y
+ * @param {MouseEvent} event
+ */
+export function click(x, y, event) {
+    /** @type {GameTab[]} */
+    const tabs = Object.keys(game_tabs);
+    if (tabs.length <= 1) return 0;
+    const padding = theme('tab_padding');
+    const max_width = (display_size.width - padding * 2) / Math.min(max_tabs_per_line, tabs.length);
+    /** @type {[GameTab, string[]][]} [tab, name (as lines)][] */
+    const cut = tabs.map(tab => [tab, game_tabs[tab].cut_name({context, max_width})]);
+    const y_diff = (Math.max(...cut.map(([_,name]) => name.length)) + .5) * theme('font_size') + padding * 2;
+
+    const tab_x = Math.ceil(x / max_width) - 1;
+    const tab_y = Math.ceil(y / y_diff) - 1;
+    const tab_index = tab_x + tab_y * max_tabs_per_line;
+    if (tab_index in tabs) {
+        globals.game_tab = tabs[tab_index];
+    }
 }
 /**
  * Writes text, with modifiers if you want, on the canvas

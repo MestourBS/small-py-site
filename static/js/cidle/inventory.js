@@ -1,5 +1,5 @@
 import StorageMachine from './storage.js';
-import { canvas_write, context as canvas_context, context, cut_lines, display_size } from './canvas.js';
+import { canvas_write, context as canvas_context, cut_lines, display_size, tabs_heights as global_tabs_heights } from './canvas.js';
 import { get_theme_value as theme } from './display.js';
 import Machine from './machine.js';
 import { Pane } from './pane.js';
@@ -99,7 +99,7 @@ const inventory = {
             if (max_diameter == 0) return;
             const padding = theme('inventory_padding');
 
-            y -= tabs_height();
+            y -= tabs_heights();
 
             const max_x = Math.floor(display_size.width / (max_diameter + padding * 2));
             const cell_x = Math.floor(x / (max_diameter + padding * 2));
@@ -191,7 +191,7 @@ const inventory = {
                     }
                 }
                 pane.x = (cell_x + 1) * (max_diameter + padding * 2) - display_size.width / 2 - globals.position[0];
-                pane.y = cell_y * (max_diameter + padding * 2) + tabs_height() - display_size.height / 2 - globals.position[1];
+                pane.y = cell_y * (max_diameter + padding * 2) - display_size.height / 2 - globals.position[1] + tabs_heights() + global_tabs_heights();
                 //pane.pinned = true;
                 p = new Pane(pane);
                 return;
@@ -206,6 +206,7 @@ const inventory = {
  *  machines: {[machine_id: string]: {
  *      crafted: number,
  *      resources: [string, number][]|(crafted: number) => [string, number][]|false,
+ *      unlocked: boolean|() => boolean,
  *  }},
  * }}
  */
@@ -217,6 +218,7 @@ const recipes = {
                 if (crafted <= 1) return [['wood', (crafted + 1) * 500]];
                 return false;
             },
+            unlocked: true,
         },
     },
 };
@@ -227,11 +229,17 @@ let subtab = 'machines';
 
 function init() {
     const machines = inventory.machines.contents;
-    Object.entries(recipes.machines).forEach(([machine]) => {
+    Object.entries(recipes.machines).forEach(([machine, data]) => {
+        let unlocked = data.unlocked;
+        if (unlocked !== true) return;
+
         if (!machines.some(([id]) => id == machine)) {
             machines.push([machine, 0, false]);
         }
     });
+
+    // Tries to unlock recipes every minute
+    setInterval(() => unlock_recipes(), 60 * 1e3);
 }
 /**
  * Makes a thing, or returns false
@@ -304,23 +312,25 @@ export function click(x, y, event) {
         return;
     }
 
-    //todo y -= global tabs height
+    y -= global_tabs_heights();
 
-    // Check which tab we've clicked on
-    const tabs = Object.keys(inventory);
-    const padding = theme('tab_padding');
-    const max_width = (display_size.width - padding * 2) / Math.min(max_tabs_per_line, tabs.length);
-    /** @type {[keyof inventory, string[]][]} [tab, name (as lines)][] */
-    const cut = tabs.map(tab => [tab, cut_lines(inventory[tab].name, {max_width: max_width})]);
-    const tab_height = (Math.max(...cut.map(([_, name]) => name.length)) + .5) * theme('font_size') + padding * 2;
+    if (y <= tabs_heights()) {
+        // Check which tab we've clicked on
+        const tabs = Object.keys(inventory);
+        const padding = theme('tab_padding');
+        const max_width = (display_size.width - padding * 2) / Math.min(max_tabs_per_line, tabs.length);
+        /** @type {[keyof inventory, string[]][]} [tab, name (as lines)][] */
+        const cut = tabs.map(tab => [tab, cut_lines(inventory[tab].name, {max_width: max_width})]);
+        const tab_height = (Math.max(...cut.map(([_, name]) => name.length)) + .5) * theme('font_size') + padding * 2;
 
-    const tab_x = Math.ceil(x / max_width) - 1;
-    const tab_y = Math.ceil(y / tab_height) - 1;
-    const tab_index = tab_x + tab_y * max_tabs_per_line;
+        const tab_x = Math.ceil(x / max_width) - 1;
+        const tab_y = Math.ceil(y / tab_height) - 1;
+        const tab_index = tab_x + tab_y * max_tabs_per_line;
 
-    if (tab_index in tabs) {
-        subtab = tabs[tab_index];
-        return;
+        if (tab_index in tabs) {
+            subtab = tabs[tab_index];
+            return;
+        }
     }
 
     inventory[subtab].click(x, y, event);
@@ -330,37 +340,37 @@ export function click(x, y, event) {
  *
  * @param {Object} [params]
  * @param {CanvasRenderingContext2D} [params.context]
- * @param {keyof inventory} [params.tab]
  * @param {number} [params.top]
  */
-export function draw({context=canvas_context, tab=subtab, top=0}={}) {
-    top = draw_tabs({context, tab, top});
+export function draw({context=canvas_context, top=0}={}) {
+    top = draw_tabs({context, top});
 
-    inventory[tab].draw({context, top});
+    inventory[subtab].draw({context, top});
 }
 /**
  * Draw the tabs for the inventory
  *
  * @param {Object} [params]
  * @param {CanvasRenderingContext2D} [params.context]
- * @param {keyof inventory} [params.tab]
  * @param {number} [params.top]
  * @returns {number} Lowest Y position on the canvas
  */
-function draw_tabs({context=canvas_context, tab=subtab, top=0}={}) {
+function draw_tabs({context=canvas_context, top=0}={}) {
     /** @type {(keyof inventory)[]} */
     const tabs = Object.keys(inventory);
+    if (tabs.length <= 1) return top;
+
     const padding = theme('tab_padding');
     const max_width = (display_size.width - padding * 2) / Math.min(max_tabs_per_line, tabs.length);
     /** @type {[keyof inventory, string[]][]} [tab, name (as lines)][] */
-    const cut = tabs.map(tab => [tab, cut_lines(inventory[tab].name, {context, max_width: max_width})]);
+    const cut = tabs.map(tab => [tab, cut_lines(inventory[tab].name, {context, max_width})]);
     const y_diff = (Math.max(...cut.map(([_, name]) => name.length)) + .5) * theme('font_size') + padding * 2;
     // X position in the tabs grid
     let x = 0;
     // Y position in the tabs grid
     let y = 0;
     for (const [id, name] of cut) {
-        const selected = id == tab;
+        const selected = id == subtab;
         const text_color = theme(selected ? 'tab_selected_text_color_fill' : 'tab_text_color_fill');
         const tab_color = theme(selected ? 'tab_selected_color_fill' : 'tab_color_fill');
         const tab_border = theme('tab_color_border');
@@ -379,14 +389,14 @@ function draw_tabs({context=canvas_context, tab=subtab, top=0}={}) {
         context.closePath();
 
         // Draw tab text
-        canvas_write(name, x * max_width + padding, y * y_diff + padding, {base_text_color: text_color, context});
+        canvas_write(name, x * max_width + padding, y * y_diff + padding + top, {base_text_color: text_color, context});
 
         // Move tab position
         x = (x + 1) % max_tabs_per_line;
         y += (x == 0);
     }
     // Change y position in the grid
-    if (x != 0) y++;
+    y += (x != 0);
 
     return y * y_diff + top;
 }
@@ -395,8 +405,10 @@ function draw_tabs({context=canvas_context, tab=subtab, top=0}={}) {
  *
  * @returns {number}
  */
-function tabs_height() {
+function tabs_heights() {
     const tabs = Object.keys(inventory);
+    if (tabs.length <= 1) return 0;
+
     const padding = theme('tab_padding');
     const max_width = (display_size.width - padding * 2) / Math.min(max_tabs_per_line, tabs.length);
     /** @type {[keyof inventory, string[]][]} [tab, name (as lines)][] */
@@ -412,6 +424,24 @@ function tabs_height() {
  */
 function copy_machine(id) {
     return Machine.get_machine_copy(id, {x: 0, y: 0, insert: false, empty: true});
+}
+/**
+ * Tries to unlock recipes
+ */
+function unlock_recipes() {
+    const machines = inventory.machines.contents;
+    Object.entries(recipes.machines).forEach(([machine, data]) => {
+        let unlocked = data.unlocked;
+        if (typeof unlocked == 'boolean') return;
+        if (typeof unlocked == 'function') {
+            unlocked = unlocked();
+            if (unlocked) data.unlocked = true;
+        }
+
+        if (!machines.some(([id]) => id == machine)) {
+            machines.push([machine, 0, false]);
+        }
+    });
 }
 
 init();

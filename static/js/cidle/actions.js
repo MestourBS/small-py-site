@@ -1,4 +1,4 @@
-import { canvas, display_size } from './canvas.js';
+import { canvas, display_size, tabs_heights, click as tabs_click } from './canvas.js';
 import globals from './globals.js';
 import Machine from './machine.js';
 import { Pane } from './pane.js';
@@ -135,7 +135,10 @@ function keyup(event) {
  * @param {MouseEvent} event
  */
 function click(x, y, event) {
-    //todo tabs support
+    if (y <= tabs_heights()) {
+        tabs_click(x, y, event);
+        return;
+    }
 
     switch (globals.game_tab) {
         case 'world':
@@ -236,7 +239,9 @@ function drag_world(x, y, x_diff, y_diff, event) {
  * @param {MouseEvent} event
  */
 function contextmenu(x, y, event) {
-    //todo tabs support
+    if (y <= tabs_heights()) {
+        return;
+    }
 
     switch (globals.game_tab) {
         case 'world':
