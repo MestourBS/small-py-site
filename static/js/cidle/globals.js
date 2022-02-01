@@ -1,3 +1,7 @@
+/**
+ * @typedef {import('./canvas.js').GameTab} GameTab
+ */
+
 export const globals = {
     /**
      * Player focus position as [x, y]
@@ -23,5 +27,17 @@ export const globals = {
      * @type {boolean}
      */
     strict_keys: true,
+    /**
+     * Currently selected tab
+     *
+     * @type {GameTab}
+     */
+    game_tab: 'world',
+    /**
+     * Objects being placed on the next click
+     *
+     * @type {{[k: string]: (x: number, y: number, event: MouseEvent) => boolean}}
+     */
+    adding: {},
 };
 export default globals;

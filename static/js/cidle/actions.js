@@ -2,11 +2,12 @@ import { canvas, display_size } from './canvas.js';
 import globals from './globals.js';
 import Machine from './machine.js';
 import { Pane } from './pane.js';
+import { click as click_inventory } from './inventory.js';
 
 /**
  * Game keybinds
  *
- * Effects are obtained with `KEYBINDS[mapped_key]`.
+ * Effects are obtained with `KEYBINDS[<globals.game_tab>][mapped_key]`.
  * `mapped_key` is the lowercased key, with alt, ctrl and/or shift prepended if they are pressed.
  * Checks are done in an alphabetical order, so alt+key takes priority over ctrl+key.
  * Longer composites take precedence over shorter ones, so alt+ctrl+key > alt+key.
@@ -16,7 +17,11 @@ import { Pane } from './pane.js';
  *
  * Actions are in-game actions (movement, attack, etc.)
  *
- * @type {{[key: string]: (keyof actions)[]}}
+ * @type {{
+ *  '*': {[key: string]: (keyof actions)[]},
+ *  world: {[key: string]: (keyof actions)[]},
+ *  inventory: {[key: string]: (keyof actions)[]},
+ * }}
  */
 const keybinds = {};
 /**
@@ -48,10 +53,11 @@ let currently_dragging = null;
  */
 function keydown(event) {
     if (event.metaKey) return;
+    const to_check = Object.assign({}, keybinds['*'] ?? {}, keybinds[globals.game_tab] ?? {});
 
     // Something accepts every key, let's try it first
-    if ('*' in keybinds) {
-        keybinds['*'].forEach(a => active_actions.add(a));
+    if ('*' in to_check) {
+        to_check['*'].forEach(a => active_actions.add(a));
 
         //? unsure
         event.preventDefault();
@@ -75,10 +81,10 @@ function keydown(event) {
     }
 
     // Call the key's actions if they exist
-    if (key in keybinds) {
+    if (key in to_check) {
         event.preventDefault();
 
-        keybinds[key].forEach(a => active_actions.add(a));
+        to_check[key].forEach(a => active_actions.add(a));
     }
 }
 /**
@@ -88,11 +94,11 @@ function keydown(event) {
  */
 function keyup(event) {
     if (event.metaKey) return;
-
+    const to_check = Object.assign({}, keybinds['*'] ?? {}, keybinds[globals.game_tab] ?? {});
 
     // Something accepts every key, let's try it first
-    if ('*' in keybinds) {
-        keybinds['*'].forEach(a => active_actions.delete(a));
+    if ('*' in to_check) {
+        to_check['*'].forEach(a => active_actions.delete(a));
 
         event.preventDefault();
     }
@@ -115,10 +121,10 @@ function keyup(event) {
     }
 
     // Call the key's actions if they exist
-    if (key in keybinds) {
+    if (key in to_check) {
         event.preventDefault();
 
-        keybinds[key].forEach(a => active_actions.delete(a));
+        to_check[key].forEach(a => active_actions.delete(a));
     }
 }
 /**
@@ -129,10 +135,36 @@ function keyup(event) {
  * @param {MouseEvent} event
  */
 function click(x, y, event) {
+    //todo tabs support
+
+    switch (globals.game_tab) {
+        case 'world':
+            click_world(x, y, event);
+            break;
+        case 'inventory':
+            click_inventory(x, y, event);
+            break;
+        default:
+            console.error(`Unknown game tab ${globals.game_tab}`);
+            break;
+    }
+}
+/**
+ * Performs a click on a target in the world
+ *
+ * @param {number} x Absolute x position where the click was on the canvas
+ * @param {number} y Absolute y position where the click was on the canvas
+ * @param {MouseEvent} event
+ */
+function click_world(x, y, event) {
     x -= display_size.width / 2 - globals.position[0];
     y -= display_size.height / 2 - globals.position[1];
 
-    const p = Pane.visible_panes.find(p => p.contains_point([x, y]));
+    if ('world' in globals.adding) {
+        if (globals.adding['world'](x, y, event)) return;
+    }
+
+    const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([x, y]));
 
     if (p) {
         p.click(x, y, event);
@@ -155,15 +187,34 @@ function click(x, y, event) {
  * @param {MouseEvent} event
  */
 function drag(x, y, x_diff, y_diff, event) {
+    switch (globals.game_tab) {
+        case 'world':
+            drag_world(x, y, x_diff, y_diff, event);
+            break;
+        case 'inventory':
+            //todo drag panes
+            break;
+    }
+}
+/**
+ * Drags a target in the world
+ *
+ * @param {number} x Absolute x position where the click was on the canvas
+ * @param {number} y Absolute y position where the click was on the canvas
+ * @param {number} x_diff Difference in x positions since last call
+ * @param {number} y_diff Difference in y positions since last call
+ * @param {MouseEvent} event
+ */
+function drag_world(x, y, x_diff, y_diff, event) {
     x -= display_size.width / 2 - globals.position[0];
     y -= display_size.height / 2 - globals.position[1];
 
     if (currently_dragging) {
-        currently_dragging.drag(x, y, x_diff, y_diff);
+        currently_dragging.drag(x, y, x_diff, y_diff, event);
         return;
     }
 
-    const p = Pane.visible_panes.find(p => p.contains_point([x, y]));
+    const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([x, y]));
 
     if (p) {
         currently_dragging = p;
@@ -185,10 +236,31 @@ function drag(x, y, x_diff, y_diff, event) {
  * @param {MouseEvent} event
  */
 function contextmenu(x, y, event) {
+    //todo tabs support
+
+    switch (globals.game_tab) {
+        case 'world':
+            contextmenu_world(x, y, event);
+            break;
+        case 'inventory':
+            break;
+        default:
+            console.error(`Unknown game tab ${globals.game_tab}`);
+            break;
+    }
+}
+/**
+ * Performs a right-click on a target in the world
+ *
+ * @param {number} x Absolute x position where the click was on the canvas
+ * @param {number} y Absolute y position where the click was on the canvas
+ * @param {MouseEvent} event
+ */
+function contextmenu_world(x, y, event) {
     x -= display_size.width / 2 - globals.position[0];
     y -= display_size.height / 2 - globals.position[1];
 
-    const p = Pane.visible_panes.find(p => p.contains_point([x, y]));
+    const p = Pane.get_visible_panes('world').find(p => p.contains_point([x, y]));
 
     // For consistency, prevent context menu clicks on panes
     // Maybe, one day, something will happen with them

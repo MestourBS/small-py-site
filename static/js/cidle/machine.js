@@ -1,6 +1,10 @@
 import { context as canvas_context } from './canvas.js';
 import globals from './globals.js';
 /**
+ * @typedef {import('./canvas.js').GameTab} GameTab
+ */
+
+/**
  * @typedef {import('./position.js').PointLike} PointLike
  */
 
@@ -14,8 +18,18 @@ export class Machine {
     /** @type {[number, number]} */
     static #vis_pos = [NaN, NaN];
 
-    static get machines() { return [...this.#machines]; }
+    /** @type {Machine[]} */
+    static get machines() {
+        // Allows children classes to access it themselves
+        if (this != Machine) return Machine.machines;
+
+        return [...this.#machines];
+    }
+    /** @type {Machine[]} */
     static get visible_machines() {
+        // Allows children classes to access it themselves
+        if (this != Machine) return Machine.visible_machines;
+
         const pos = globals.position;
         if (pos.some((n, i) => n != this.#vis_pos[i])) {
             this.#visible_machines = false;
@@ -35,6 +49,9 @@ export class Machine {
      * @returns {Machine}
      */
     static get_machine_copy(id, parts=null) {
+        // Allows children classes to access it themselves
+        if (this != Machine) return Machine.get_machine_copy(id, parts);
+
         if (!(id in this.#machine_registry)) {
             throw new RangeError(`Unknown machine id (${id})`);
         }
@@ -50,22 +67,33 @@ export class Machine {
      * @param {number?} [params.y]
      * @param {string?} [params.name]
      * @param {number} [params.level]
+     * @param {string|HTMLImageElement?} [params.image]
+     * @param {boolean} [params.insert]
      */
-    constructor({id = null, x = null, y = null, name = null, level = 0}) {
+    constructor({id = null, x = null, y = null, name = null, level = 0, image = null, insert = true}) {
         if ((x == null) != (y == null)) throw new TypeError(`Both machine x and y must be either null or not null simultaneously (${x}, ${y})`);
         if (isNaN(x)) throw new TypeError(`Machine x is NaN (${x})`);
         if (isNaN(y)) throw new TypeError(`Machine y is NaN (${y})`);
         if (isNaN(level)) throw new TypeError(`Machine level is NaN (${level})`);
+        if (typeof image == 'string') {
+            const i = new Image;
+            i.src = image;
+            image = i;
+        } else if (image != null && !(image instanceof Image)) throw new TypeError(`Image must be an url, an image object or null (${image})`);
 
         this.#id = id;
         this.#x = x;
         this.#y = y;
         this.#name = name;
         this.#level = level;
+        this.#image = image;
 
-        Machine.#machines.push(this);
-        if (id && !(id in Machine.#machine_registry)) {
-            Machine.#machine_registry[id] = this;
+        if (insert) {
+            Machine.#machines.push(this);
+
+            if (id && !(id in Machine.#machine_registry)) {
+                Machine.#machine_registry[id] = this;
+            }
         }
     }
 
@@ -74,11 +102,15 @@ export class Machine {
     #id;
     #name;
     #level;
+    /** @type {HTMLImageElement} */
+    #image;
 
     get x() { return this.#x; }
     get y() { return this.#y; }
     get id() { return this.#id; }
     get is_visible() { return false; }
+    get image() { return this.#image; }
+    get radius() { return 0; }
 
     get name() { return this.#name ?? this.#id; }
     set name(name) { this.#name = name + ''; }
@@ -87,28 +119,98 @@ export class Machine {
     set level(level) { if (!isNaN(level)) this.#level = Math.max(0, level); }
 
     /**
+     * Removes the machine from the machine list
+     */
+    destroy() {
+        let i = Machine.#machines.indexOf(this);
+        while (i != -1) {
+            Machine.#machines.splice(i, 1);
+            i = Machine.#machines.indexOf(this);
+        }
+        if (Machine.#visible_machines !== false) {
+            let i = Machine.#visible_machines.indexOf(this);
+            while (i != -1) {
+                Machine.#visible_machines.splice(i, 1);
+                i = Machine.#visible_machines.indexOf(this);
+            }
+        }
+    }
+
+    /**
+     * Adds the machine to the machine list
+     *
+     * @param {Object} [params]
+     * @param {number?} [params.x] New X position
+     * @param {number?} [params.y] New Y position
+     */
+    insert({x, y}={}) {
+        let i = Machine.#machines.indexOf(this);
+        if (i == -1) Machine.#machines.push(this);
+
+        this.#x = x ?? this.#x;
+        this.#y = y ?? this.#y;
+
+        if (this.is_visible && Machine.#visible_machines !== false) {
+            let i = Machine.#visible_machines.indexOf(this);
+            if (i == -1) Machine.#visible_machines.push(this);
+        }
+    }
+
+    /**
      * Checks whether the machine contains the point at [X, Y] (absolute in grid)
      *
      * @param {PointLike} point
      */
     contains_point(point) { return false; }
 
-    /** Draws the machine */
-    draw({context=canvas_context}={}) { if (this.constructor != Machine) throw new Error(`${this.constructor.name} has no draw function!`); }
+    /**
+     * Draws the machine
+     *
+     * @param {Object} [params]
+     * @param {CanvasRenderingContext2D} [params.context]
+     * @param {number?} [params.x] Override for the x position
+     * @param {number?} [params.y] Override for the y position
+     */
+    draw({context=canvas_context, x=null, y=null}={}) { if (this.constructor != Machine) throw new Error(`${this.constructor.name} has no draw function!`); }
 
     /**
      * Copies the machine
      *
      * @param {Object} [parts]
-     * @param {number} [parts.x]
-     * @param {number} [parts.y]
+     * @param {number?} [parts.x]
+     * @param {number?} [parts.y]
+     * @param {string?} [parts.name]
+     * @param {string|HTMLImageElement?} [parts.image]
+     * @param {boolean} [parts.insert]
      */
-    clone({x, y}=this) {
+    clone({x, y, name, level, image, insert=true}={}) {
         x ??= this.x;
         y ??= this.y;
+        name ??= this.#name;
+        level ??= this.#level;
+        image ??= this.#image;
         const id = this.id;
-        return new Machine({id, x, y});
+        return new Machine({id, x, y, name, level, image, insert});
     }
+
+    /**
+     * Computes the pane arguments for a pane
+     *
+     * @returns {{
+     *  x: number,
+     *  y: number,
+     *  pinned?: boolean,
+     *  id: string,
+     *  content?: {
+     *      content: (string|() => string)[],
+     *      click?: (() => void)[],
+     *      width?: number,
+     *  }[][],
+     *  title?: string|false,
+     *  tab?: GameTab
+     * }?}
+     */
+    panecontents(event) { return null; }
 
     /**
      * Action to perform on click

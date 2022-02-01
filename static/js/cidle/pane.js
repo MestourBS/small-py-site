@@ -4,28 +4,43 @@ import globals from './globals.js';
 import { rect_contains_point, to_point } from './position.js';
 import { array_group_by } from './primitives.js';
 /**
+ * @typedef {import('./canvas.js').GameTab} GameTab
+ */
+
+/**
  * @typedef {import('./position.js').PointLike} PointLike
  */
 
 export class Pane {
     /** @type {{[id: string]: Pane}} */
     static #panes = {};
-    /** @type {Pane[]|false} */
-    static #visible_panes = false;
+    /**
+     * @type {{
+     *  world: false|Pane[],
+     *  inventory: false|Pane[],
+     * }}
+     */
+    static #visible_panes = {};
     /** @type {[number, number]} */
     static #vis_pos = [NaN, NaN];
 
     static get panes() { return Object.values(this.#panes); }
-    static get visible_panes() {
+    /**
+     * Gets the visible panes of a tab
+     *
+     * @param {GameTab} tab
+     * @returns {Pane[]}
+     */
+    static get_visible_panes(tab=globals.game_tab) {
         const pos = globals.position;
         if (pos.some((n, i) => this.#vis_pos[i] != n)) {
-            this.#visible_panes = false;
+            this.#visible_panes[tab] = false;
             this.#vis_pos = [...pos];
         }
-        if (!this.#visible_panes) {
-            this.#visible_panes = this.panes.filter(p => p.is_visible);
+        if (!this.#visible_panes[tab]) {
+            this.#visible_panes[tab] = this.panes.filter(p => p.tab == tab && p.is_visible);
         }
-        return this.#visible_panes;
+        return this.#visible_panes[tab];
     }
     /**
      * Gets the pane with a specific id
@@ -46,8 +61,9 @@ export class Pane {
      * @param {string} params.id
      * @param {{content: (string|() => string)[], click?: (() => void)[], width?: number}[][]} [params.content]
      * @param {string|false} [params.title]
+     * @param {GameTab} [params.tab]
      */
-    constructor({x, y, pinned=false, id, content=[], title=false}) {
+    constructor({x, y, pinned=false, id, content=[], title=false, tab=globals.game_tab}) {
         if (isNaN(x)) throw new TypeError(`Pane x must be a number (${x})`);
         if (isNaN(y)) throw new TypeError(`Pane y must be a number (${y})`);
         let is_valid_content = Array.isArray(content);
@@ -94,12 +110,16 @@ export class Pane {
         this.#pinned = !!pinned;
         this.#id = id;
         this.#content = content;
+        this.#tab = tab;
 
         if (id in Pane.#panes) {
             Pane.#panes[id].remove();
         }
         Pane.#panes[id] = this;
-        if (this.is_visible) Pane.#visible_panes.push?.(this);
+        if (this.is_visible) {
+            const panes = (Pane.#visible_panes[tab] ??= []);
+            panes.push?.(this);
+        }
     }
 
     #has_dynamic_cell = false;
@@ -110,6 +130,7 @@ export class Pane {
     #content;
     /** @type {false|{content: string[], click?: (() => void)[], width?: number}[][]} */
     #cut_content = false;
+    #tab;
 
     get x() { return this.#x; }
     get y() { return this.#y; }
@@ -126,6 +147,7 @@ export class Pane {
     }
     get id() { return this.#id; }
     get content() { return this.#cut_content ?? this.#content; }
+    get tab() { return this.#tab; }
 
     /**
      * Cuts the content's cell text
@@ -281,19 +303,14 @@ export class Pane {
         x -= this.x;
         y -= this.y;
 
-        if (x < 0 || x > this.x + this.#table_widths().reduce((s, w) => s + w, 0)) return;
+        const space = 20;
+        const width = this.#table_widths().reduce((s, w) => s + w, 0);
+        if (x < -space || x > width + space) return;
 
-        let y_grid = -1;
-        let y_checked = 0;
+        const heights = this.#table_heights();
+        const in_range = y >= -space && y < space + heights[0];
 
-        this.#table_heights().forEach(h => {
-            if (y_checked >= y) return;
-
-            y_grid++;
-            y_checked += h;
-        });
-
-        if (y_grid == 0) {
+        if (in_range) {
             this.#x += x_diff;
             this.#y += y_diff;
         }
@@ -305,8 +322,8 @@ export class Pane {
     remove() {
         if (this.#id in Pane.#panes) delete Pane.#panes[this.#id];
         /** @type {number} */
-        const i = Pane.#visible_panes.indexOf?.(this) ?? -1;
-        if (i != -1) Pane.#visible_panes.splice?.(i, 1);
+        const i = Pane.#visible_panes[this.#tab].indexOf?.(this) ?? -1;
+        if (!isNaN(i) && i != -1) Pane.#visible_panes[this.#tab].splice?.(i, 1);
         this.#id = null;
     }
 

@@ -63,13 +63,8 @@ export function make_resources() {
     const resources = [
         {
             id: 'wood',
-            name: 'wood',
+            name: gettext('games_cidle_resource_wood'),
             color: '#730',
-        },
-        {
-            id: 'fire',
-            name: 'fire',
-            color: '#f70',
         },
     ];
 

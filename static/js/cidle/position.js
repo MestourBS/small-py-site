@@ -126,8 +126,7 @@ export function parallel_perpendicular(line) {
     } else if (y_dist == 0) {
         x_dist = 1;
     } else {
-        const factors = shared_factors(x_dist, y_dist);
-        const f = factors.reduce((a, b) => a * b, 1);
+        const f = Math.min(x_dist, y_dist);
         x_dist /= f;
         y_dist /= f;
     }

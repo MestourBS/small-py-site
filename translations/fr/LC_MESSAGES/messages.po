@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2021-12-22 11:46+0100\n"
+"POT-Creation-Date: 2022-02-01 11:22+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -509,391 +509,400 @@ msgstr ""
 "progrès depuis votre dernier prestige, mais vous allez gagner des "
 "nouvelle ressources"
 
-#: static/js/rpg/actions.js:134
+#: static/js/cidle/canvas.js:33
+msgid "games_cidle_tab_world"
+msgstr "Monde"
+
+#: static/js/cidle/canvas.js:49
+msgid "games_cidle_tab_inventory"
+msgstr "Inventaire"
+
+#: static/js/cidle/display.js:36
+msgid "games_cidle_style_light"
+msgstr "Clair"
+
+#: static/js/cidle/inventory.js:25
+msgid "games_cidle_inventory_machines"
+msgstr "Machines"
+
+#: static/js/cidle/inventory.js:134
+#, fuzzy
+msgid "games_cidle_place"
+msgstr "Placer %(obj)s"
+
+#: static/js/cidle/inventory.js:156
+msgid "games_cidle_make"
+msgstr "Faire %(obj)s"
+
+#: static/js/cidle/inventory.js:166
+msgid "games_cidle_craft_costs"
+msgstr "Cout de fabrication"
+
+#: static/js/cidle/maker.js:406
+msgid "games_cidle_maker_requires"
+msgstr "A Besoin de"
+
+#: static/js/cidle/maker.js:417
+msgid "games_cidle_maker_produces"
+msgstr "Produit"
+
+#: static/js/cidle/maker.js:428
+msgid "games_cidle_maker_consumes"
+msgstr "Utilise"
+
+#: static/js/cidle/maker.js:439
+msgid "games_cidle_maker_upgrade"
+msgstr "Cout d'amélioration"
+
+#: static/js/cidle/maker.js:852
+msgid "games_cidle_maker_tree_chopper"
+msgstr "Coupeur de Bois"
+
+#: static/js/cidle/resource.js:66
+msgid "games_cidle_resource_wood"
+msgstr "Bois"
+
+#: static/js/cidle/storage.js:222
+msgid "cidle_storage_contents"
+msgstr "Contenu Stocké"
+
+#: static/js/cidle/storage.js:441
+msgid "games_cidle_storage_wood_storage"
+msgstr "Stockage de Bois"
+
+#: static/js/rpg/actions.js:158
 msgid "games_rpg_action_move_player_left"
 msgstr "Déplacer le joueur à gauche"
 
-#: static/js/rpg/actions.js:140
+#: static/js/rpg/actions.js:164
 msgid "games_rpg_action_move_player_right"
 msgstr "Déplacer le joueur à droite"
 
-#: static/js/rpg/actions.js:146
+#: static/js/rpg/actions.js:170
 msgid "games_rpg_action_move_player_down"
 msgstr "Déplacer le joueur en bas"
 
-#: static/js/rpg/actions.js:152
+#: static/js/rpg/actions.js:176
 msgid "games_rpg_action_move_player_up"
 msgstr "Déplacer le joueur en haut"
 
-#: static/js/rpg/actions.js:160
+#: static/js/rpg/actions.js:184
 msgid "games_rpg_action_move_cursor_inventory_left"
 msgstr "Déplacer le curseur de l'inventaire à gauche"
 
-#: static/js/rpg/actions.js:204
+#: static/js/rpg/actions.js:228
 msgid "games_rpg_action_move_cursor_inventory_right"
 msgstr "Déplacer le curseur de l'inventaire à droite"
 
-#: static/js/rpg/actions.js:260
+#: static/js/rpg/actions.js:284
 msgid "games_rpg_action_move_cursor_inventory_down"
 msgstr "Déplacer le curseur de l'inventaire en bas"
 
-#: static/js/rpg/actions.js:279
+#: static/js/rpg/actions.js:303
 msgid "games_rpg_action_move_cursor_inventory_up"
 msgstr "Déplacer le curseur de l'inventaire en haut"
 
-#: static/js/rpg/actions.js:298
+#: static/js/rpg/actions.js:322
 msgid "games_rpg_action_move_cursor_status_down"
 msgstr "Déplacer le curseur du status en bas"
 
-#: static/js/rpg/actions.js:315
+#: static/js/rpg/actions.js:337
 msgid "games_rpg_action_move_cursor_status_up"
 msgstr "Déplacer le curseur du status en haut"
 
-#: static/js/rpg/actions.js:325
+#: static/js/rpg/actions.js:345
 msgid "games_rpg_action_move_cursor_skill_select_up"
 msgstr "Déplacer le curseur de sélection de capacités en haut"
 
-#: static/js/rpg/actions.js:339
+#: static/js/rpg/actions.js:359
 msgid "games_rpg_action_move_cursor_skill_select_down"
 msgstr "Déplacer le curseur de sélection de capacités en bas"
 
-#: static/js/rpg/actions.js:352
+#: static/js/rpg/actions.js:372
 msgid "games_rpg_action_move_cursor_skill_select_left"
 msgstr "Déplacer le curseur de sélection de capacités à gauche"
 
-#: static/js/rpg/actions.js:371
+#: static/js/rpg/actions.js:391
 msgid "games_rpg_action_move_cursor_skill_select_right"
 msgstr "Déplacer le curseur de sélection de capacités à droite"
 
-#: static/js/rpg/actions.js:389
+#: static/js/rpg/actions.js:409
 msgid "games_rpg_action_move_cursor_skill_target_up"
 msgstr "Déplacer le curseur de ciblage de capacité en haut"
 
-#: static/js/rpg/actions.js:411
+#: static/js/rpg/actions.js:427
 msgid "games_rpg_action_move_cursor_skill_target_down"
 msgstr "Déplacer le curseur de ciblage de capacité en bas"
 
-#: static/js/rpg/actions.js:433
+#: static/js/rpg/actions.js:445
 msgid "games_rpg_action_move_cursor_skill_target_left"
 msgstr "Déplacer le curseur de ciblage de capacité à gauche"
 
-#: static/js/rpg/actions.js:455
+#: static/js/rpg/actions.js:463
 msgid "games_rpg_action_move_cursor_skill_target_right"
 msgstr "Déplacer le curseur de ciblage de capacité à droite"
 
-#: static/js/rpg/actions.js:479
+#: static/js/rpg/actions.js:481
+msgid "games_rpg_action_move_cursor_options_up"
+msgstr "Déplacer le curseur des options en haut"
+
+#: static/js/rpg/actions.js:490
+msgid "games_rpg_action_move_cursor_options_down"
+msgstr "Déplacer le curseur des options en bas"
+
+#: static/js/rpg/actions.js:501
 msgid "games_rpg_action_use_inventory_selected"
 msgstr "Utiliser l'objet sélectionné"
 
-#: static/js/rpg/actions.js:491
+#: static/js/rpg/actions.js:513
 msgid "games_rpg_action_drop_inventory_selected"
 msgstr "Lacher l'objet sélectionné"
 
-#: static/js/rpg/actions.js:508
+#: static/js/rpg/actions.js:530
 msgid "games_rpg_action_toggle_equip_inventory_selected"
 msgstr "Equipper l'objet sélectionné"
 
-#: static/js/rpg/actions.js:522
+#: static/js/rpg/actions.js:544
 msgid "games_rpg_action_select_skill_selected"
 msgstr "Utiliser la capacité sélectionné"
 
-#: static/js/rpg/actions.js:543
+#: static/js/rpg/actions.js:561
 msgid "games_rpg_action_use_skill"
 msgstr "Utiliser la capacité"
 
-#: static/js/rpg/actions.js:563
+#: static/js/rpg/actions.js:582
 msgid "games_rpg_action_level_skill"
 msgstr "Améliorer la capacité"
 
-#: static/js/rpg/actions.js:574
+#: static/js/rpg/actions.js:591
+msgid "games_rpg_action_call_option"
+msgstr "Dépend de l'option"
+
+#: static/js/rpg/actions.js:605
 msgid "games_rpg_action_game_pause"
 msgstr "Mettre sur pause"
 
-#: static/js/rpg/actions.js:580
+#: static/js/rpg/actions.js:611
 msgid "games_rpg_action_game_resume"
 msgstr "Continuer"
 
-#: static/js/rpg/actions.js:586
+#: static/js/rpg/actions.js:617
 msgid "games_rpg_action_game_pause_toggle"
 msgstr "Activer/désactiver le mode pause"
 
-#: static/js/rpg/actions.js:592
+#: static/js/rpg/actions.js:623
 msgid "games_rpg_action_show_inventory"
 msgstr "Voir l'inventaire"
 
-#: static/js/rpg/actions.js:600
+#: static/js/rpg/actions.js:631
 msgid "games_rpg_action_hide_inventory"
 msgstr "Cacher l'inventaire"
 
-#: static/js/rpg/actions.js:606
+#: static/js/rpg/actions.js:637
 msgid "games_rpg_action_show_status"
 msgstr "Voir le status"
 
-#: static/js/rpg/actions.js:614
+#: static/js/rpg/actions.js:644
 msgid "games_rpg_action_hide_status"
 msgstr "Cacher le status"
 
-#: static/js/rpg/actions.js:620
+#: static/js/rpg/actions.js:650
 msgid "games_rpg_action_show_skills"
 msgstr "Voir les capacités"
 
-#: static/js/rpg/actions.js:630
+#: static/js/rpg/actions.js:660
 msgid "games_rpg_action_hide_skills"
 msgstr "Cacher les capacités"
 
-#: static/js/rpg/actions.js:636
+#: static/js/rpg/actions.js:666
 msgid "games_rpg_action_change_skill"
 msgstr "Changer la capacité"
 
-#: static/js/rpg/actions.js:642
+#: static/js/rpg/actions.js:672
 msgid "games_rpg_action_cancel_skill"
 msgstr "Annuler la capacité"
 
-#: static/js/rpg/actions.js:648
+#: static/js/rpg/actions.js:678
 msgid "games_rpg_action_show_minimap"
 msgstr "Voir la carte"
 
-#: static/js/rpg/actions.js:654
+#: static/js/rpg/actions.js:685
 msgid "games_rpg_action_hide_minimap"
 msgstr "Cacher la carte"
 
-#: static/js/rpg/actions.js:662
+#: static/js/rpg/actions.js:691 static/js/rpg/actions.js:698
+msgid "games_rpg_action_show_options_test"
+msgstr "Voir les options de test"
+
+#: static/js/rpg/actions.js:726
 msgid "games_rpg_action_open_context_menu"
 msgstr "Ouvrir le menu contextuel"
 
-#: static/js/rpg/actions.js:911
+#: static/js/rpg/actions.js:972
 msgid "games_rpg_item_has_passive"
 msgstr "A des effets passifs"
 
-#: static/js/rpg/actions.js:912
+#: static/js/rpg/actions.js:973
 msgid "games_rpg_item_can_use"
 msgstr "Peut être utilisé"
 
-#: static/js/rpg/actions.js:913
+#: static/js/rpg/actions.js:974
 msgid "games_rpg_item_can_equip"
 msgstr "Peut être équippé"
 
-#: static/js/rpg/canvas.js:43
+#: static/js/rpg/canvas.js:46
 msgid "games_rpg_type_none"
 msgstr "Aucun"
 
-#: static/js/rpg/canvas.js:51
+#: static/js/rpg/canvas.js:54
 msgid "games_rpg_status_health"
 msgstr "Vie"
 
-#: static/js/rpg/canvas.js:52
+#: static/js/rpg/canvas.js:55
 msgid "games_rpg_status_health_max"
 msgstr "Vie Max"
 
-#: static/js/rpg/canvas.js:53
+#: static/js/rpg/canvas.js:56
 msgid "games_rpg_status_magic"
 msgstr "Magie"
 
-#: static/js/rpg/canvas.js:54
+#: static/js/rpg/canvas.js:57
 msgid "games_rpg_status_magic_max"
 msgstr "Magie Max"
 
-#: static/js/rpg/canvas.js:55
+#: static/js/rpg/canvas.js:58
 msgid "games_rpg_status_speed"
 msgstr "Vitesse"
 
-#: static/js/rpg/canvas.js:56
+#: static/js/rpg/canvas.js:59
 msgid "games_rpg_status_range"
 msgstr "Portée"
 
-#: static/js/rpg/canvas.js:57
+#: static/js/rpg/canvas.js:60
 msgid "games_rpg_status_kills"
 msgstr "Entité(s) tuée(s)"
 
-#: static/js/rpg/canvas.js:58
+#: static/js/rpg/canvas.js:61
 msgid "games_rpg_status_inventory"
 msgstr "Inventaire"
 
-#: static/js/rpg/canvas.js:59
+#: static/js/rpg/canvas.js:62
 msgid "games_rpg_status_skills"
 msgstr "Capacités"
 
-#: static/js/rpg/canvas.js:60
+#: static/js/rpg/canvas.js:63
 msgid "games_rpg_status_skills_total_levels"
 msgstr "niveaux totaux"
 
-#: static/js/rpg/canvas.js:61
+#: static/js/rpg/canvas.js:64
 msgid "games_rpg_status_defense"
 msgstr "Défense %(type)s"
 
-#: static/js/rpg/canvas.js:62
+#: static/js/rpg/canvas.js:65
 msgid "games_rpg_status_damage"
 msgstr "Dégats %(type)s"
 
-#: static/js/rpg/canvas.js:74
+#: static/js/rpg/canvas.js:77
 msgid "games_rpg_slot_head"
 msgstr "Tête"
 
-#: static/js/rpg/canvas.js:78
+#: static/js/rpg/canvas.js:81
 msgid "games_rpg_slot_face"
 msgstr "Visage"
 
-#: static/js/rpg/canvas.js:82
+#: static/js/rpg/canvas.js:85
 msgid "games_rpg_slot_neck"
 msgstr "Cou"
 
-#: static/js/rpg/canvas.js:86
+#: static/js/rpg/canvas.js:89
 msgid "games_rpg_slot_chest"
 msgstr "Torse"
 
-#: static/js/rpg/canvas.js:90
+#: static/js/rpg/canvas.js:93
 msgid "games_rpg_slot_arm"
 msgstr "Bras"
 
-#: static/js/rpg/canvas.js:94
+#: static/js/rpg/canvas.js:97
 msgid "games_rpg_slot_hand"
 msgstr "Main"
 
-#: static/js/rpg/canvas.js:98
+#: static/js/rpg/canvas.js:101
 msgid "games_rpg_slot_leg"
 msgstr "Jambe"
 
-#: static/js/rpg/canvas.js:102
+#: static/js/rpg/canvas.js:105
 msgid "games_rpg_slot_foot"
 msgstr "Pied"
 
-#: static/js/rpg/canvas.js:301 static/js/rpg/canvas.js:373
-#: static/js/rpg/canvas.js:520
+#: static/js/rpg/canvas.js:313 static/js/rpg/canvas.js:385
+#: static/js/rpg/canvas.js:532
 msgid "games_rpg_status_name"
 msgstr "Nom"
 
-#: static/js/rpg/canvas.js:301 static/js/rpg/canvas.js:373
-#: static/js/rpg/canvas.js:520
+#: static/js/rpg/canvas.js:313 static/js/rpg/canvas.js:385
+#: static/js/rpg/canvas.js:532
 msgid "games_rpg_status_name_unnamed"
 msgstr "Sans nom"
 
-#: static/js/rpg/canvas.js:303 static/js/rpg/canvas.js:522
+#: static/js/rpg/canvas.js:315 static/js/rpg/canvas.js:534
 msgid "games_rpg_status_description"
 msgstr "Description"
 
-#: static/js/rpg/canvas.js:305
+#: static/js/rpg/canvas.js:317
 msgid "games_rpg_status_on_use"
 msgstr "Sur utilisation"
 
-#: static/js/rpg/canvas.js:319 static/js/rpg/canvas.js:536
+#: static/js/rpg/canvas.js:331 static/js/rpg/canvas.js:548
 msgid "games_rpg_status_passive"
 msgstr "Passif"
 
-#: static/js/rpg/canvas.js:335
+#: static/js/rpg/canvas.js:347
 msgid "games_rpg_status_equipped"
 msgstr "Quand équipé"
 
-#: static/js/rpg/canvas.js:341
+#: static/js/rpg/canvas.js:353
 msgid "games_rpg_status_equip_slot"
 msgstr "Equipé sur %(slot)s"
 
-#: static/js/rpg/canvas.js:374
+#: static/js/rpg/canvas.js:386
 msgid "games_rpg_status_faction"
 msgstr "Groupe"
 
-#: static/js/rpg/canvas.js:396
+#: static/js/rpg/canvas.js:408
 msgid "defense"
 msgstr ""
 
-#: static/js/rpg/canvas.js:403
+#: static/js/rpg/canvas.js:415
 msgid "damage"
 msgstr ""
 
-#: static/js/rpg/canvas.js:423
+#: static/js/rpg/canvas.js:435
 msgid "games_rpg_status_items"
 msgstr "objets"
 
-#: static/js/rpg/canvas.js:423
+#: static/js/rpg/canvas.js:435
 msgid "games_rpg_status_item"
 msgstr "objet"
 
-#: static/js/rpg/canvas.js:525
+#: static/js/rpg/canvas.js:537
 msgid "games_rpg_status_cost"
 msgstr "Coût"
 
-#: static/js/rpg/canvas.js:530
+#: static/js/rpg/canvas.js:542
 msgid "games_rpg_status_level_cost"
 msgstr "Coût d'un niveau"
 
-#: static/js/rpg/canvas.js:550
+#: static/js/rpg/canvas.js:562
 msgid "games_rpg_status_on_use_self"
 msgstr "Sur utilisation sur soi"
 
-#: static/js/rpg/canvas.js:564
+#: static/js/rpg/canvas.js:576
 msgid "games_rpg_status_on_use_target"
 msgstr "Sur utilisation sur cible"
 
-#: static/js/rpg/display.js:62
+#: static/js/rpg/display.js:72
 msgid "games_rpg_themes_dark"
 msgstr "Mode sombre"
-
-#: static/js/rpg/display.js:118
-msgid "games_rpg_theme_text_font"
-msgstr "Police du texte"
-
-#: static/js/rpg/display.js:119
-msgid "games_rpg_theme_text_color"
-msgstr "Couleur du text"
-
-#: static/js/rpg/display.js:120
-msgid "games_rpg_theme_text_item_amount_color"
-msgstr "Couleur du nombre d'objet"
-
-#: static/js/rpg/display.js:121
-msgid "games_rpg_theme_text_very_low_health_color"
-msgstr "Couleur vie très basse"
-
-#: static/js/rpg/display.js:122
-msgid "games_rpg_theme_text_low_health_color"
-msgstr "Couleur vie basse"
-
-#: static/js/rpg/display.js:123
-msgid "games_rpg_theme_text_item_equipped_color"
-msgstr "Couleur quand équippé"
-
-#: static/js/rpg/display.js:124
-msgid "games_rpg_theme_text_item_has_slot_color"
-msgstr "Couleur quand il est possible d'équipper"
-
-#: static/js/rpg/display.js:125
-msgid "games_rpg_theme_text_item_has_not_slot_color"
-msgstr "Couleur quand il n'est pas possible d'équipper"
-
-#: static/js/rpg/display.js:128
-msgid "games_rpg_theme_border_tooltip_color"
-msgstr "Couleur de la bordure de l'info-bulle"
-
-#: static/js/rpg/display.js:129
-msgid "games_rpg_theme_border_inventory_cell_color"
-msgstr "Couleur de la bordure des cases d'inventaire"
-
-#: static/js/rpg/display.js:130
-msgid "games_rpg_theme_border_equipment_cell_color"
-msgstr "Couleur de la bordure des cases d'équipement"
-
-#: static/js/rpg/display.js:131
-msgid "games_rpg_theme_border_inventory_cursor_color"
-msgstr "Couleur du curseur de l'inventaire"
-
-#: static/js/rpg/display.js:134
-msgid "games_rpg_theme_background_tooltip_color"
-msgstr "Couleur de fond de l'info-bulle"
-
-#: static/js/rpg/display.js:135
-msgid "games_rpg_theme_background_inventory_color"
-msgstr "Couleur de fond de l'inventaire"
-
-#: static/js/rpg/display.js:136
-msgid "games_rpg_theme_background_equipment_cell_locked_color"
-msgstr "Couleur de fond des cases d'équipement non disponibles"
-
-#: static/js/rpg/display.js:137
-msgid "games_rpg_theme_background_entity_health_color"
-msgstr "Couleur de fond de vie"
-
-#: static/js/rpg/display.js:138
-msgid "games_rpg_theme_background_entity_missing_health_color"
-msgstr "Couleur de fond de vie manquante"
 
 #: static/js/rpg/entity.js:242
 msgid "games_rpg_faction_null"
@@ -951,15 +960,15 @@ msgstr "Argent"
 msgid "games_rpg_items_video_game"
 msgstr "Jeu Vidéo"
 
-#: static/js/rpg/skills.js:339
+#: static/js/rpg/skills.js:337
 msgid "games_rpg_skills_rest"
 msgstr "Repos"
 
-#: static/js/rpg/skills.js:353
+#: static/js/rpg/skills.js:351
 msgid "games_rpg_skills_see"
 msgstr "Vision"
 
-#: static/js/rpg/skills.js:368
+#: static/js/rpg/skills.js:366
 msgid "games_rpg_skills_stab"
 msgstr "Poignarder"
 
@@ -1053,4 +1062,55 @@ msgstr "Options"
 #: templates/games/blockus.html:7
 msgid "blockus_game_keybinds"
 msgstr "Contrôles"
+
+#~ msgid "games_rpg_theme_text_font"
+#~ msgstr "Police du texte"
+
+#~ msgid "games_rpg_theme_text_color"
+#~ msgstr "Couleur du text"
+
+#~ msgid "games_rpg_theme_text_item_amount_color"
+#~ msgstr "Couleur du nombre d'objet"
+
+#~ msgid "games_rpg_theme_text_very_low_health_color"
+#~ msgstr "Couleur vie très basse"
+
+#~ msgid "games_rpg_theme_text_low_health_color"
+#~ msgstr "Couleur vie basse"
+
+#~ msgid "games_rpg_theme_text_item_equipped_color"
+#~ msgstr "Couleur quand équippé"
+
+#~ msgid "games_rpg_theme_text_item_has_slot_color"
+#~ msgstr "Couleur quand il est possible d'équipper"
+
+#~ msgid "games_rpg_theme_text_item_has_not_slot_color"
+#~ msgstr "Couleur quand il n'est pas possible d'équipper"
+
+#~ msgid "games_rpg_theme_border_tooltip_color"
+#~ msgstr "Couleur de la bordure de l'info-bulle"
+
+#~ msgid "games_rpg_theme_border_inventory_cell_color"
+#~ msgstr "Couleur de la bordure des cases d'inventaire"
+
+#~ msgid "games_rpg_theme_border_equipment_cell_color"
+#~ msgstr "Couleur de la bordure des cases d'équipement"
+
+#~ msgid "games_rpg_theme_border_inventory_cursor_color"
+#~ msgstr "Couleur du curseur de l'inventaire"
+
+#~ msgid "games_rpg_theme_background_tooltip_color"
+#~ msgstr "Couleur de fond de l'info-bulle"
+
+#~ msgid "games_rpg_theme_background_inventory_color"
+#~ msgstr "Couleur de fond de l'inventaire"
+
+#~ msgid "games_rpg_theme_background_equipment_cell_locked_color"
+#~ msgstr "Couleur de fond des cases d'équipement non disponibles"
+
+#~ msgid "games_rpg_theme_background_entity_health_color"
+#~ msgstr "Couleur de fond de vie"
+
+#~ msgid "games_rpg_theme_background_entity_missing_health_color"
+#~ msgstr "Couleur de fond de vie manquante"
 

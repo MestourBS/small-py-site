@@ -1,7 +1,12 @@
 import { get_theme_value as theme } from './display.js';
+import globals from './globals.js';
+import { draw as draw_inventory } from './inventory.js';
 import Machine from './machine.js';
 import { MakerMachine } from './maker.js';
 import { Pane } from './pane.js';
+/**
+ * @typedef {keyof game_tabs} GameTab
+ */
 
 /**
  * Canvas of the game
@@ -23,7 +28,39 @@ export const display_size = {
     /** @type {[number, number][]} */
     get corners() { return [[0, 0], [0, this.height], [this.width, this.height], [this.width, 0]]; },
 };
-
+const game_tabs = {
+    world: {
+        name: gettext('games_cidle_tab_world'),
+        /** @type {false|string[]} */
+        _cut_name: false,
+        get cut_name() {
+            if (this._cut_name == false) {
+                this._cut_name = cut_lines(this.name);
+            }
+            return this._cut_name;
+        },
+        draw: () => {
+            MakerMachine.maker_machines.filter(m => m.can_produce()).forEach(m => m.draw_connections({context}));
+            Machine.visible_machines.forEach(m => m.draw({context}));
+            Pane.get_visible_panes('world').forEach(p => p.draw({context}));
+        },
+    },
+    inventory: {
+        name: gettext('games_cidle_tab_inventory'),
+        /** @type {false|string[]} */
+        _cut_name: false,
+        get cut_name() {
+            if (this._cut_name == false) {
+                this._cut_name = cut_lines(this.name);
+            }
+            return this._cut_name;
+        },
+        draw: ({top=0}={}) => {
+            draw_inventory({context, top});
+            Pane.get_visible_panes('inventory').forEach(p => p.draw({context}));
+        },
+    },
+};
 /**
  * Regex for color matching in text writing
  *
@@ -76,11 +113,26 @@ function canvas_reset() {
  * Refreshes the canvas contents
  */
 export function canvas_refresh() {
+    const {game_tab} = globals;
     canvas_reset();
 
-    MakerMachine.maker_machines.filter(m => m.can_produce()).forEach(m => m.draw_connections({context}));
-    Machine.visible_machines.forEach(m => m.draw({context}));
-    Pane.visible_panes.forEach(p => p.draw({context}));
+    //todo draw tabs & highlight current tab & store position from top
+
+    if (game_tab in game_tabs) {
+        game_tabs[game_tab].draw({top: 0});
+    } else {
+        console.error(`Unknown game tab ${game_tab}`);
+    }
+}
+/**
+ * Draws the tabs
+ *
+ * @returns {number}
+ */
+function draw_tabs() {
+    const tabs = Object.keys(game_tabs);
+
+    //todo
 }
 /**
  * Writes text, with modifiers if you want, on the canvas
@@ -221,7 +273,7 @@ export function cut_lines(lines, {
     if (lines && !Array.isArray(lines)) lines = [lines];
     if (!lines?.length) return [0, []];
 
-    lines = lines.map(l => l.toString());
+    lines = lines.map(l => l + '');
 
     // Set text var
     context.font = `${font_size}px ${font_family}`;

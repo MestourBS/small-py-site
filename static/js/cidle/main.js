@@ -1,3 +1,4 @@
+import './inventory.js';
 import { canvas_refresh } from './canvas.js';
 import MakerMachine, { make_makers } from './maker.js';
 import { make_resources } from './resource.js';

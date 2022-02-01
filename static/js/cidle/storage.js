@@ -16,8 +16,13 @@ export class StorageMachine extends Machine {
     /** @type {{[resource: string]: StorageMachine[]}} */
     static #filtered_storages = {};
 
-    static get storage_machines() { return [...this.#storages]; }
-    static get machines() { return super.machines; }
+    /** @type {StorageMachine[]} */
+    static get storage_machines() {
+        // Allows children classes to access it themselves
+        if (this != StorageMachine) return StorageMachine.storage_machines;
+
+        return [...this.#storages];
+    }
 
     /**
      * Gets the storages that store `resource`
@@ -26,6 +31,9 @@ export class StorageMachine extends Machine {
      * @returns {StorageMachine[]}
      */
     static storages_for(resource) {
+        // Allows children classes to access it themselves
+        if (this != StorageMachine) return StorageMachine.storages_for(resource);
+
         return [...(this.#filtered_storages[resource] ??= [])];
     }
 
@@ -36,12 +44,14 @@ export class StorageMachine extends Machine {
      * @param {number?} [params.y]
      * @param {string?} [params.name]
      * @param {number?} [params.level]
+     * @param {string|HTMLImageElement?} [params.image]
+     * @param {boolean} [params.insert]
      * @param {{[id: string]: {amount?: number, max?: number}}?} [params.resources]
      * @param {(level: number) => number} [params.level_formula]
      * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.upgrade_costs]
      */
     constructor({
-        id = null, x = null, y = null, name = null, level = 0,
+        id = null, x = null, y = null, name = null, level = 0, image = null, insert = true,
         resources = {}, level_formula = l => l+1, upgrade_costs=[],
     }) {
         if (typeof resources != 'object') throw new TypeError(`Storage machine resources must be an object (${resources})`);
@@ -49,7 +59,7 @@ export class StorageMachine extends Machine {
         if (typeof upgrade_costs == 'function');
         else if (!Array.isArray(upgrade_costs) || upgrade_costs.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine upgrade_costs must be an array of arrays of [resources,numbers] (${upgrade_costs})`);
 
-        super({id, x, y, name, level});
+        super({id, x, y, name, level, image, insert});
 
         for (let data of Object.values(resources)) {
             if (!('amount' in data)) data.amount = 0;
@@ -58,16 +68,19 @@ export class StorageMachine extends Machine {
         Object.keys(resources).forEach(res => {
             const filtered = StorageMachine.#filtered_storages;
 
-            (filtered[res] ??= []).push(this);
+            if (insert) (filtered[res] ??= []).push(this);
         });
 
         this.#resources = resources;
         this.#level_formula = level_formula;
         this.#upgrade_costs = upgrade_costs;
-        StorageMachine.#storages.push(this);
 
-        if (this.is_visible) {
-            Machine.visible_machines.push(this);
+        if (insert) {
+            StorageMachine.#storages.push(this);
+
+            if (this.is_visible) {
+                Machine.visible_machines.push(this);
+            }
         }
     }
 
@@ -103,7 +116,6 @@ export class StorageMachine extends Machine {
 
         return this.#resources_leveled;
     }
-    //get resources() { return this.#resources; }
     get is_visible() {
         let {x, y} = this;
         if (x == null || y == null) return false;
@@ -138,6 +150,39 @@ export class StorageMachine extends Machine {
         return this.#upgrade_costs_leveled;
     }
 
+    destroy() {
+        let i = StorageMachine.#storages.indexOf(this);
+        while (i != -1) {
+            StorageMachine.#storages.splice(i, 1);
+            i = StorageMachine.#storages.indexOf(this);
+        }
+        Object.keys(this.#resources).forEach(res => {
+            let i = StorageMachine.#filtered_storages[res].indexOf(this);
+            while (i != -1) {
+                StorageMachine.#filtered_storages[res].splice(i, 1);
+                i = StorageMachine.#filtered_storages[res].indexOf(this);
+            }
+        });
+
+        super.destroy();
+    }
+
+    /**
+     * @param {Object} [params]
+     * @param {number?} [params.x] New X position
+     * @param {number?} [params.y] New Y position
+     */
+    insert({x, y}={}) {
+        let i = StorageMachine.#storages.indexOf(this);
+        if (i == -1) StorageMachine.#storages.push(this);
+        Object.keys(this.#resources).forEach(res => {
+            let i = StorageMachine.#filtered_storages[res].indexOf(this);
+            if (i == -1) StorageMachine.#filtered_storages[res].push(this);
+        });
+
+        super.insert({x, y});
+    }
+
     /** @param {PointLike} point */
     contains_point(point) {
         let dist = coords_distance(this, point);
@@ -145,16 +190,35 @@ export class StorageMachine extends Machine {
         return dist <= this.radius ** 2;
     }
 
-    /** @param {PointLike} point */
-    click(event) {
-        const pane_id = `storage_${this.id}_pane`;
-        let p = Pane.pane(pane_id);
-        if (p) {
-            p.remove();
-            return;
-        }
-
+    /**
+     * @param {MouseEvent} event
+     * @returns {{
+     *  x: number,
+     *  y: number,
+     *  pinned?: boolean,
+     *  id: string,
+     *  content?: {
+     *      content: (string|() => string)[],
+     *      click?: (() => void)[],
+     *      width?: number,
+     *  }[][],
+     *  title?: string|false,
+     *  tab?: GameTab
+     * }?}
+     */
+    panecontents(event) {
+        const pane_id = `${globals.game_tab}_storage_${this.id}_pane`;
+        /**
+         * @type {{
+         *  content: (string|() => string)[],
+         *  click?: (() => void)[],
+         *  width?: number,
+         * }[][]}
+         */
         const content = [
+            [{
+                content: [gettext('cidle_storage_contents')],
+            }],
             ...Object.entries(this.resources).map(([res, data]) => {
                 const resource = Resource.resource(res);
                 const get_amount = () => {
@@ -199,20 +263,43 @@ export class StorageMachine extends Machine {
                 }];
             }));
         }
-        p = new Pane({x, y, id: pane_id, content, title: this.name});
+
+        return {x, y, id: pane_id, content, title: this.name};
+    }
+
+    /** @param {MouseEvent} event */
+    click(event) {
+        const contents = this.panecontents(event);
+        const pane_id = contents.id;
+        let p = Pane.pane(pane_id);
+        if (p) {
+            p.remove();
+            return;
+        }
+
+        p = new Pane(contents);
     }
 
     /**
      * @param {Object} params
      * @param {CanvasRenderingContext2D} [params.context]
+     * @param {number?} [params.x] Override for the x position
+     * @param {number?} [params.y] Override for the y position
      * @param {'fraction'|'logarithm'} [params.fillstyle]
+     * - Fraction fills at percentile of storage (`amount/max`)
+     * - Logarithm fills at percentile of logarithm storage (`log(amount)/log(max)`)
      */
-    draw({context=canvas_context, fillstyle='fraction'}={}) {
-        let {x, y} = this;
-        if (x == null || y == null) return;
-
-        x += display_size.width / 2 - globals.position[0];
-        y += display_size.height / 2 - globals.position[1];
+    draw({context=canvas_context, x=null, y=null, fillstyle='fraction'}={}) {
+        if (x == null) {
+            ({x} = this);
+            if (x == null) return;
+            x += display_size.width / 2 - globals.position[0];
+        }
+        if (y == null) {
+            ({y} = this);
+            if (y == null) return;
+            y += display_size.height / 2 - globals.position[1];
+        }
 
         context.fillStyle = theme('storage_color_fill');
         context.beginPath();
@@ -267,18 +354,26 @@ export class StorageMachine extends Machine {
      * @param {number?} [parts.y]
      * @param {string?} [parts.name]
      * @param {number?} [parts.level]
+     * @param {string|HTMLImageElement?} [parts.image]
+     * @param {boolean} [parts.insert]
      * @param {{[id: string]: {amount?: number, max?: number}}?} [parts.resources]
      * @param {((level: number) => number)?} [parts.level_formula]
+     * @param {boolean} [parts.empty]
      */
-    clone({x, y, name, level, resources, level_formula} = {}) {
+    clone({x, y, name, level, resources, image, insert=true, level_formula, empty=false} = {}) {
         x ??= this.x;
         y ??= this.y;
+        image ??= this.image;
         name ??= this.name;
         level ??= this.level;
-        resources ??= this.#resources;
+        resources ??= Object.fromEntries(Object.entries(this.resources).map(([res, data]) => {
+            let {amount, max} = data;
+            if (empty) amount = 0;
+            return [res, {amount, max}];
+        }));
         level_formula ??= this.#level_formula;
         const id = this.id;
-        return new StorageMachine({id, x, y, name, level, resources, level_formula});
+        return new StorageMachine({id, x, y, name, level, resources, image, insert, level_formula});
     }
 
     /**
@@ -330,6 +425,7 @@ export function make_storages() {
      *  x?: number,
      *  y?: number,
      *  name?: string,
+     *  image?: string|HTMLImageElement,
      *  level?: number,
      *  resources?: {[id: string]: {amount?: number, max?: number}},
      *  level_formula?: (level: number) => number,
@@ -339,6 +435,7 @@ export function make_storages() {
     const storages = [
         {
             id: 'wood_storage',
+            name: gettext('games_cidle_storage_wood_storage'),
             x: 0,
             y: 0,
             resources: {
@@ -349,3 +446,5 @@ export function make_storages() {
 
     storages.forEach(s => new StorageMachine(s));
 }
+
+//todo draw image instead of circle
