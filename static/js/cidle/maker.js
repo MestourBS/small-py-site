@@ -513,18 +513,22 @@ export class MakerMachine extends Machine {
             y += display_size.height / 2 - globals.position[1];
         }
 
-        context.fillStyle = theme('maker_color_fill');
-        context.strokeStyle = theme('maker_color_border');
-        context.setLineDash([]);
-        context.beginPath();
-        context.moveTo(x - this.radius, y);
-        context.lineTo(x, y - this.radius);
-        context.lineTo(x + this.radius, y);
-        context.lineTo(x, y + this.radius);
-        context.lineTo(x - this.radius, y);
-        context.fill();
-        context.stroke();
-        context.closePath();
+        if (this.image) {
+            context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
+        } else {
+            context.fillStyle = theme('maker_color_fill');
+            context.strokeStyle = theme('maker_color_border');
+            context.setLineDash([]);
+            context.beginPath();
+            context.moveTo(x - this.radius, y);
+            context.lineTo(x, y - this.radius);
+            context.lineTo(x + this.radius, y);
+            context.lineTo(x, y + this.radius);
+            context.lineTo(x - this.radius, y);
+            context.fill();
+            context.stroke();
+            context.closePath();
+        }
 
         if (this.paused) {
             context.fillStyle = theme('text_color_fill');
@@ -884,5 +888,3 @@ export function insert_makers() {
         Machine.get_machine_copy(id, parts);
     });
 }
-
-//todo draw image instead of rhombus

@@ -316,51 +316,55 @@ export class StorageMachine extends Machine {
             y += display_size.height / 2 - globals.position[1];
         }
 
-        context.fillStyle = theme('storage_color_fill');
-        context.beginPath();
-        context.arc(x, y, this.radius, 0, 2 * Math.PI);
-        context.fill();
-        context.closePath();
+        if (this.image) {
+            context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
+        } else {
+            context.fillStyle = theme('storage_color_fill');
+            context.beginPath();
+            context.arc(x, y, this.radius, 0, 2 * Math.PI);
+            context.fill();
+            context.closePath();
 
-        // Partial fill for resources
-        const keys = Object.keys(this.resources);
-        const length = keys.length;
-        for (let i = 0; i < length; i++) {
-            const res_id = keys[i];
-            const {amount, max} = this.resources[res_id];
-            const resource = Resource.resource(res_id);
+            // Partial fill for resources
+            const keys = Object.keys(this.resources);
+            const length = keys.length;
+            for (let i = 0; i < length; i++) {
+                const res_id = keys[i];
+                const {amount, max} = this.resources[res_id];
+                const resource = Resource.resource(res_id);
 
-            let fill = 0;
-            switch (fillstyle) {
-                case 'logarithm':
-                    fill = Math.log(amount) / Math.log(max);
-                    break;
-                case 'fraction':
-                default:
-                    fill = amount / max;
-                    break;
+                let fill = 0;
+                switch (fillstyle) {
+                    case 'logarithm':
+                        fill = Math.log(amount) / Math.log(max);
+                        break;
+                    case 'fraction':
+                    default:
+                        fill = amount / max;
+                        break;
+                }
+
+                fill = Math.max(0, Math.min(1, fill));
+                const start = 2 * i / length * Math.PI;
+                const end = 2 * (i + 1) / length * Math.PI;
+
+                context.fillStyle = resource.color;
+                context.strokeStyle = resource.color;
+                context.beginPath();
+                context.moveTo(x, y);
+                context.arc(x, y, this.radius * fill, start, end);
+                context.lineTo(x, y);
+                context.fill();
+                context.stroke();
+                context.closePath();
             }
 
-            fill = Math.max(0, Math.min(1, fill));
-            const start = 2 * i / length * Math.PI;
-            const end = 2 * (i + 1) / length * Math.PI;
-
-            context.fillStyle = resource.color;
-            context.strokeStyle = resource.color;
+            context.strokeStyle = theme('storage_color_border');
             context.beginPath();
-            context.moveTo(x, y);
-            context.arc(x, y, this.radius * fill, start, end);
-            context.lineTo(x, y);
-            context.fill();
+            context.arc(x, y, this.radius, 0, 2 * Math.PI);
             context.stroke();
             context.closePath();
         }
-
-        context.strokeStyle = theme('storage_color_border');
-        context.beginPath();
-        context.arc(x, y, this.radius, 0, 2 * Math.PI);
-        context.stroke();
-        context.closePath();
     }
 
     /**
@@ -482,5 +486,3 @@ export function insert_storages() {
         Machine.get_machine_copy(id, parts);
     });
 }
-
-//todo draw image instead of circle
