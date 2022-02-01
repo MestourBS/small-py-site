@@ -445,7 +445,3 @@ function unlock_recipes() {
 }
 
 init();
-
-//todo click support
-//todo show panes
-//todo allow placing machines

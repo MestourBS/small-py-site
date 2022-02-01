@@ -1,4 +1,4 @@
-import { number_between, shared_factors } from './primitives.js';
+import { number_between } from './primitives.js';
 /**
  * @typedef {{x: number, y: number}|{0: number, 1: number}|[number, number]} PointLike
  * @typedef {{x: number, y: number}} Point

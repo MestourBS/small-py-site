@@ -351,5 +351,3 @@ canvas.addEventListener('contextmenu', e => {
 
     contextmenu(x, y, e);
 });
-
-//todo call active actions

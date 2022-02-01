@@ -5,6 +5,8 @@ import { make_resources } from './resource.js';
 import { make_storages } from './storage.js';
 import './actions.js';
 
+//todo saving/loading
+
 /** @type {number} */
 let last_production;
 
