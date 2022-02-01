@@ -28,20 +28,23 @@ export function prime_factors(number) {
  * @returns {number[]}
  */
 export function shared_factors(...numbers) {
-    const factors = [];
-    let divider = 2;
-    numbers = numbers.map(n => Math.abs(n));
+    const factors = numbers.map(n => prime_factors(n));
+    const shared = [];
 
-    while (Math.min(...numbers) >= 2) {
-        if (numbers.every(n => n % divider == 0)) {
-            factors.push(divider);
-            numbers = numbers.map(n => n /= divider);
-        } else {
-            divider++;
+    for (let i = 0; i < factors[0].length; i++) {
+        const factor = factors[0][i];
+
+        if (factors.every(f => f.includes(factor))) {
+            i--;
+            factors.forEach(f => {
+                const i = f.indexOf(factor);
+                f.splice(i, 1);
+            });
+            shared.push(factor);
         }
     }
 
-    return factors;
+    return shared;
 }
 
 /**
