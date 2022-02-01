@@ -61,8 +61,8 @@ export class MakerMachine extends Machine {
         this.#type = type;
         this.#paused = paused;
 
-        MakerMachine.#maker_machines.push(this);
         if (x != null && y != null && insert && this.is_visible) {
+            MakerMachine.#maker_machines.push(this);
             Machine.visible_machines.push(this);
         }
     }
@@ -147,6 +147,12 @@ export class MakerMachine extends Machine {
         while (i != -1) {
             MakerMachine.#maker_machines.splice(i, 1);
             i = MakerMachine.#maker_machines.indexOf(this);
+        }
+        const pane_id = this.panecontents().id;
+        let p = Pane.pane(pane_id);
+        if (p) {
+            p.remove();
+            return;
         }
 
         super.destroy();
@@ -407,7 +413,7 @@ export class MakerMachine extends Machine {
      * }?}
      */
     panecontents(event) {
-        const pane_id = `${globals.game_tab}_maker_${this.id}_pane`;
+        const pane_id = `${globals.game_tab}_maker_${this.index}_pane`;
         /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
         const content = [];
         if (this.requires.length) {
@@ -666,7 +672,7 @@ export class MakerMachine extends Machine {
      * @param {[string, number][][]?} [params.produces]
      * @param {[string, number][][]?} [params.requires]
      */
-    clone({x, y, name, level, image, insert, hidden, type, paused, consumes, produces, requires}={}) {
+    clone({x, y, name, level, image, insert=true, hidden, type, paused, consumes, produces, requires}={}) {
         x ??= this.x;
         y ??= this.y;
         name ??= this.name;

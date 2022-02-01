@@ -172,6 +172,12 @@ export class StorageMachine extends Machine {
                 i = StorageMachine.#filtered_storages[res].indexOf(this);
             }
         });
+        const pane_id = this.panecontents().id;
+        let p = Pane.pane(pane_id);
+        if (p) {
+            p.remove();
+            return;
+        }
 
         super.destroy();
     }
@@ -216,7 +222,7 @@ export class StorageMachine extends Machine {
      * }?}
      */
     panecontents(event) {
-        const pane_id = `${globals.game_tab}_storage_${this.id}_pane`;
+        const pane_id = `${globals.game_tab}_storage_${this.index}_pane`;
         /**
          * @type {{
          *  content: (string|() => string)[],

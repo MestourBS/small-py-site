@@ -112,6 +112,7 @@ export class Machine {
     get is_visible() { return false; }
     get image() { return this.#image; }
     get radius() { return 0; }
+    get index() { return Machine.machines.indexOf(this); }
 
     get name() { return this.#name ?? this.#id; }
     set name(name) { this.#name = name + ''; }

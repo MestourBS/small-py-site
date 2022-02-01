@@ -49,8 +49,8 @@ const inventory = {
             contents.forEach(entry => {
                 const [id, amount] = entry;
                 let [,,machine] = entry;
-                const cell_x = [x * max_diameter, (x + 1) * max_diameter + padding * 2];
-                const cell_y = [y * max_diameter + top, (y + 1) * max_diameter + padding * 2 + top];
+                const cell_x = [x * (max_diameter + padding * 2), (x + 1) * (max_diameter + padding * 2)];
+                const cell_y = [y * (max_diameter + padding * 2) + top, (y + 1) * (max_diameter + padding * 2) + top];
 
                 // Draw the box
                 context.strokeStyle = theme('inventory_color_border');
@@ -71,8 +71,8 @@ const inventory = {
                 }
                 const machine_draw = {
                     context,
-                    x: x * max_diameter + machine.radius + padding,
-                    y: y * max_diameter + machine.radius + padding + top,
+                    x: x * (max_diameter + padding * 2) + machine.radius + padding,
+                    y: y * (max_diameter + padding * 2) + machine.radius + padding + top,
                 };
                 machine.draw(machine_draw);
 
@@ -131,6 +131,8 @@ const inventory = {
                         content: [gettext('games_cidle_place', {obj: name})],
                         click: [() => {
                             this.click(x,arg_y,event);
+                            const row = inventory.machines.contents.find(([i]) => i == id);
+                            row[1]--;
                             globals.game_tab = 'world';
                             globals.adding['world'] = (x, y, event) => {
                                 if (event.shiftKey) {
@@ -220,6 +222,13 @@ const recipes = {
             },
             unlocked: true,
         },
+        'tree_chopper': {
+            crafted: 0,
+            resources: (crafted) => {
+                return [['wood', (crafted + 1) ** 2 * 500]];
+            },
+            unlocked: () => recipes.machines['wood_storage'].crafted >= 1,
+        },
     },
 };
 const max_tabs_per_line = 5;
@@ -238,8 +247,8 @@ function init() {
         }
     });
 
-    // Tries to unlock recipes every minute
-    setInterval(() => unlock_recipes(), 60 * 1e3);
+    // Tries to unlock recipes every 15 seconds
+    setInterval(() => unlock_recipes(), 15 * 1e3);
 }
 /**
  * Makes a thing, or returns false
@@ -437,6 +446,7 @@ function unlock_recipes() {
             unlocked = unlocked();
             if (unlocked) data.unlocked = true;
         }
+        if (!unlocked) return;
 
         if (!machines.some(([id]) => id == machine)) {
             machines.push([machine, 0, false]);
@@ -469,7 +479,7 @@ export function save_data() {
                 if (!d.crafted) delete d.crafted;
 
                 return [id, d];
-            }).filter(([_,data]) => data != null)),
+            }).filter(data => data != null)),
         },
     };
 
@@ -515,7 +525,10 @@ export function load_data(data={}) {
                 const {crafted=0, unlocked=null} = data;
                 const recipe = recipes.machines[machine];
                 recipe.crafted = crafted;
-                if (unlocked === true) recipe.unlocked = unlocked;
+                if (unlocked === true) {
+                    recipe.unlocked = unlocked;
+                    if (!inventory.machines.contents.some(([id]) => id == machine)) inventory.machines.contents.push([machine, 0, false]);
+                }
             });
         }
     }

@@ -65,7 +65,7 @@ function save(event) {
 
     const json = JSON.stringify(data);
 
-    localStorage.setItem('games_cidle', json);
+    localStorage.setItem('games_cidle', btoa(json));
 }
 /**
  * Loads the data
@@ -95,7 +95,7 @@ function load() {
      */
     let data;
     try {
-        data = JSON.parse(json);
+        data = JSON.parse(atob(json));
     } catch {
         console.error('Saved data is corrupted, deleting');
         localStorage.removeItem('games_cidle');
