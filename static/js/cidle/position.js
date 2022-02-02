@@ -118,6 +118,7 @@ export function parallel_perpendicular(line) {
 
     let x_dist = pointb.x - pointa.x;
     let y_dist = pointb.y - pointa.y;
+    let diff_root = 1;
 
     if (x_dist == 0 && y_dist == 0) {
         return dist => [to_point(pointa), to_point(pointb)];
@@ -126,16 +127,15 @@ export function parallel_perpendicular(line) {
     } else if (y_dist == 0) {
         x_dist = 1;
     } else {
-        const f = Math.min(x_dist, y_dist);
-        x_dist /= f;
-        y_dist /= f;
+        diff_root = coords_distance(pointa, pointb) ** .5;
     }
 
     /**
      * @param {number} dist
      * @returns {[number, number]}
      */
-    const to_vector = dist => {
+    const to_vector = (dist = 0) => {
+        dist /= diff_root;
         return [y_dist * dist, -x_dist * dist];
     };
     const func = parallel(line);

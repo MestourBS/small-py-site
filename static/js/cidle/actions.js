@@ -4,6 +4,8 @@ import Machine from './machine.js';
 import { Pane } from './pane.js';
 import { click as click_inventory } from './inventory.js';
 
+//todo if clickable, change cursor style
+
 /**
  * Game keybinds
  *

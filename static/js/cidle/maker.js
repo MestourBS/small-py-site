@@ -13,7 +13,6 @@ import { beautify } from './primitives.js';
  * @typedef {'fixed'|'scaling'} MakerType
  */
 
-//todo fix arrows at non 90° angles
 //todo allow maker to be visible under some conditions
 
 export class MakerMachine extends Machine {
@@ -306,7 +305,7 @@ export class MakerMachine extends Machine {
                  * }}
                  */
                 const result = (results[res] ??= {});
-                if (group_resources) result.machines = [];
+                if (group_resources) result.machines ??= [];
                 if (group_relations) result.with = [];
                 StorageMachine.storages_for(res)
                     .sort((a, b) => distance(this, a) - distance(this, b))
@@ -336,7 +335,7 @@ export class MakerMachine extends Machine {
                  * }}
                  */
                 const result = (results[res] ??= {});
-                if (group_resources) result.machines = [];
+                if (group_resources) result.machines ??= [];
                 if (group_relations) result.from = [];
 
                 StorageMachine.storages_for(res)
@@ -370,7 +369,7 @@ export class MakerMachine extends Machine {
                  * }}
                  */
                 const result = (results[res] ??= {});
-                if (group_resources) result.machines = [];
+                if (group_resources) result.machines ??= [];
                 if (group_relations) result.to = [];
 
                 StorageMachine.storages_for(res)
@@ -480,6 +479,19 @@ export class MakerMachine extends Machine {
         const pane_id = `${globals.game_tab}_maker_${id}_pane`;
         /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
         const content = [];
+        if (this.#unpausable) {
+            content.push([{content: [gettext('games_cidle_maker_unpausable')], width: 2}]);
+        } else {
+            const pause_text = {
+                'true': gettext('games_cidle_maker_paused'),
+                'false': gettext('games_cidle_maker_unpaused'),
+            };
+            content.push([{
+                content: [() => pause_text[this.paused]],
+                width: 2,
+                click: [() => this.pause_toggle()],
+            }])
+        }
         if (this.requires.length) {
             content.push([{content: [gettext('games_cidle_maker_requires')], width: 2}]);
             content.push(...this.requires.map(([res, req]) => {
@@ -699,17 +711,27 @@ export class MakerMachine extends Machine {
                 if (rel == 'with') return;
 
                 if (rel == 'from') [pa, pb] = [pb, pa];
+
                 const dist_x = pb.x - pa.x;
                 const dist_y = pb.y - pa.y;
+                let off_x = 2.5 * Math.sign(dist_x);
+                let off_y = 2.5 * Math.sign(dist_y);
+                if (!dist_x || !dist_y) {
+                    off_x *= !!dist_x;
+                    off_y *= !!dist_y;
+                } else {
+                    off_x = 2.5 * dist_x / (Math.abs(dist_x) + Math.abs(dist_y));
+                    off_y = 2.5 * dist_y / (Math.abs(dist_x) + Math.abs(dist_y));
+                }
                 /** @type {[number, number]} */
                 const tip = [
-                    (pa.x + pb.x) / 2 + 5 * Math.sign(dist_x),
-                    (pa.y + pb.y) / 2 + 5 * Math.sign(dist_y),
+                    (pa.x + pb.x) / 2 + off_x,
+                    (pa.y + pb.y) / 2 + off_y,
                 ];
                 /** @type {[number, number]} */
-                const left = parallels(d + 5).reduce((a, p) => [a[0] + p.x / 2, a[1] + p.y / 2], [0, 0]);
+                const left = parallels(d + 5).reduce((a, p) => [a[0] + p.x / 2 - off_x, a[1] + p.y / 2 - off_y], [0, 0]);
                 /** @type {[number, number]} */
-                const right = parallels(d - 5).reduce((a, p) => [a[0] + p.x / 2, a[1] + p.y / 2], [0, 0]);
+                const right = parallels(d - 5).reduce((a, p) => [a[0] + p.x / 2 - off_x, a[1] + p.y / 2 - off_y], [0, 0]);
 
                 tip[0] += offset_x;
                 left[0] += offset_x;
@@ -976,7 +998,6 @@ export function make_makers() {
             name: gettext('games_cidle_maker_fire_extinguisher'),
             requires: [[['fire', 1e-1]]],
             consumes: [[['fire', 1e-3]]],
-            produces: [[['fire', 0]]],
             type: ['scaling'],
             unpausable: true,
         },
