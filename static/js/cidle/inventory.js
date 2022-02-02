@@ -20,6 +20,7 @@ import { beautify } from './primitives.js';
  *      contents: [string, number, Machine|false][],
  *      draw: ({context, top} ?: {context?: CanvasRenderingContext2D, top?: number}) => void,
  *      click: (x: number, y: number, event: MouseEvent) => void,
+ *      is_clickable: (x: number, y: number, event: MouseEvent) => boolean,
  *  },
  * }}
  */
@@ -86,7 +87,6 @@ const inventory = {
             });
         },
         click: function(x, y, event) {
-            const arg_y = y;
             const contents = this.contents;
             if (contents.length == 0) return;
 
@@ -100,6 +100,7 @@ const inventory = {
                 return machine.radius;
             })) * 2;
             if (max_diameter == 0) return;
+            const arg_y = y;
             const padding = theme('inventory_padding');
 
             y -= tabs_heights();
@@ -206,6 +207,31 @@ const inventory = {
                 p = new Pane(pane);
                 return;
             }
+        },
+        is_clickable: function(x, y, event) {
+            const contents = this.contents;
+            if (contents.length == 0) return false;
+
+            const max_diameter = Math.max(0, ...contents.map(entry => {
+                const [id] = entry;
+                let [,,machine] = entry;
+                if (!machine) {
+                    entry[2] = machine = copy_machine(id);
+                }
+
+                return machine.radius;
+            })) * 2;
+            if (max_diameter == 0) return false;
+
+            const padding = theme('inventory_padding');
+            y -= tabs_heights();
+
+            const max_x = Math.floor(display_size.width / (max_diameter + padding * 2));
+            const cell_x = Math.floor(x / (max_diameter + padding * 2));
+            const cell_y = Math.floor(y / (max_diameter + padding * 2));
+            const cell_index = cell_x + cell_y * max_x;
+
+            return cell_index in contents;
         },
     },
 };
@@ -415,6 +441,26 @@ export function click(x, y, event) {
     }
 
     inventory[subtab].click(x, y, event);
+}
+/**
+ * Checks if the mouse's position is clickable in the inventory
+ *
+ * @param {number} x Absolute x position where the click was on the canvas
+ * @param {number} y Absolute y position where the click was on the canvas
+ * @param {MouseEvent} event
+ * @returns {boolean}
+ */
+export function is_clickable(x, y, event) {
+    const w_x = x - display_size.width / 2 + globals.position[0];
+    const w_y = y - display_size.height / 2 + globals.position[1];
+
+    const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([w_x, w_y]));
+    if (p) return p.is_clickable([w_x, w_y]);
+
+    y -= global_tabs_heights();
+    if (y <= tabs_heights()) return true;
+
+    return inventory[subtab].is_clickable(x, y, event);
 }
 /**
  * Draw a specific part of the inventory

@@ -290,6 +290,53 @@ export class Pane {
     }
 
     /**
+     * Checks whether the cell containing the point at [X, Y] (absolute in grid) is clickable
+     *
+     * @param {PointLike} point
+     * @returns {boolean}
+     */
+    is_clickable(point) {
+        let {x, y} = to_point(point);
+        if (this.#pinned) {
+            x += display_size.width / 2 - globals.position[0];
+            y += display_size.height / 2 - globals.position[1];
+        }
+        x -= this.x;
+        y -= this.y;
+
+        let x_grid = 0;
+        let y_grid = -1;
+        let x_checked = 0;
+        let y_checked = 0;
+
+        this.#table_heights().forEach(h => {
+            if (y_checked >= y) return;
+
+            y_grid++;
+            y_checked += h;
+        });
+        this.#table_widths().forEach(w => {
+            if (x_checked >= x) return;
+
+            x_grid++;
+            x_checked += w;
+        });
+
+        const row = this.#content[y_grid];
+        let x_index = 0;
+        /** @type {null|{content: (string | (() => string))[]; click?: (() => void)[]; width?: number;}} */
+        let cell_selected = null;
+        row.forEach(cell => {
+            const min = x_index;
+            const max = x_index + (cell.width ?? 1);
+            if (min < x_grid && max >= x_grid) cell_selected = cell;
+            x_index = max;
+        });
+
+        return cell_selected && cell_selected.click?.length;
+    }
+
+    /**
      * Drags the pane
      *
      * @param {number} x Absolute x position

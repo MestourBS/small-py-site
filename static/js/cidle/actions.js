@@ -2,9 +2,7 @@ import { canvas, display_size, tabs_heights, click as tabs_click } from './canva
 import globals from './globals.js';
 import Machine from './machine.js';
 import { Pane } from './pane.js';
-import { click as click_inventory } from './inventory.js';
-
-//todo if clickable, change cursor style
+import { click as click_inventory, is_clickable as is_clickable_inventory } from './inventory.js';
 
 /**
  * Game keybinds
@@ -37,6 +35,20 @@ const actions = new Proxy(Object.freeze({
  * @type {Set<keyof actions>}
  */
 const active_actions = new Set;
+const game_tabs = {
+    world: {
+        click: click_world,
+        can_click: is_clickable_world,
+        drag: drag_world,
+        contextmenu: contextmenu_world,
+    },
+    inventory: {
+        click: click_inventory,
+        can_click: is_clickable_inventory,
+        drag: drag_inventory,
+        contextmenu: () => {},
+    },
+};
 
 let last_action = Date.now();
 let clicking = false;
@@ -142,16 +154,10 @@ function click(x, y, event) {
         return;
     }
 
-    switch (globals.game_tab) {
-        case 'world':
-            click_world(x, y, event);
-            break;
-        case 'inventory':
-            click_inventory(x, y, event);
-            break;
-        default:
-            console.error(`Unknown game tab ${globals.game_tab}`);
-            break;
+    if (globals.game_tab in game_tabs) {
+        game_tabs[globals.game_tab].click(x, y, event);
+    } else {
+        console.error(`Unknown game tab ${globals.game_tab}`);
     }
 }
 /**
@@ -183,6 +189,51 @@ function click_world(x, y, event) {
     machine.click(event);
 }
 /**
+ * Checks if the mouse's position is clickable
+ *
+ * @param {number} x Absolute x position where the click was on the canvas
+ * @param {number} y Absolute y position where the click was on the canvas
+ * @param {MouseEvent} event
+ * @returns {boolean}
+ */
+function is_clickable(x, y, event) {
+    if (y <= tabs_heights()) {
+        return true;
+    }
+
+    if (globals.game_tab in game_tabs) {
+        return game_tabs[globals.game_tab].can_click(x, y, event);
+    } else {
+        console.error(`Unknown game tab ${globals.game_tab}`);
+    }
+
+    return false;
+}
+/**
+ * Checks if the mouse's position is clickable in the world
+ *
+ * @param {number} x Absolute x position where the click was on the canvas
+ * @param {number} y Absolute y position where the click was on the canvas
+ * @param {MouseEvent} event
+ * @returns {boolean}
+ */
+function is_clickable_world(x, y, event) {
+    if ('world' in globals.adding) {
+        return true;
+    }
+
+    x -= display_size.width / 2 - globals.position[0];
+    y -= display_size.height / 2 - globals.position[1];
+
+    const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([x, y]));
+    if (p) return p.is_clickable([x, y]);
+
+    const machine = Machine.visible_machines.find(m => m.contains_point([x, y]));
+    if (machine) return true;
+
+    return false;
+}
+/**
  * Drags a target
  *
  * @param {number} x Absolute x position where the click was on the canvas
@@ -192,13 +243,10 @@ function click_world(x, y, event) {
  * @param {MouseEvent} event
  */
 function drag(x, y, x_diff, y_diff, event) {
-    switch (globals.game_tab) {
-        case 'world':
-            drag_world(x, y, x_diff, y_diff, event);
-            break;
-        case 'inventory':
-            drag_inventory(x, y, x_diff, y_diff, event);
-            break;
+    if (globals.game_tab in game_tabs) {
+        game_tabs[globals.game_tab].drag(x, y, x_diff, y_diff, event);
+    } else {
+        console.error(`Unknown game tab ${globals.game_tab}`);
     }
 }
 /**
@@ -270,15 +318,10 @@ function contextmenu(x, y, event) {
         return;
     }
 
-    switch (globals.game_tab) {
-        case 'world':
-            contextmenu_world(x, y, event);
-            break;
-        case 'inventory':
-            break;
-        default:
-            console.error(`Unknown game tab ${globals.game_tab}`);
-            break;
+    if (globals.game_tab in game_tabs) {
+        game_tabs[globals.game_tab].contextmenu(x, y, event);
+    } else {
+        console.error(`Unknown game tab ${globals.game_tab}`);
     }
 }
 /**
@@ -322,13 +365,17 @@ document.addEventListener('focus', () => {
     globals.focused = true;
 });
 document.addEventListener('mousemove', e => {
+    let x = e.x - canvas.offsetLeft;
+    let y = e.y - canvas.offsetTop;
+    e.preventDefault();
+
     if (clicking) {
         dragging = true;
-        let x = e.x - canvas.offsetLeft;
-        let y = e.y - canvas.offsetTop;
-        e.preventDefault();
 
         drag(x, y, e.movementX, e.movementY, e);
+    } else {
+        const cursor = is_clickable(x, y, e) ? 'pointer' : null;
+        canvas.style.cursor = cursor;
     }
 });
 canvas.addEventListener('click', e => {
