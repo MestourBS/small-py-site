@@ -276,7 +276,7 @@ export class StorageMachine extends Machine {
         const x = this.x + this.radius;
         const y = this.y - this.radius;
         if (this.upgrade_costs !== false) {
-            content.push([{content: ['upgrade'], width: 2, click: [() => this.upgrade()]}]);
+            content.push([{content: [gettext('games_cidle_maker_upgrade')], width: 2, click: [() => this.upgrade()]}]);
             content.push(...this.upgrade_costs.map(([res, cost]) => {
                 const resource = Resource.resource(res);
                 const cost_func = () => {
