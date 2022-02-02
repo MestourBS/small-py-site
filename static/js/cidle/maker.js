@@ -32,24 +32,46 @@ export class MakerMachine extends Machine {
      * @param {string|HTMLImageElement?} [params.image]
      * @param {boolean} [params.insert]
      * @param {boolean} [params.hidden]
-     * @param {('fixed'|'scaling')[]} [params.type]
+     * @param {('fixed'|'scaling')[]|(level: number) => 'fixed'|'scaling'} [params.type]
      * @param {boolean} [params.paused]
-     * @param {[string, number][][]?} [params.consumes]
-     * @param {[string, number][][]?} [params.produces]
-     * @param {[string, number][][]?} [params.requires]
+     * @param {boolean} [params.unpausable]
+     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.consumes]
+     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.produces]
+     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.requires]
      * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.upgrade_costs]
+     * @param {number?} [params.max_level]
      */
     constructor({
         id = null, x = null, y = null, name = null, level = 0, image = null, insert = true,
-        hidden=false, type=['fixed'], paused=false,
-        consumes=[], produces=[], requires=[], upgrade_costs=[],
+        hidden=false, type=['fixed'], paused=false, unpausable=false,
+        consumes=[], produces=[], requires=[], upgrade_costs=[], max_level=null,
     }) {
-        if (!Array.isArray(consumes) || consumes.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine consumes must be an array of arrays of [resources,numbers] (${consumes})`);
-        if (!Array.isArray(produces) || produces.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine produces must be an array of arrays of [resources,numbers] (${produces})`);
-        if (!Array.isArray(requires) || requires.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine requires must be an array of arrays of [resources,numbers] (${requires})`);
+        if (typeof consumes == 'function');
+        else if (!Array.isArray(consumes) || consumes.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine consumes must be an array of arrays of [resources,numbers] (${consumes})`);
+        if (typeof produces == 'function');
+        else if (!Array.isArray(produces) || produces.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine produces must be an array of arrays of [resources,numbers] (${produces})`);
+        if (typeof requires == 'function');
+        else if (!Array.isArray(requires) || requires.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine requires must be an array of arrays of [resources,numbers] (${requires})`);
         if (typeof upgrade_costs == 'function');
         else if (!Array.isArray(upgrade_costs) || upgrade_costs.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine upgrade_costs must be an array of arrays of [resources,numbers] (${upgrade_costs})`);
-        if (type.some(t => !['fixed', 'scaling'].includes(t))) throw new TypeError(`Maker machine type must be an array of fixed or scaling (${type})`);
+        if (typeof type == 'function');
+        else if (type.some(t => !['fixed', 'scaling'].includes(t))) throw new TypeError(`Maker machine type must be an array of fixed or scaling (${type})`);
+        if (isNaN(max_level)) throw new TypeError(`Maker machine max level must be a number (${max_level})`);
+
+        if (max_level == null) {
+            /** @type {number[]} */
+            const levels = [];
+            if (Array.isArray(consumes)) levels.push(consumes.length);
+            if (Array.isArray(produces)) levels.push(produces.length);
+            if (Array.isArray(requires)) levels.push(requires.length);
+            if (Array.isArray(upgrade_costs)) levels.push(upgrade_costs.length);
+            if (Array.isArray(type)) levels.push(type.length);
+            if (levels.length) {
+                max_level = Math.min(...levels);
+            } else {
+                max_level = 0;
+            }
+        }
 
         super({id, x, y, name, level, image, insert});
 
@@ -59,11 +81,15 @@ export class MakerMachine extends Machine {
         this.#upgrade_costs = upgrade_costs;
         this.#hidden = !!hidden;
         this.#type = type;
-        this.#paused = paused;
+        this.#paused = !!paused;
+        this.#unpausable = !!unpausable;
+        this.#max_level = max_level;
 
-        if (x != null && y != null && insert && this.is_visible) {
+        if (x != null && y != null && insert) {
             MakerMachine.#maker_machines.push(this);
-            Machine.visible_machines.push(this);
+            if (this.is_visible) {
+                Machine.visible_machines.push(this);
+            }
         }
     }
 
@@ -73,25 +99,47 @@ export class MakerMachine extends Machine {
     #last_multiplier = 1;
     #hidden;
     #type;
-    #paused = false;
+    #paused;
+    #unpausable;
     #upgrade_costs;
     /** @type {null|false|[string, number][]} */
     #upgrade_costs_leveled = null;
+    /** @type {null|[string, number][]} */
+    #consumes_leveled = null;
+    /** @type {null|[string, number][]} */
+    #produces_leveled = null;
+    /** @type {null|[string, number][]} */
+    #requires_leveled = null;
+    /** @type {null|'fixed'|'scaling'} */
+    #type_leveled = null;
+    #max_level = 0;
 
     /** @type {[string, number][]} */
     get consumes() {
-        if (!(this.level in this.#consumes)) return [];
-        return this.#consumes[this.level].map(v => [...v]);
+        if (this.#consumes_leveled == null) {
+            if (typeof this.#consumes == 'function') this.#consumes_leveled = this.#consumes(this.level);
+            else if (!(this.level in this.#consumes)) this.#consumes_leveled = [];
+            else this.#consumes_leveled = this.#consumes[this.level].map(v => [...v]);
+        }
+        return this.#consumes_leveled;
     }
     /** @type {[string, number][]} */
     get produces() {
-        if (!(this.level in this.#produces)) return [];
-        return this.#produces[this.level].map(v => [...v]);
+        if (this.#produces_leveled == null) {
+            if (typeof this.#produces == 'function') this.#produces_leveled = this.#produces(this.level);
+            else if (!(this.level in this.#produces)) this.#produces_leveled = [];
+            else this.#produces_leveled = this.#produces[this.level].map(v => [...v]);
+        }
+        return this.#produces_leveled;
     }
     /** @type {[string, number][]} */
     get requires() {
-        if (!(this.level in this.#requires)) return [];
-        return this.#requires[this.level].map(v => [...v]);
+        if (this.#requires_leveled == null) {
+            if (typeof this.#requires == 'function') this.#requires_leveled = this.#requires(this.level);
+            else if (!(this.level in this.#requires)) this.#requires_leveled = [];
+            else this.#requires_leveled = this.#requires[this.level].map(v => [...v]);
+        }
+        return this.#requires_leveled;
     }
     /** @type {[string, number][]|false} */
     get upgrade_costs() {
@@ -100,7 +148,6 @@ export class MakerMachine extends Machine {
             else if (!(this.level in this.#upgrade_costs)) this.#upgrade_costs_leveled = false;
             else this.#upgrade_costs_leveled = this.#upgrade_costs[this.level].map(v => [...v]);
         }
-
         return this.#upgrade_costs_leveled;
     }
     get is_visible() {
@@ -122,23 +169,31 @@ export class MakerMachine extends Machine {
     get radius() { return 25; }
     get hidden() { return this.#hidden; }
     get type() {
-        if (this.level in this.#type) return this.#type[this.level];
-        return 'fixed';
+        if (this.#type_leveled == null) {
+            if (typeof this.#type == 'function') this.#type_leveled = this.#type(this.level);
+            else if (!(this.level in this.#type)) this.#type_leveled = 'fixed';
+            else this.#type_leveled = this.#type[this.level];
+        }
+        return this.#type_leveled;
     }
-    get paused() { return this.#paused; }
-    get #max_level() { return Math.max(this.#type.length, this.#consumes.length, this.#produces.length, this.#requires.length) - 1; }
+    get paused() { return this.#paused && !this.#unpausable; }
+    get max_level() { return this.#max_level; }
     get level() { return super.level; }
     set level(level) {
         if (!isNaN(level)) {
-            super.level = Math.min(this.#max_level, level);
+            super.level = Math.min(this.max_level, level);
             this.#upgrade_costs_leveled = null;
+            this.#consumes_leveled = null;
+            this.#produces_leveled = null;
+            this.#requires_leveled = null;
+            this.#type_leveled = null;
         }
     }
 
     toJSON() {
         return Object.assign(super.toJSON(), {
             hidden: this.#hidden,
-            paused: this.#paused,
+            paused: this.paused,
         });
     }
 
@@ -282,11 +337,14 @@ export class MakerMachine extends Machine {
                 StorageMachine.storages_for(res)
                     .sort((a, b) => distance(this, a) - distance(this, b))
                     .forEach(m => {
-                        if (con <= 0 || m.resources[res].amount <= 0) return;
+                        if (m.resources[res].amount <= 0) return;
+                        const insert =  group_relations && (con > 0 || this.type == 'scaling');
+                        if (con > 0) {
+                            if (group_resources && !result.machines.includes(m)) result.machines.push(m);
+                            con -= m.resources[res].amount;
+                        }
 
-                        if (group_resources && !result.machines.includes(m)) result.machines.push(m);
-                        con -= m.resources[res].amount;
-                        if (group_relations) {
+                        if (insert) {
                             results.from.push(m);
                             result.from.push(m);
                         }
@@ -428,6 +486,17 @@ export class MakerMachine extends Machine {
                 }];
             }));
         }
+        if (this.consumes.length) {
+            content.push([{content: [gettext('games_cidle_maker_consumes')], width: 2}]);
+            content.push(...this.consumes.map(([res, con]) => {
+                const resource = Resource.resource(res);
+                return [{
+                    content: [`{color:${resource.color}}${resource.name}`],
+                }, {
+                    content: [`{color:${resource.color}}${beautify(-con)}/s`],
+                }];
+            }));
+        }
         if (this.produces.length) {
             content.push([{content: [gettext('games_cidle_maker_produces')], width: 2}]);
             content.push(...this.produces.map(([res, pro]) => {
@@ -436,17 +505,6 @@ export class MakerMachine extends Machine {
                     content: [`{color:${resource.color}}${resource.name}`],
                 }, {
                     content: [`{color:${resource.color}}${beautify(pro)}/s`],
-                }];
-            }));
-        }
-        if (this.consumes.length) {
-            content.push([{content: [gettext('games_cidle_maker_consumes')], width: 2}]);
-            content.push(...this.consumes.map(([res, con]) => {
-                const resource = Resource.resource(res);
-                return [{
-                    content: [`{color:${resource.color}}${resource.name}`],
-                }, {
-                    content: [`{color:${resource.color}}${beautify(con)}/s`],
                 }];
             }));
         }
@@ -517,6 +575,7 @@ export class MakerMachine extends Machine {
         if (this.image) {
             context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
         } else {
+            if (this.#unpausable) context.lineWidth = 2;
             context.fillStyle = theme('maker_color_fill');
             context.strokeStyle = theme('maker_color_border');
             context.setLineDash([]);
@@ -529,6 +588,7 @@ export class MakerMachine extends Machine {
             context.fill();
             context.stroke();
             context.closePath();
+            if (this.#unpausable) context.lineWidth = 1;
         }
 
         if (this.paused) {
@@ -557,7 +617,7 @@ export class MakerMachine extends Machine {
      */
     draw_connections({context=canvas_context, multiplier=this.#last_multiplier}) {
         if (this.#hidden) return;
-        if (this.#paused) {
+        if (this.paused) {
             context.setLineDash([10]);
         }
 
@@ -656,7 +716,7 @@ export class MakerMachine extends Machine {
                 context.closePath();
             });
         });
-        if (this.#paused) {
+        if (this.paused) {
             // Resets dashes to prevent problems with other lines
             context.setLineDash([]);
         }
@@ -671,13 +731,14 @@ export class MakerMachine extends Machine {
      * @param {string|HTMLImageElement?} [params.image]
      * @param {boolean?} [params.insert]
      * @param {boolean?} [params.hidden]
+     * @param {boolean?} [params.unpausable]
      * @param {('fixed'|'scaling')[]?} [params.type]
      * @param {boolean} [params.hidden]
-     * @param {[string, number][][]?} [params.consumes]
-     * @param {[string, number][][]?} [params.produces]
-     * @param {[string, number][][]?} [params.requires]
+     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.consumes]
+     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.produces]
+     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.requires]
      */
-    clone({x, y, name, level, image, insert=true, hidden, type, paused, consumes, produces, requires}={}) {
+    clone({x, y, name, level, image, insert=true, unpausable, hidden, type, paused, consumes, produces, requires}={}) {
         x ??= this.x;
         y ??= this.y;
         name ??= this.name;
@@ -689,8 +750,9 @@ export class MakerMachine extends Machine {
         requires ??= this.#requires;
         image ??= this.image;
         paused ??= this.paused;
+        unpausable ??= this.#unpausable;
         const id = this.id;
-        return new MakerMachine({id, x, y, name, level, hidden, type, paused, consumes, produces, requires, image, insert});
+        return new MakerMachine({id, x, y, name, level, hidden, type, paused, unpausable, consumes, produces, requires, image, insert});
     }
 
     /**
@@ -724,7 +786,7 @@ export class MakerMachine extends Machine {
      * @param {boolean} [params.overdo] Whether over producing and consuming is done
      */
     produce({multiplier=1, overdo=false}={}) {
-        if (this.#paused) {
+        if (this.paused) {
             this.#last_multiplier = multiplier;
             return;
         }
@@ -738,22 +800,34 @@ export class MakerMachine extends Machine {
         this.consumes.forEach(([res, con]) => {
             con *= multiplier;
 
-            from.forEach(machine => {
-                if (con <= 0) return;
+            if (this.type == 'fixed') {
+                from.forEach(machine => {
+                    if (con <= 0) return;
 
-                const resobj = machine.resources[res];
-                const loss = Math.min(con, resobj.amount);
+                    const resobj = machine.resources[res];
+                    const loss = Math.min(con, resobj.amount);
 
-                resobj.amount -= loss;
-                con -= loss;
-            });
+                    resobj.amount -= loss;
+                    con -= loss;
+                });
 
-            if (con > 0 && overdo) {
-                // Not enough consumed, share the further loss with everything
-                const loss = con / from.length;
+                if (con > 0 && overdo) {
+                    // Not enough consumed, share the further loss with everything
+                    const loss = con / from.length;
+                    from.forEach(machine => {
+                        const resobj = machine.resources[res];
+                        resobj.amount -= loss;
+                    });
+                }
+            } else if (this.type == 'scaling') {
+                const cons = from.map(machine => machine.resources[res].amount);
+                const sum_cons = cons.reduce((s, c) => s + c, 0);
+                let ratio = 1 - con / sum_cons;
+                if (ratio > 1) ratio = 1 / ratio;
+
                 from.forEach(machine => {
                     const resobj = machine.resources[res];
-                    resobj.amount -= loss;
+                    resobj.amount *= ratio;
                 });
             }
         });
@@ -845,10 +919,12 @@ export function make_makers() {
      *  name?: string,
      *  image?: string|HTMLImageElement,
      *  hidden?: boolean,
-     *  type?: ('fixed'|'scaling')[],
-     *  consumes?: [string, number][][],
-     *  produces?: [string, number][][],
-     *  requires?: [string, number][][],
+     *  unpausable?: boolean,
+     *  max_level?: number,
+     *  type?: ('fixed'|'scaling')[]|(level: number) => 'fixed'|'scaling',
+     *  consumes?: [string, number][][]|(level: number) => [string, number][]|false,
+     *  produces?: [string, number][][]|(level: number) => [string, number][]|false,
+     *  requires?: [string, number][][]|(level: number) => [string, number][]|false,
      *  upgrade_costs?: [string, number][][]|(level: number) => [string, number][]|false,
      * }[]}
      */
@@ -856,12 +932,32 @@ export function make_makers() {
         {
             id: 'tree_chopper',
             name: gettext('games_cidle_maker_tree_chopper'),
-            produces: [[['wood', 1]]],
+            produces: [[['wood', 1]], [['wood', 2]]],
+            upgrade_costs: (level) => {
+                if (level == 0 && StorageMachine.any_storage_for('stone')) return [['stone', 100]];
+                return false;
+            },
+            max_level: 1,
         },
         {
             id: 'stone_miner',
             name: gettext('games_cidle_maker_stone_miner'),
             produces: [[['stone', 1]]],
+        },
+        {
+            id: 'wood_burner',
+            name: gettext('games_cidle_maker_wood_burner'),
+            produces: [[['fire', 1]]],
+            consumes: [[['wood', 1]]],
+        },
+        {
+            id: 'fire_extinguisher',
+            name: gettext('games_cidle_maker_fire_extinguisher'),
+            requires: [[['fire', 1e-1]]],
+            consumes: [[['fire', 1e-3]]],
+            produces: [[['fire', 0]]],
+            type: ['scaling'],
+            unpausable: true,
         },
         {
             id: 'sundial',
@@ -893,6 +989,7 @@ export function insert_makers() {
      */
     const makers = [
         ['tree_chopper', {x: -100, y: 0}],
+        ['fire_extinguisher', {x: 0, y: 100}],
     ];
 
     makers.forEach(([id, parts]) => {

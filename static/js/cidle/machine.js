@@ -2,11 +2,10 @@ import { context as canvas_context } from './canvas.js';
 import globals from './globals.js';
 /**
  * @typedef {import('./canvas.js').GameTab} GameTab
- */
-
-/**
  * @typedef {import('./position.js').PointLike} PointLike
  */
+
+//todo allow moving machine
 
 export class Machine {
     /** @type {{[id: string]: Machine}} */
@@ -48,7 +47,7 @@ export class Machine {
      * @param {Object} [parts]
      * @returns {Machine}
      */
-    static get_machine_copy(id, parts=null) {
+    static get_machine_copy(id, parts={}) {
         // Allows children classes to access it themselves
         if (this != Machine) return Machine.get_machine_copy(id, parts);
 

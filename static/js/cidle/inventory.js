@@ -79,7 +79,7 @@ const inventory = {
                 };
                 machine.draw(machine_draw);
 
-                canvas_write(amount.toString(), cell_x[1], cell_y[1] - theme('font_size'), {text_align: 'right'});
+                if (amount) canvas_write(amount.toString(), cell_x[1], cell_y[1] - theme('font_size'), {text_align: 'right'});
 
                 x = (x + 1) % max_x;
                 y += x == 0;
@@ -223,6 +223,8 @@ const recipes = {
         'wood_storage': {
             crafted: 0,
             resources: (crafted) => {
+                if (crafted > 1 && !StorageMachine.any_storage_for('stone')) return false;
+
                 if (crafted <= 1) return [['wood', crafted * 500 + 500]];
                 if (crafted <= 3) return [['wood', crafted * 500 + 1_000], ['stone', crafted * 1_000]];
                 return false;
@@ -233,6 +235,8 @@ const recipes = {
         'tree_chopper': {
             crafted: 0,
             resources: (crafted) => {
+                if (crafted > 3 && !StorageMachine.any_storage_for('stone')) return false;
+
                 if (crafted <= 3) return [['wood', (crafted + 1) ** 2 * 500]];
                 if (crafted <= 6) return [['wood', crafted ** 2 * 500], ['stone', crafted ** 1.5 * 500]];
             },
@@ -256,12 +260,30 @@ const recipes = {
                 if (crafted <= 3) return [['stone', crafted ** 2 * 500], ['wood', crafted * 500]];
                 return false;
             },
-            unlocked: () => StorageMachine.storages_for('stone').length > 0,
+            unlocked: () => StorageMachine.any_storage_for('stone'),
             position: 3,
+        },
+        'fire_pit': {
+            crafted: 0,
+            resources: (crafted) => {
+                return [['stone', crafted * 500 + 1_000]];
+            },
+            unlocked: () => StorageMachine.any_storage_for('stone'),
+            position: 4,
+        },
+        'wood_burner': {
+            crafted: 0,
+            resources: (crafted) => {
+                return [['wood', crafted * 200 + 1_000], ['stone', crafted ** 2 * 500 + 1_500]];
+            },
+            unlocked: () => StorageMachine.any_storage_for('fire'),
+            position: 5,
         },
         'giant_clock': {
             crafted: 0,
             resources: (crafted) => {
+                if (crafted >= 5 && !StorageMachine.any_storage_for('stone')) return false;
+
                 /** @type {[string, number][]} */
                 const costs = [['wood', 500 * (crafted + 1) ** 2]];
                 if (crafted >= 5) costs.push(['stone', 750 * (crafted - 4) ** 2]);
@@ -274,7 +296,7 @@ const recipes = {
             resources: (crafted) => {
                 return [['stone', 1e3 * 10 ** crafted], ['time', 10 * 2 ** crafted]];
             },
-            unlocked: () => StorageMachine.storages_for('time').length > 0,
+            unlocked: () => ['time', 'stone'].every(res => StorageMachine.any_storage_for(res)),
         },
     },
 };

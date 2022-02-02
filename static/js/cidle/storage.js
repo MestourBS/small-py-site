@@ -36,6 +36,18 @@ export class StorageMachine extends Machine {
 
         return [...(this.#filtered_storages[resource] ??= [])];
     }
+    /**
+     * Checks whether there is any storage available for a resource
+     *
+     * @param {string} resource
+     * @returns {boolean}
+     */
+    static any_storage_for(resource) {
+        // Allows children classes to access it themselves
+        if (this != StorageMachine) return StorageMachine.storages_for(resource);
+
+        return resource in this.#filtered_storages && this.#filtered_storages[resource].length > 0;
+    }
 
     /**
      * @param {Object} params
@@ -463,6 +475,13 @@ export function make_storages() {
             name: gettext('games_cidle_storage_stone_storage'),
             resources: {
                 stone: {},
+            },
+        },
+        {
+            id: 'fire_pit',
+            name: gettext('games_cidle_storage_fire_pit'),
+            resources: {
+                fire: {},
             },
         },
         {

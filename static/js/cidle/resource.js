@@ -72,6 +72,11 @@ export function make_resources() {
             color: '#777',
         },
         {
+            id: 'fire',
+            name: gettext('games_cidle_resource_fire'),
+            color: '#f70',
+        },
+        {
             id: 'time',
             name: gettext('games_cidle_resource_time'),
             color: '#f00',
