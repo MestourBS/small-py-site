@@ -372,6 +372,8 @@ document.addEventListener('mousemove', e => {
     if (clicking) {
         dragging = true;
 
+        canvas.style.cursor = 'grabbing';
+
         drag(x, y, e.movementX, e.movementY, e);
     } else {
         const cursor = is_clickable(x, y, e) ? 'pointer' : null;
@@ -385,6 +387,8 @@ canvas.addEventListener('click', e => {
         e.preventDefault();
 
         click(x, y, e);
+    } else {
+        canvas.style.cursor = null;
     }
     dragging = false;
 });
