@@ -8,9 +8,10 @@ import Resource from './resource.js';
 import { beautify } from './primitives.js';
 /**
  * @typedef {import('./position.js').PointLike} PointLike
+ * @typedef {'fraction'|'logarithm'} FillType
  */
 
-//todo store fill level type in machine
+//todo level-based resources value
 //todo add fill level support for images
 
 export class StorageMachine extends Machine {
@@ -63,16 +64,18 @@ export class StorageMachine extends Machine {
      * @param {boolean} [params.insert]
      * @param {{[id: string]: {amount?: number, max?: number}}?} [params.resources]
      * @param {(level: number) => number} [params.level_formula]
-     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.upgrade_costs]
+     * @param {[string, number][][]|((level: number) => [string, number][]|false|null)?} [params.upgrade_costs]
+     * @param {FillType} [params.filltype]
      */
     constructor({
         id = null, x = null, y = null, name = null, level = 0, image = null, insert = true,
-        resources = {}, level_formula = l => l+1, upgrade_costs=[],
+        resources = {}, level_formula = l => l+1, upgrade_costs=[], filltype='fraction',
     }) {
         if (typeof resources != 'object') throw new TypeError(`Storage machine resources must be an object (${resources})`);
         if (typeof level_formula != 'function') throw new TypeError(`Storage machine level_formula must be a function (${level_formula})`);
         if (typeof upgrade_costs == 'function');
         else if (!Array.isArray(upgrade_costs) || upgrade_costs.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine upgrade_costs must be an array of arrays of [resources,numbers] (${upgrade_costs})`);
+        if (!['fraction', 'logarithm'].includes(filltype)) throw new TypeError(`Storage machine filltype must be either 'fraction' or 'logarithm' (${filltype})`);
 
         super({id, x, y, name, level, image, insert});
 
@@ -89,6 +92,7 @@ export class StorageMachine extends Machine {
         this.#resources = resources;
         this.#level_formula = level_formula;
         this.#upgrade_costs = upgrade_costs;
+        this.#filltype = filltype;
 
         if (x != null && y != null && insert) {
             StorageMachine.#storages.push(this);
@@ -115,6 +119,7 @@ export class StorageMachine extends Machine {
      * @type {null|false|[string, number][]}
      */
     #upgrade_costs_leveled = null;
+    #filltype;
 
     /** @type {{[id: string]: {amount: number, max: number}}} */
     get resources() {
@@ -162,8 +167,9 @@ export class StorageMachine extends Machine {
             else this.#upgrade_costs_leveled = this.#upgrade_costs[this.level].map(v => [...v]);
         }
 
-        return this.#upgrade_costs_leveled;
+        return this.#upgrade_costs_leveled ?? false;
     }
+    get filltype() { return this.#filltype; }
 
     toJSON() {
         return Object.assign(super.toJSON(), {
@@ -321,11 +327,11 @@ export class StorageMachine extends Machine {
      * @param {CanvasRenderingContext2D} [params.context]
      * @param {number?} [params.x] Override for the x position
      * @param {number?} [params.y] Override for the y position
-     * @param {'fraction'|'logarithm'} [params.fillstyle]
+     * @param {FillType} [params.fillstyle]
      * - Fraction fills at percentile of storage (`amount/max`)
      * - Logarithm fills at percentile of logarithm storage (`log(amount)/log(max)`)
      */
-    draw({context=canvas_context, x=null, y=null, fillstyle='fraction'}={}) {
+    draw({context=canvas_context, x=null, y=null, fillstyle=this.filltype}={}) {
         if (x == null) {
             ({x} = this);
             if (x == null) return;
@@ -366,7 +372,7 @@ export class StorageMachine extends Machine {
                         break;
                 }
 
-                fill = Math.max(min_fill, Math.min(1, fill));
+                if (fill) fill = Math.max(min_fill, Math.min(1, fill));
                 const start = 2 * i / length * Math.PI;
                 const end = 2 * (i + 1) / length * Math.PI;
 
@@ -401,9 +407,11 @@ export class StorageMachine extends Machine {
      * @param {boolean} [parts.insert]
      * @param {{[id: string]: {amount?: number, max?: number}}?} [parts.resources]
      * @param {((level: number) => number)?} [parts.level_formula]
+     * @param {[string, number][][]|((level: number) => [string, number][]|false|null)?} [params.upgrade_costs]
+     * @param {FillType} [params.filltype]
      * @param {boolean} [parts.empty]
      */
-    clone({x, y, name, level, resources, image, insert=true, level_formula, empty=false} = {}) {
+    clone({x, y, name, level, resources, image, insert=true, level_formula, upgrade_costs, filltype, empty=false} = {}) {
         x ??= this.x;
         y ??= this.y;
         image ??= this.image;
@@ -411,13 +419,17 @@ export class StorageMachine extends Machine {
         level ??= this.level;
         resources = Object.fromEntries(Object.entries(this.#resources).map(([res, data]) => {
             const ndata = resources?.[res] ?? {};
-            ndata.amount ??= data.amount;
+
+            if (empty) ndata.amount = 0;
+            else ndata.amount ??= data.amount;
             ndata.max ??= data.max;
             return [res, ndata];
         }));
         level_formula ??= this.#level_formula;
+        filltype ??= this.#filltype;
+        upgrade_costs ??= this.#upgrade_costs;
         const id = this.id;
-        return new StorageMachine({id, x, y, name, level, resources, image, insert, level_formula});
+        return new StorageMachine({id, x, y, name, level, resources, image, insert, level_formula, filltype, upgrade_costs});
     }
 
     /**
@@ -472,6 +484,7 @@ export function make_storages() {
      *  resources?: {[id: string]: {amount?: number, max?: number}},
      *  level_formula?: (level: number) => number,
      *  upgrade_costs?: [string, number][][]|((level: number) => [string, number][]|false)?,
+     *  filltype?: FillType,
      * }[]}
      */
     const storages = [
@@ -521,7 +534,8 @@ export function insert_storages() {
      *  image?: string|HTMLImageElement,
      *  resources?: {[id: string]: {amount?: number, max?: number}},
      *  level_formula?: (level: number) => number,
-     *  empty?: boolean
+     *  empty?: boolean,
+     *  filltype?: FillType,
      * }][]}
      */
     const storages = [
