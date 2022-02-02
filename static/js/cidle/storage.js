@@ -10,6 +10,9 @@ import { beautify } from './primitives.js';
  * @typedef {import('./position.js').PointLike} PointLike
  */
 
+//todo store fill level type in machine
+//todo add fill level support for images
+
 export class StorageMachine extends Machine {
     /** @type {StorageMachine[]} */
     static #storages = [];
@@ -297,6 +300,11 @@ export class StorageMachine extends Machine {
 
     /** @param {MouseEvent} event */
     click(event) {
+        if (event.shiftKey) {
+            super.click(event);
+            return;
+        }
+
         const contents = this.panecontents(event);
         const pane_id = contents.id;
         let p = Pane.pane(pane_id);
@@ -341,6 +349,7 @@ export class StorageMachine extends Machine {
             // Partial fill for resources
             const keys = Object.keys(this.resources);
             const length = keys.length;
+            const min_fill = 1 / (this.radius * 2);
             for (let i = 0; i < length; i++) {
                 const res_id = keys[i];
                 const {amount, max} = this.resources[res_id];
@@ -357,26 +366,28 @@ export class StorageMachine extends Machine {
                         break;
                 }
 
-                fill = Math.max(0, Math.min(1, fill));
+                fill = Math.max(min_fill, Math.min(1, fill));
                 const start = 2 * i / length * Math.PI;
                 const end = 2 * (i + 1) / length * Math.PI;
 
                 context.fillStyle = resource.color;
-                context.strokeStyle = resource.color;
                 context.beginPath();
                 context.moveTo(x, y);
                 context.arc(x, y, this.radius * fill, start, end);
                 context.lineTo(x, y);
                 context.fill();
-                context.stroke();
                 context.closePath();
             }
+
+            if (this.moving) context.setLineDash([5]);
 
             context.strokeStyle = theme('storage_color_border');
             context.beginPath();
             context.arc(x, y, this.radius, 0, 2 * Math.PI);
             context.stroke();
             context.closePath();
+
+            if (this.moving) context.setLineDash([]);
         }
     }
 
@@ -398,10 +409,11 @@ export class StorageMachine extends Machine {
         image ??= this.image;
         name ??= this.name;
         level ??= this.level;
-        resources ??= Object.fromEntries(Object.entries(this.resources).map(([res, data]) => {
-            let {amount, max} = data;
-            if (empty) amount = 0;
-            return [res, {amount, max}];
+        resources = Object.fromEntries(Object.entries(this.#resources).map(([res, data]) => {
+            const ndata = resources?.[res] ?? {};
+            ndata.amount ??= data.amount;
+            ndata.max ??= data.max;
+            return [res, ndata];
         }));
         level_formula ??= this.#level_formula;
         const id = this.id;
@@ -440,8 +452,8 @@ export class StorageMachine extends Machine {
                 });
         });
         this.level++;
-        const pane_id = `storage_${this.id}_pane`;
-        let p = Pane.pane(pane_id);
+        const pane = this.panecontents();
+        let p = Pane.pane(pane.id);
         if (p) {
             this.click();
             this.click();
@@ -520,5 +532,3 @@ export function insert_storages() {
         Machine.get_machine_copy(id, parts);
     });
 }
-
-//todo add fill level support for images

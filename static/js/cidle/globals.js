@@ -39,7 +39,7 @@ export const globals = {
     /**
      * Objects being placed on the next click
      *
-     * @type {{[k: string]: (x: number, y: number, event: MouseEvent) => boolean}}
+     * @type {{[game_tab: string]: (x: number, y: number, event: MouseEvent) => boolean}}
      */
     adding: {},
 };

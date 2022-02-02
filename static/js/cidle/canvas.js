@@ -98,6 +98,7 @@ const pre_split = {};
  */
 const modifier_types = ['color', 'italic', 'bold'];
 const max_tabs_per_line = 5;
+export const grid_spacing = 50;
 
 /**
  * Empties the canvas display

@@ -1,11 +1,9 @@
-import { context as canvas_context } from './canvas.js';
+import { context as canvas_context, grid_spacing } from './canvas.js';
 import globals from './globals.js';
 /**
  * @typedef {import('./canvas.js').GameTab} GameTab
  * @typedef {import('./position.js').PointLike} PointLike
  */
-
-//todo allow moving machine
 
 export class Machine {
     /** @type {{[id: string]: Machine}} */
@@ -104,6 +102,7 @@ export class Machine {
     #level;
     /** @type {HTMLImageElement} */
     #image;
+    #moving = false;
 
     get x() { return this.#x; }
     get y() { return this.#y; }
@@ -112,6 +111,8 @@ export class Machine {
     get image() { return this.#image; }
     get radius() { return 0; }
     get index() { return Machine.machines.indexOf(this); }
+    get moving() { return this.#moving; }
+    set moving(moving) { this.#moving = !!moving; }
 
     get name() { return this.#name ?? this.#id; }
     set name(name) { this.#name = name + ''; }
@@ -227,7 +228,23 @@ export class Machine {
      *
      * @param {MouseEvent} event
      */
-    click(event) {}
+    click(event) {
+        if (event.shiftKey) {
+            this.#moving = true;
+            globals.adding['world'] = (x, y, event) => {
+                if (event.shiftKey) {
+                    x = Math.round(x / grid_spacing) * grid_spacing;
+                    y = Math.round(y / grid_spacing) * grid_spacing;
+                }
+                this.#x = x;
+                this.#y = y;
+                this.#moving = false;
+                delete globals.adding['world'];
+                event.preventDefault();
+                return true;
+            };
+        }
+    }
 
     /**
      * Action to perform on context menu

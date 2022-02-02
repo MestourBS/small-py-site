@@ -1,5 +1,5 @@
 import StorageMachine from './storage.js';
-import { canvas_write, context as canvas_context, cut_lines, display_size, tabs_heights as global_tabs_heights } from './canvas.js';
+import { canvas_write, context as canvas_context, cut_lines, display_size, grid_spacing, tabs_heights as global_tabs_heights } from './canvas.js';
 import { get_theme_value as theme } from './display.js';
 import Machine from './machine.js';
 import { Pane } from './pane.js';
@@ -128,6 +128,7 @@ const inventory = {
                     return;
                 }
 
+                pane.content.forEach(row => row.forEach(cell => delete cell.click));
                 let name = (pane.title !== false ? pane.title : machine.name);
                 if (amount > 0) {
                     pane.content.unshift([{
@@ -137,13 +138,15 @@ const inventory = {
                             const row = inventory.machines.contents.find(([i]) => i == id);
                             row[1]--;
                             globals.game_tab = 'world';
+                            Machine.machines.forEach(m => m.moving = false);
                             globals.adding['world'] = (x, y, event) => {
                                 if (event.shiftKey) {
-                                    x = Math.round(x / 100) * 100;
-                                    y = Math.round(y / 100) * 100;
+                                    x = Math.round(x / grid_spacing) * grid_spacing;
+                                    y = Math.round(y / grid_spacing) * grid_spacing;
                                 }
                                 delete globals.adding['world'];
                                 machine.clone({x, y});
+                                event.preventDefault();
                                 return true;
                             };
                         }],

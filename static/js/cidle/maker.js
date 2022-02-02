@@ -9,7 +9,12 @@ import { Pane } from './pane.js';
 import { beautify } from './primitives.js';
 /**
  * @typedef {import('./position.js').PointLike} PointLike
+ *
+ * @typedef {'fixed'|'scaling'} MakerType
  */
+
+//todo fix arrows at non 90° angles
+//todo allow maker to be visible under some conditions
 
 export class MakerMachine extends Machine {
     /** @type {MakerMachine[]} */
@@ -32,13 +37,13 @@ export class MakerMachine extends Machine {
      * @param {string|HTMLImageElement?} [params.image]
      * @param {boolean} [params.insert]
      * @param {boolean} [params.hidden]
-     * @param {('fixed'|'scaling')[]|(level: number) => 'fixed'|'scaling'} [params.type]
+     * @param {MakerType[]|(level: number) => MakerType} [params.type]
      * @param {boolean} [params.paused]
      * @param {boolean} [params.unpausable]
      * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.consumes]
      * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.produces]
      * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.requires]
-     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.upgrade_costs]
+     * @param {[string, number][][]|((level: number) => [string, number][]|false|null)?} [params.upgrade_costs]
      * @param {number?} [params.max_level]
      */
     constructor({
@@ -110,7 +115,7 @@ export class MakerMachine extends Machine {
     #produces_leveled = null;
     /** @type {null|[string, number][]} */
     #requires_leveled = null;
-    /** @type {null|'fixed'|'scaling'} */
+    /** @type {null|MakerType} */
     #type_leveled = null;
     #max_level = 0;
 
@@ -148,7 +153,7 @@ export class MakerMachine extends Machine {
             else if (!(this.level in this.#upgrade_costs)) this.#upgrade_costs_leveled = false;
             else this.#upgrade_costs_leveled = this.#upgrade_costs[this.level].map(v => [...v]);
         }
-        return this.#upgrade_costs_leveled;
+        return this.#upgrade_costs_leveled ?? false;
     }
     get is_visible() {
         if (this.#hidden) return false;
@@ -541,6 +546,11 @@ export class MakerMachine extends Machine {
 
     /** @param {MouseEvent} event */
     click(event) {
+        if (event.shiftKey) {
+            super.click(event);
+            return;
+        }
+
         const contents = this.panecontents(event);
         const pane_id = contents.id;
         let p = Pane.pane(pane_id);
@@ -576,9 +586,10 @@ export class MakerMachine extends Machine {
             context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
         } else {
             if (this.#unpausable) context.lineWidth = 2;
+            if (this.moving) context.setLineDash([5]);
+
             context.fillStyle = theme('maker_color_fill');
             context.strokeStyle = theme('maker_color_border');
-            context.setLineDash([]);
             context.beginPath();
             context.moveTo(x - this.radius, y);
             context.lineTo(x, y - this.radius);
@@ -588,6 +599,9 @@ export class MakerMachine extends Machine {
             context.fill();
             context.stroke();
             context.closePath();
+
+            // Resets line to prevent problems with other lines
+            if (this.moving) context.setLineDash([]);
             if (this.#unpausable) context.lineWidth = 1;
         }
 
@@ -732,13 +746,15 @@ export class MakerMachine extends Machine {
      * @param {boolean?} [params.insert]
      * @param {boolean?} [params.hidden]
      * @param {boolean?} [params.unpausable]
-     * @param {('fixed'|'scaling')[]?} [params.type]
+     * @param {MakerType[]|((level: number) => MakerType)?} [params.type]
      * @param {boolean} [params.hidden]
      * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.consumes]
      * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.produces]
      * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.requires]
+     * @param {[string, number][][]|((level: number) => [string, number][]|false|null)?} [params.upgrade_costs]
+     * @param {number?} [params.max_level]
      */
-    clone({x, y, name, level, image, insert=true, unpausable, hidden, type, paused, consumes, produces, requires}={}) {
+    clone({x, y, name, level, image, insert=true, unpausable, hidden, type, paused, consumes, produces, requires, upgrade_costs, max_level}={}) {
         x ??= this.x;
         y ??= this.y;
         name ??= this.name;
@@ -751,8 +767,10 @@ export class MakerMachine extends Machine {
         image ??= this.image;
         paused ??= this.paused;
         unpausable ??= this.#unpausable;
+        upgrade_costs ??= this.#upgrade_costs;
+        max_level ??= this.#max_level;
         const id = this.id;
-        return new MakerMachine({id, x, y, name, level, hidden, type, paused, unpausable, consumes, produces, requires, image, insert});
+        return new MakerMachine({id, x, y, name, level, hidden, type, paused, unpausable, consumes, produces, requires, image, insert, upgrade_costs, max_level});
     }
 
     /**
@@ -902,11 +920,11 @@ export class MakerMachine extends Machine {
                 });
         });
         this.level++;
-        const pane_id = `maker_${this.id}_pane`;
-        let p = Pane.pane(pane_id);
+        const pane = this.panecontents();
+        let p = Pane.pane(pane.id);
         if (p) {
-            this.click();
-            this.click();
+            this.click({shiftKey: false});
+            this.click({shiftKey: false});
         }
     }
 }
@@ -921,11 +939,11 @@ export function make_makers() {
      *  hidden?: boolean,
      *  unpausable?: boolean,
      *  max_level?: number,
-     *  type?: ('fixed'|'scaling')[]|(level: number) => 'fixed'|'scaling',
+     *  type?: MakerType[]|(level: number) => MakerType,
      *  consumes?: [string, number][][]|(level: number) => [string, number][]|false,
      *  produces?: [string, number][][]|(level: number) => [string, number][]|false,
      *  requires?: [string, number][][]|(level: number) => [string, number][]|false,
-     *  upgrade_costs?: [string, number][][]|(level: number) => [string, number][]|false,
+     *  upgrade_costs?: [string, number][][]|(level: number) => [string, number][]|false|null,
      * }[]}
      */
     const makers = [
@@ -934,7 +952,10 @@ export function make_makers() {
             name: gettext('games_cidle_maker_tree_chopper'),
             produces: [[['wood', 1]], [['wood', 2]]],
             upgrade_costs: (level) => {
-                if (level == 0 && StorageMachine.any_storage_for('stone')) return [['stone', 100]];
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('stone')) return [['stone', 100]];
+                    return null;
+                }
                 return false;
             },
             max_level: 1,
@@ -978,13 +999,13 @@ export function insert_makers() {
      *  y: number,
      *  name?: string,
      *  level?: string,
-     *  imnage?: string|HTMLImageElement,
+     *  image?: string|HTMLImageElement,
      *  insert?: boolean,
      *  hidden?: boolean,
-     *  type?: ('fixed'|'scaling')[],
-     *  consumes?: [string, number][][],
-     *  produces?: [string, number][][],
-     *  requires?: [string, number][][],
+     *  type?: MakerType[]|(level: number) => MakerType,
+     *  consumes?: [string, number][][]|(level: number) => [string, number][]|false,
+     *  produces?: [string, number][][]|(level: number) => [string, number][]|false,
+     *  requires?: [string, number][][]|(level: number) => [string, number][]|false,
      * }][]}
      */
     const makers = [
