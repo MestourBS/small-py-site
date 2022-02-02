@@ -125,13 +125,15 @@ export function canvas_refresh() {
     const {game_tab} = globals;
     canvas_reset();
 
-    let top = draw_tabs({context});
+    let top = tabs_heights({context});
 
     if (game_tab in game_tabs) {
         game_tabs[game_tab].draw({top});
     } else {
         console.error(`Unknown game tab ${game_tab}`);
     }
+
+    draw_tabs({context});
 }
 /**
  * Draws the tabs

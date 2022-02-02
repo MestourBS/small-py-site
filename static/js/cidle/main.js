@@ -2,7 +2,7 @@ import { save_data as save_inventory, load_data as load_inventory } from './inve
 import { canvas_refresh } from './canvas.js';
 import MakerMachine, { insert_makers, make_makers } from './maker.js';
 import { make_resources } from './resource.js';
-import { insert_storages, make_storages } from './storage.js';
+import StorageMachine, { insert_storages, make_storages } from './storage.js';
 import './actions.js';
 import { save_data as save_globals, load_data as load_globals } from './globals.js';
 import { save_data as save_machines, load_data as load_machines } from './machine.js';
@@ -30,18 +30,25 @@ function init() {
 
     requestAnimationFrame(() => display());
     setInterval(() => {
-        //todo bank unspent time
-        /*
-        if (!document.hasFocus()) {
-            return;
-        }
-        */
-
         let now = Date.now();
         let diff = (now - last_production) / 1e3;
         last_production = now;
+        let multiplier = diff;
 
-        MakerMachine.maker_machines.filter(m => m.can_produce({multiplier: diff})).forEach(m => m.produce({multiplier: diff}));
+        /** @type {MakerMachine[]} */
+        const time_machines = [];
+        /** @type {MakerMachine[]} */
+        const present_machines = [];
+        MakerMachine.maker_machines.forEach(m => {
+            const target = m.consumes.some(p => p[0] == 'time') ? time_machines : present_machines;
+            target.push(m);
+        });
+        time_machines.filter(m => m.can_produce({multiplier})).forEach(m => {
+            multiplier = m.consumes.filter(p => p[0] == 'time').map(p => p[1]).reduce((n, c) => n * (c + 1), multiplier);
+            m.produce({multiplier: diff});
+        });
+
+        MakerMachine.maker_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
     }, 1e3 / 30);
 }
 
@@ -57,10 +64,21 @@ function display() {
  * @param {BeforeUnloadEvent} event
  */
 function save(event) {
+    const d = new Date;
+    const date = {
+        sec: d.getSeconds(),
+        min: d.getMinutes(),
+        hour: d.getHours(),
+        day: d.getDate(),
+        month: d.getMonth(),
+        year: d.getFullYear(),
+    };
+
     const data = {
         globals: save_globals(),
         inventory: save_inventory(),
         machines: save_machines(),
+        date,
     };
 
     const json = JSON.stringify(data);
@@ -91,6 +109,14 @@ function load() {
      *      },
      *  },
      *  machines?: {id: string, ...parts}[],
+     *  date?: {
+     *      sec?: number,
+     *      min?: number,
+     *      hour?: number,
+     *      day?: number,
+     *      month?: number,
+     *      year?: number,
+     *  },
      * }}
      */
     let data;
@@ -110,6 +136,33 @@ function load() {
     }
     if ('machines' in data) {
         load_machines(data.machines);
+    }
+    if ('date' in data) {
+        const now = new Date;
+        now.setMilliseconds(0);
+        const {date} = data;
+        const save = new Date;
+        save.setMilliseconds(0);
+        if ('year' in date) save.setFullYear(date.year);
+        if ('month' in date) save.setMonth(date.month);
+        if ('day' in date) save.setDate(date.day);
+        if ('hour' in date) save.setHours(date.hour);
+        if ('min' in date) save.setMinutes(date.min);
+        if ('sec' in date) save.setSeconds(date.sec);
+        let seconds = (now - save) / 1e3;
+
+        if (seconds > 0) {
+            const storages = StorageMachine.storages_for('time');
+            storages.forEach(m => {
+                if (seconds <= 0) return;
+
+                const time = m.resources.time;
+                const space = time.max - time.amount;
+                const move = Math.min(space, seconds);
+                time.amount += move;
+                seconds -= move;
+            });
+        }
     }
 }
 

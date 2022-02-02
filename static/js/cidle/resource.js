@@ -66,6 +66,16 @@ export function make_resources() {
             name: gettext('games_cidle_resource_wood'),
             color: '#730',
         },
+        {
+            id: 'stone',
+            name: gettext('games_cidle_resource_stone'),
+            color: '#777',
+        },
+        {
+            id: 'time',
+            name: gettext('games_cidle_resource_time'),
+            color: '#f00',
+        },
     ];
 
     resources.forEach(r => new Resource(r));

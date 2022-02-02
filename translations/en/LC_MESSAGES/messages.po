@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-02-01 13:13+0100\n"
+"POT-Creation-Date: 2022-02-02 08:37+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -62,22 +62,6 @@ msgstr "Error: No group name"
 #: Controllers/ControllerChat.py:105
 msgid "chat_unknown_user"
 msgstr "Unknown user"
-
-#: Controllers/ControllerGame.py:9 templates/home.html:3
-msgid "games_blockus"
-msgstr "Blockus"
-
-#: Controllers/ControllerGame.py:10
-msgid "games_idle"
-msgstr "Idle"
-
-#: Controllers/ControllerGame.py:11
-msgid "games_rpg"
-msgstr "Mini RPG"
-
-#: Controllers/ControllerGame.py:12
-msgid "games_cidle"
-msgstr "Canvas Idle"
 
 #: static/js/blockus.js:53
 msgid "game_blockus_theme_name_dark"
@@ -536,53 +520,77 @@ msgstr "Inventory"
 msgid "games_cidle_style_light"
 msgstr "Light"
 
-#: static/js/cidle/inventory.js:25
+#: static/js/cidle/inventory.js:28
 msgid "games_cidle_inventory_machines"
 msgstr "Machines"
 
-#: static/js/cidle/inventory.js:134
+#: static/js/cidle/inventory.js:137
 msgid "games_cidle_place"
 msgstr "Place %(obj)s"
 
-#: static/js/cidle/inventory.js:160
+#: static/js/cidle/inventory.js:165
 msgid "games_cidle_make"
 msgstr "Make %(obj)s"
 
-#: static/js/cidle/inventory.js:170
+#: static/js/cidle/inventory.js:175
 msgid "games_cidle_craft_costs"
 msgstr "Crafting Cost"
 
-#: static/js/cidle/maker.js:406
+#: static/js/cidle/maker.js:422
 msgid "games_cidle_maker_requires"
 msgstr "Requires"
 
-#: static/js/cidle/maker.js:417
+#: static/js/cidle/maker.js:433
 msgid "games_cidle_maker_produces"
 msgstr "Produces"
 
-#: static/js/cidle/maker.js:428
+#: static/js/cidle/maker.js:444
 msgid "games_cidle_maker_consumes"
 msgstr "Consumes"
 
-#: static/js/cidle/maker.js:439
+#: static/js/cidle/maker.js:455
 msgid "games_cidle_maker_upgrade"
 msgstr "Upgrade Cost"
 
-#: static/js/cidle/maker.js:852
+#: static/js/cidle/maker.js:874
 msgid "games_cidle_maker_tree_chopper"
 msgstr "Tree Chopper"
+
+#: static/js/cidle/maker.js:879
+msgid "games_cidle_maker_stone_miner"
+msgstr "Stone Miner"
+
+#: static/js/cidle/maker.js:884
+msgid "games_cidle_maker_sundial"
+msgstr "Sundial"
 
 #: static/js/cidle/resource.js:66
 msgid "games_cidle_resource_wood"
 msgstr "Wood"
 
-#: static/js/cidle/storage.js:222
+#: static/js/cidle/resource.js:71
+msgid "games_cidle_resource_stone"
+msgstr "Stone"
+
+#: static/js/cidle/resource.js:76
+msgid "games_cidle_resource_time"
+msgstr "Time"
+
+#: static/js/cidle/storage.js:238
 msgid "cidle_storage_contents"
 msgstr "Stored Contents"
 
-#: static/js/cidle/storage.js:441
+#: static/js/cidle/storage.js:459
 msgid "games_cidle_storage_wood_storage"
 msgstr "Wood Storage"
+
+#: static/js/cidle/storage.js:466
+msgid "games_cidle_storage_stone_storage"
+msgstr "Stone Storage"
+
+#: static/js/cidle/storage.js:473
+msgid "games_cidle_storage_giant_clock"
+msgstr "Giant Clock"
 
 #: static/js/rpg/actions.js:158
 msgid "games_rpg_action_move_player_left"
@@ -1005,6 +1013,10 @@ msgstr "Logged in as %(username)s"
 msgid "logout"
 msgstr "Log out"
 
+#: templates/home.html:3
+msgid "games_blockus"
+msgstr "Blockus"
+
 #: templates/home.html:6
 msgid "home_view_chat"
 msgstr "Go to the chat"
@@ -1127,4 +1139,13 @@ msgstr "Games"
 
 #~ msgid "games_rpg_theme_background_entity_missing_health_color"
 #~ msgstr "Missing health color"
+
+#~ msgid "games_idle"
+#~ msgstr "Idle"
+
+#~ msgid "games_rpg"
+#~ msgstr "Mini RPG"
+
+#~ msgid "games_cidle"
+#~ msgstr "Canvas Idle"
 

@@ -62,8 +62,9 @@ export class Pane {
      * @param {{content: (string|() => string)[], click?: (() => void)[], width?: number}[][]} [params.content]
      * @param {string|false} [params.title]
      * @param {GameTab} [params.tab]
+     * @param {boolean} [params.pinnable] Whether the tab can be (un)pinned afterwards
      */
-    constructor({x, y, pinned=false, id, content=[], title=false, tab=globals.game_tab}) {
+    constructor({x, y, pinned=false, id, content=[], title=false, tab=globals.game_tab, pinnable=true}) {
         if (isNaN(x)) throw new TypeError(`Pane x must be a number (${x})`);
         if (isNaN(y)) throw new TypeError(`Pane y must be a number (${y})`);
         let is_valid_content = Array.isArray(content);
@@ -83,14 +84,16 @@ export class Pane {
 
         const title_bar = [
             {
-                content: [() => (this.#pinned ? '{italic}' : '') + '📌'],
-                click: [() => this.pin_toggle()],
-            },
-            {
                 content: ['X'],
                 click: [() => this.remove()],
             },
         ];
+        if (pinnable) {
+            title_bar.unshift({
+                content: [() => (this.#pinned ? '{italic}' : '') + '📌'],
+                click: [() => this.pin_toggle()],
+            });
+        }
         if (title !== false) {
             title_bar.unshift({content: [`{bold}${title}`]});
         }

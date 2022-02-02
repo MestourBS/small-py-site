@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-02-01 13:13+0100\n"
+"POT-Creation-Date: 2022-02-02 08:37+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -62,22 +62,6 @@ msgstr "Erreur: Pas de nom dde groupe"
 #: Controllers/ControllerChat.py:105
 msgid "chat_unknown_user"
 msgstr "Utilisateur inconnu"
-
-#: Controllers/ControllerGame.py:9 templates/home.html:3
-msgid "games_blockus"
-msgstr "Blockus"
-
-#: Controllers/ControllerGame.py:10
-msgid "games_idle"
-msgstr "Idle"
-
-#: Controllers/ControllerGame.py:11
-msgid "games_rpg"
-msgstr "Mini RPG"
-
-#: Controllers/ControllerGame.py:12
-msgid "games_cidle"
-msgstr "Idle Canevas"
 
 #: static/js/blockus.js:53
 msgid "game_blockus_theme_name_dark"
@@ -537,54 +521,77 @@ msgstr "Inventaire"
 msgid "games_cidle_style_light"
 msgstr "Clair"
 
-#: static/js/cidle/inventory.js:25
+#: static/js/cidle/inventory.js:28
 msgid "games_cidle_inventory_machines"
 msgstr "Machines"
 
-#: static/js/cidle/inventory.js:134
-#, fuzzy
+#: static/js/cidle/inventory.js:137
 msgid "games_cidle_place"
 msgstr "Placer %(obj)s"
 
-#: static/js/cidle/inventory.js:160
+#: static/js/cidle/inventory.js:165
 msgid "games_cidle_make"
 msgstr "Faire %(obj)s"
 
-#: static/js/cidle/inventory.js:170
+#: static/js/cidle/inventory.js:175
 msgid "games_cidle_craft_costs"
 msgstr "Cout de fabrication"
 
-#: static/js/cidle/maker.js:406
+#: static/js/cidle/maker.js:422
 msgid "games_cidle_maker_requires"
 msgstr "A Besoin de"
 
-#: static/js/cidle/maker.js:417
+#: static/js/cidle/maker.js:433
 msgid "games_cidle_maker_produces"
 msgstr "Produit"
 
-#: static/js/cidle/maker.js:428
+#: static/js/cidle/maker.js:444
 msgid "games_cidle_maker_consumes"
 msgstr "Utilise"
 
-#: static/js/cidle/maker.js:439
+#: static/js/cidle/maker.js:455
 msgid "games_cidle_maker_upgrade"
 msgstr "Cout d'amélioration"
 
-#: static/js/cidle/maker.js:852
+#: static/js/cidle/maker.js:874
 msgid "games_cidle_maker_tree_chopper"
 msgstr "Coupeur de Bois"
+
+#: static/js/cidle/maker.js:879
+msgid "games_cidle_maker_stone_miner"
+msgstr "Mineur de Pierre"
+
+#: static/js/cidle/maker.js:884
+msgid "games_cidle_maker_sundial"
+msgstr "Cadran Solaire"
 
 #: static/js/cidle/resource.js:66
 msgid "games_cidle_resource_wood"
 msgstr "Bois"
 
-#: static/js/cidle/storage.js:222
+#: static/js/cidle/resource.js:71
+msgid "games_cidle_resource_stone"
+msgstr "Pierre"
+
+#: static/js/cidle/resource.js:76
+msgid "games_cidle_resource_time"
+msgstr "Temps"
+
+#: static/js/cidle/storage.js:238
 msgid "cidle_storage_contents"
 msgstr "Contenu Stocké"
 
-#: static/js/cidle/storage.js:441
+#: static/js/cidle/storage.js:459
 msgid "games_cidle_storage_wood_storage"
 msgstr "Stockage de Bois"
+
+#: static/js/cidle/storage.js:466
+msgid "games_cidle_storage_stone_storage"
+msgstr "Stockage de Pierre"
+
+#: static/js/cidle/storage.js:473
+msgid "games_cidle_storage_giant_clock"
+msgstr "Horloge Géante"
 
 #: static/js/rpg/actions.js:158
 msgid "games_rpg_action_move_player_left"
@@ -1007,6 +1014,10 @@ msgstr "Connecté en tant que %(username)s"
 msgid "logout"
 msgstr "Se déconnecter"
 
+#: templates/home.html:3
+msgid "games_blockus"
+msgstr "Blockus"
+
 #: templates/home.html:6
 msgid "home_view_chat"
 msgstr "Aller aux discussions"
@@ -1129,4 +1140,13 @@ msgstr "Jeux"
 
 #~ msgid "games_rpg_theme_background_entity_missing_health_color"
 #~ msgstr "Couleur de fond de vie manquante"
+
+#~ msgid "games_idle"
+#~ msgstr "Idle"
+
+#~ msgid "games_rpg"
+#~ msgstr "Mini RPG"
+
+#~ msgid "games_cidle"
+#~ msgstr "Idle Canevas"
 

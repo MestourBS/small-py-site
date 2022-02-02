@@ -413,7 +413,8 @@ export class MakerMachine extends Machine {
      * }?}
      */
     panecontents(event) {
-        const pane_id = `${globals.game_tab}_maker_${this.index}_pane`;
+        const id = this.index == -1 ? this.id : this.index;
+        const pane_id = `${globals.game_tab}_maker_${id}_pane`;
         /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
         const content = [];
         if (this.requires.length) {
@@ -856,6 +857,16 @@ export function make_makers() {
             id: 'tree_chopper',
             name: gettext('games_cidle_maker_tree_chopper'),
             produces: [[['wood', 1]]],
+        },
+        {
+            id: 'stone_miner',
+            name: gettext('games_cidle_maker_stone_miner'),
+            produces: [[['stone', 1]]],
+        },
+        {
+            id: 'sundial',
+            name: gettext('games_cidle_maker_sundial'),
+            consumes: [[['time', 1]]],
         },
     ];
 

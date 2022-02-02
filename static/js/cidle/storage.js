@@ -222,7 +222,8 @@ export class StorageMachine extends Machine {
      * }?}
      */
     panecontents(event) {
-        const pane_id = `${globals.game_tab}_storage_${this.index}_pane`;
+        const id = this.index == -1 ? this.id : this.index;
+        const pane_id = `${globals.game_tab}_maker_${id}_pane`;
         /**
          * @type {{
          *  content: (string|() => string)[],
@@ -457,6 +458,20 @@ export function make_storages() {
                 wood: {},
             },
         },
+        {
+            id: 'stone_storage',
+            name: gettext('games_cidle_storage_stone_storage'),
+            resources: {
+                stone: {},
+            },
+        },
+        {
+            id: 'giant_clock',
+            name: gettext('games_cidle_storage_giant_clock'),
+            resources: {
+                time: {max: 3_600},
+            },
+        },
     ];
 
     storages.forEach(s => new StorageMachine(s));
@@ -486,3 +501,5 @@ export function insert_storages() {
         Machine.get_machine_copy(id, parts);
     });
 }
+
+//todo add fill level support for images

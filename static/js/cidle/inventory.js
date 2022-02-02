@@ -7,6 +7,9 @@ import globals from './globals.js';
 import Resource from './resource.js';
 import { beautify } from './primitives.js';
 
+//todo allow multiple recipes for a single machine
+//? array of resources lists instead of only 1 list
+
 /**
  * Current inventory
  *
@@ -192,8 +195,10 @@ const inventory = {
                         );
                     }
                 }
-                pane.x = (cell_x + 1) * (max_diameter + padding * 2) - display_size.width / 2 - globals.position[0];
-                pane.y = cell_y * (max_diameter + padding * 2) - display_size.height / 2 - globals.position[1] + tabs_heights() + global_tabs_heights();
+                pane.x = (cell_x + 1) * (max_diameter + padding * 2);
+                pane.y = cell_y * (max_diameter + padding * 2) + tabs_heights() + global_tabs_heights();
+                pane.pinned = true;
+                pane.pinnable = false;
                 //pane.pinned = true;
                 p = new Pane(pane);
                 return;
@@ -209,6 +214,7 @@ const inventory = {
  *      crafted: number,
  *      resources: [string, number][]|(crafted: number) => [string, number][]|false,
  *      unlocked: boolean|() => boolean,
+ *      position?: number,
  *  }},
  * }}
  */
@@ -217,17 +223,58 @@ const recipes = {
         'wood_storage': {
             crafted: 0,
             resources: (crafted) => {
-                if (crafted <= 1) return [['wood', (crafted + 1) * 500]];
+                if (crafted <= 1) return [['wood', crafted * 500 + 500]];
+                if (crafted <= 3) return [['wood', crafted * 500 + 1_000], ['stone', crafted * 1_000]];
                 return false;
             },
             unlocked: true,
+            position: 0,
         },
         'tree_chopper': {
             crafted: 0,
             resources: (crafted) => {
-                return [['wood', (crafted + 1) ** 2 * 500]];
+                if (crafted <= 3) return [['wood', (crafted + 1) ** 2 * 500]];
+                if (crafted <= 6) return [['wood', crafted ** 2 * 500], ['stone', crafted ** 1.5 * 500]];
             },
             unlocked: () => recipes.machines['wood_storage'].crafted >= 1,
+            position: 1,
+        },
+        'stone_storage': {
+            crafted: 0,
+            resources: (crafted) => {
+                if (crafted == 0) return [['wood', 2_000]];
+                if (crafted <= 3) return [['stone', crafted * 500], ['wood', crafted * 500 + 2_000]];
+                return false;
+            },
+            unlocked: () => recipes.machines['tree_chopper'].crafted >= 1,
+            position: 2,
+        },
+        'stone_miner': {
+            crafted: 0,
+            resources: (crafted) => {
+                if (crafted == 0) return [['wood', 2_500]];
+                if (crafted <= 3) return [['stone', crafted ** 2 * 500], ['wood', crafted * 500]];
+                return false;
+            },
+            unlocked: () => StorageMachine.storages_for('stone').length > 0,
+            position: 3,
+        },
+        'giant_clock': {
+            crafted: 0,
+            resources: (crafted) => {
+                /** @type {[string, number][]} */
+                const costs = [['wood', 500 * (crafted + 1) ** 2]];
+                if (crafted >= 5) costs.push(['stone', 750 * (crafted - 4) ** 2]);
+                return costs;
+            },
+            unlocked: () => atob(localStorage.getItem('games_cidle')).includes('date'),
+        },
+        'sundial': {
+            crafted: 0,
+            resources: (crafted) => {
+                return [['stone', 1e3 * 10 ** crafted], ['time', 10 * 2 ** crafted]];
+            },
+            unlocked: () => StorageMachine.storages_for('time').length > 0,
         },
     },
 };
@@ -312,8 +359,8 @@ function craft(id, type = subtab) {
  * @param {MouseEvent} event
  */
 export function click(x, y, event) {
-    const w_x = x - display_size.width / 2 - globals.position[0];
-    const w_y = y - display_size.height / 2 - globals.position[1];
+    const w_x = x - display_size.width / 2 + globals.position[0];
+    const w_y = y - display_size.height / 2 + globals.position[1];
     const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([w_x, w_y]));
 
     if (p) {
@@ -439,7 +486,8 @@ function copy_machine(id) {
  */
 function unlock_recipes() {
     const machines = inventory.machines.contents;
-    Object.entries(recipes.machines).forEach(([machine, data]) => {
+    const rmachines = recipes.machines;
+    Object.entries(rmachines).forEach(([machine, data]) => {
         let unlocked = data.unlocked;
         if (typeof unlocked == 'boolean') return;
         if (typeof unlocked == 'function') {
@@ -451,6 +499,16 @@ function unlock_recipes() {
         if (!machines.some(([id]) => id == machine)) {
             machines.push([machine, 0, false]);
         }
+    });
+    machines.sort(([a], [b]) => {
+        if ('position' in rmachines[a] && 'position' in rmachines[b]) {
+            const posa = rmachines[a].position;
+            const posb = rmachines[b].position;
+            return posa - posb;
+        } else if ('position' in rmachines[a] != 'position' in rmachines[b]) {
+            return ('position' in rmachines[b]) - ('position' in rmachines[a]);
+        }
+        return a > b;
     });
 }
 /**
