@@ -232,7 +232,7 @@ export class Machine {
         if (event.shiftKey) {
             this.#moving = true;
             globals.adding['world'] = (x, y, event) => {
-                if (event.shiftKey) {
+                if (!event.shiftKey) {
                     x = Math.round(x / grid_spacing) * grid_spacing;
                     y = Math.round(y / grid_spacing) * grid_spacing;
                 }

@@ -7,6 +7,8 @@ import './actions.js';
 import { save_data as save_globals, load_data as load_globals } from './globals.js';
 import { save_data as save_machines, load_data as load_machines } from './machine.js';
 
+//todo move production to a single all consuming / producing function
+
 /** @type {number} */
 let last_production;
 
@@ -48,7 +50,7 @@ function init() {
             m.produce({multiplier: diff});
         });
 
-        MakerMachine.maker_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
+        present_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
     }, 1e3 / 30);
 }
 

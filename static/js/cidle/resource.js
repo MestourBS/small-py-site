@@ -77,6 +77,11 @@ export function make_resources() {
             color: '#f70',
         },
         {
+            id: 'brick',
+            name: gettext('games_cidle_resource_brick'),
+            color: '#555',
+        },
+        {
             id: 'time',
             name: gettext('games_cidle_resource_time'),
             color: '#f00',

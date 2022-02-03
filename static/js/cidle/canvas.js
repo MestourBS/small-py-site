@@ -8,6 +8,8 @@ import { Pane } from './pane.js';
  * @typedef {keyof game_tabs} GameTab
  */
 
+//todo draw snapping grid
+
 /**
  * Canvas of the game
  *

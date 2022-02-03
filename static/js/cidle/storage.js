@@ -3,7 +3,7 @@ import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
 import Machine from './machine.js';
 import { Pane } from './pane.js';
-import { coords_distance } from './position.js';
+import { coords_distance as distance } from './position.js';
 import Resource from './resource.js';
 import { beautify } from './primitives.js';
 /**
@@ -11,6 +11,7 @@ import { beautify } from './primitives.js';
  * @typedef {'fraction'|'logarithm'} FillType
  */
 
+//todo move upgrading to its own pane
 //todo level-based resources value
 //todo add fill level support for images
 
@@ -221,7 +222,7 @@ export class StorageMachine extends Machine {
 
     /** @param {PointLike} point */
     contains_point(point) {
-        let dist = coords_distance(this, point);
+        let dist = distance(this, point);
 
         return dist <= this.radius ** 2;
     }
@@ -467,8 +468,8 @@ export class StorageMachine extends Machine {
         const pane = this.panecontents();
         let p = Pane.pane(pane.id);
         if (p) {
-            this.click();
-            this.click();
+            this.click({shiftKey: false});
+            this.click({shiftKey: false});
         }
     }
 }
@@ -483,7 +484,7 @@ export function make_storages() {
      *  level?: number,
      *  resources?: {[id: string]: {amount?: number, max?: number}},
      *  level_formula?: (level: number) => number,
-     *  upgrade_costs?: [string, number][][]|((level: number) => [string, number][]|false)?,
+     *  upgrade_costs?: [string, number][][]|((level: number) => [string, number][]|false|null)?,
      *  filltype?: FillType,
      * }[]}
      */
@@ -493,6 +494,13 @@ export function make_storages() {
             name: gettext('games_cidle_storage_wood_storage'),
             resources: {
                 wood: {},
+            },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('brick')) return [['brick', 10]];
+                    return null;
+                }
+                return false;
             },
         },
         {
@@ -506,7 +514,21 @@ export function make_storages() {
             id: 'fire_pit',
             name: gettext('games_cidle_storage_fire_pit'),
             resources: {
-                fire: {},
+                fire: {max: 250},
+            },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('brick')) return [['brick', 100]];
+                    return null;
+                }
+                return false;
+            },
+        },
+        {
+            id: 'brick_pile',
+            name: gettext('games_cidle_storage_brick_pile'),
+            resources: {
+                brick: {max: 512},
             },
         },
         {

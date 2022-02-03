@@ -13,6 +13,8 @@ import { beautify } from './primitives.js';
  * @typedef {'fixed'|'scaling'} MakerType
  */
 
+//todo display recipe type
+//todo move upgrading to its own pane
 //todo allow maker to be visible under some conditions
 
 export class MakerMachine extends Machine {
@@ -342,15 +344,20 @@ export class MakerMachine extends Machine {
                     .sort((a, b) => distance(this, a) - distance(this, b))
                     .forEach(m => {
                         if (m.resources[res].amount <= 0) return;
-                        const insert =  group_relations && (con > 0 || this.type == 'scaling');
+                        const insert =  con > 0 || this.type == 'scaling';
                         if (con > 0) {
                             if (group_resources && !result.machines.includes(m)) result.machines.push(m);
                             con -= m.resources[res].amount;
                         }
 
                         if (insert) {
-                            results.from.push(m);
-                            result.from.push(m);
+                            if (group_relations) {
+                                results.from.push(m);
+                                result.from.push(m);
+                            }
+                            if (group_resources && !result.machines.includes(m)) {
+                                result.machines.push(m);
+                            }
                         }
                     });
                 result.can_consume = con <= 0;
@@ -842,7 +849,7 @@ export class MakerMachine extends Machine {
 
             if (this.type == 'fixed') {
                 from.forEach(machine => {
-                    if (con <= 0) return;
+                    if (con <= 0 || !(res in machine.resources)) return;
 
                     const resobj = machine.resources[res];
                     const loss = Math.min(con, resobj.amount);
@@ -985,13 +992,35 @@ export function make_makers() {
         {
             id: 'stone_miner',
             name: gettext('games_cidle_maker_stone_miner'),
-            produces: [[['stone', 1]]],
+            produces: [[['stone', 1]], [['stone', 3]]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('brick')) return [['brick', 100]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
         },
         {
             id: 'wood_burner',
             name: gettext('games_cidle_maker_wood_burner'),
-            produces: [[['fire', 1]]],
-            consumes: [[['wood', 1]]],
+            produces: [[['fire', 1]], [['fire', 3]]],
+            consumes: [[['wood', 1]], [['wood', 1.5]]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('brick')) return [['brick', 200]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
+        },
+        {
+            id: 'brick_furnace',
+            name: gettext('games_cidle_maker_brick_furnace'),
+            produces: [[['brick', 1]]],
+            consumes: [[['stone', 5], ['fire', 1]]],
         },
         {
             id: 'fire_extinguisher',

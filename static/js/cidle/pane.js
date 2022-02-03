@@ -5,9 +5,6 @@ import { rect_contains_point, to_point } from './position.js';
 import { array_group_by } from './primitives.js';
 /**
  * @typedef {import('./canvas.js').GameTab} GameTab
- */
-
-/**
  * @typedef {import('./position.js').PointLike} PointLike
  */
 
