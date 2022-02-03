@@ -1,6 +1,6 @@
 import { save_data as save_inventory, load_data as load_inventory } from './inventory.js';
 import { canvas_refresh } from './canvas.js';
-import MakerMachine, { insert_makers, make_makers } from './maker.js';
+import MakerMachine, { insert_makers, make_makers, time_speed } from './maker.js';
 import { make_resources } from './resource.js';
 import StorageMachine, { insert_storages, make_storages } from './storage.js';
 import './actions.js';
@@ -45,10 +45,9 @@ function init() {
             const target = m.consumes.some(p => p[0] == 'time') ? time_machines : present_machines;
             target.push(m);
         });
-        time_machines.filter(m => m.can_produce({multiplier})).forEach(m => {
-            multiplier = m.consumes.filter(p => p[0] == 'time').map(p => p[1]).reduce((n, c) => n * (c + 1), multiplier);
-            m.produce({multiplier: diff});
-        });
+        time_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
+
+        multiplier *= time_speed();
 
         present_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
     }, 1e3 / 30);

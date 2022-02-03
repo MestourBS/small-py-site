@@ -5,7 +5,7 @@ import Machine from './machine.js';
 import { Pane } from './pane.js';
 import { coords_distance as distance } from './position.js';
 import Resource from './resource.js';
-import { beautify } from './primitives.js';
+import { beautify, stable_pad_number } from './primitives.js';
 /**
  * @typedef {import('./position.js').PointLike} PointLike
  * @typedef {'fraction'|'logarithm'} FillType
@@ -260,6 +260,7 @@ export class StorageMachine extends Machine {
                 const resource = Resource.resource(res);
                 const get_amount = () => {
                     let amount = beautify(data.amount);
+                    if (data.amount < data.max) amount = stable_pad_number(amount);
                     if (isFinite(data.max)) {
                         amount += ` / ${beautify(data.max)}`;
                     }
@@ -534,6 +535,8 @@ export class StorageMachine extends Machine {
                     cost -= loss;
                 });
         });
+        const up_pane = this.#upgrade_pane_contents();
+        Pane.pane(up_pane.id)?.remove?.();
         this.level++;
         const pane = this.panecontents();
         let p = Pane.pane(pane.id);
@@ -541,8 +544,6 @@ export class StorageMachine extends Machine {
             this.click({shiftKey: false});
             this.click({shiftKey: false});
         }
-        const up_pane = this.#upgrade_pane_contents();
-        Pane.pane(up_pane.id)?.remove?.();
     }
 }
 export default StorageMachine;
@@ -608,6 +609,13 @@ export function make_storages() {
             name: gettext('games_cidle_storage_gravel_box'),
             resources: {
                 gravel: {},
+            },
+        },
+        {
+            id: 'water_bucket',
+            name: gettext('games_cidle_storage_water_bucket'),
+            resources: {
+                water: {}
             },
         },
         // Time storages

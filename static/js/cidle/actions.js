@@ -4,7 +4,6 @@ import Machine from './machine.js';
 import { Pane } from './pane.js';
 import { click as click_inventory, is_clickable as is_clickable_inventory } from './inventory.js';
 
-//todo show transparent when placing
 //todo exit dragging when mouse exits canvas
 //todo add zooming
 
@@ -50,6 +49,12 @@ const game_tabs = {
         click: click_inventory,
         can_click: is_clickable_inventory,
         drag: drag_inventory,
+        contextmenu: () => {},
+    },
+    resources: {
+        click: () => {},
+        can_click: () => false,
+        drag: () => {},
         contextmenu: () => {},
     },
 };

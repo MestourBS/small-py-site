@@ -11,6 +11,16 @@ export class Resource {
     static resource(id) {
         return this.#resources[id] ?? null;
     }
+    /**
+     * Gets all resources names
+     *
+     * @returns {string[]}
+     */
+    static all_resources() {
+        if (this != Resource) return Resource.all_resources();
+
+        return Object.keys(this.#resources);
+    }
 
     /**
      * @param {Object} params
@@ -85,6 +95,11 @@ export function make_resources() {
             id: 'gravel',
             name: gettext('games_cidle_resource_gravel'),
             color: '#999',
+        },
+        {
+            id: 'water',
+            name: gettext('games_cidle_resource_water'),
+            color: '#00f',
         },
         // Time resources
         {

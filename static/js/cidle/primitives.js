@@ -79,6 +79,20 @@ export function beautify(number, {cutoffs=[6], options=[{notation: 'standard'}, 
 }
 
 /**
+ * Pads a number to prevent constantly changing length
+ *
+ * @param {string} number
+ * @param {number} [trailing_numbers]
+ * @returns {string}
+ */
+export function stable_pad_number(number, trailing_numbers=3) {
+    number += '';
+    let padlength = number.length + trailing_numbers + 1;
+    if (number.includes('.')) padlength -= number.split('.')[1].length + 1;
+    return number.padEnd(padlength);
+}
+
+/**
  * Groups an array by the results of func call
  *
  * @template T

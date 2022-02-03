@@ -2,13 +2,17 @@ import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
 import { draw as draw_inventory } from './inventory.js';
 import Machine from './machine.js';
-import { MakerMachine } from './maker.js';
+import { MakerMachine, time_speed } from './maker.js';
 import { Pane } from './pane.js';
+import { beautify, stable_pad_number } from './primitives.js';
+import Resource from './resource.js';
+import StorageMachine from './storage.js';
 /**
  * @typedef {keyof game_tabs} GameTab
  */
 
-//todo resources tab
+//todo show transparent when placing
+//todo show resources sources
 
 /**
  * Canvas of the game
@@ -69,6 +73,91 @@ const game_tabs = {
         draw: ({top=0}={}) => {
             draw_inventory({context, top});
             Pane.get_visible_panes('inventory').forEach(p => p.draw({context}));
+        },
+    },
+    resources: {
+        name: gettext('games_cidle_tab_resources'),
+        /** @type {false|string[]} @private */
+        _cut_name: false,
+        /** @type {false|string} @private */
+        _cut_params: false,
+        cut_name(params) {
+            const p = JSON.stringify(params);
+            if (this._cut_params != p) {
+                this._cut_name = cut_lines(this.name, params);
+                this._cut_params = p;
+            }
+            return this._cut_name;
+        },
+        draw: () => {
+            const x = theme('tab_padding');
+            let y = theme('tab_padding') + tabs_heights();
+            const font_size = theme('font_size');
+
+            // Show time speed
+            const speed = time_speed();
+            if (speed != 1) {
+                const speed_str = gettext('games_cidle_time_speed', {speed: beautify(speed)});
+                const cut_time_speed = cut_lines(speed_str);
+                canvas_write(speed_str, x, y);
+                y += (cut_time_speed.length + 1) * font_size;
+            }
+
+            // Show resources
+            Resource.all_resources().map(res => {
+                const storages = StorageMachine.storages_for(res);
+                if (!storages.length) return null;
+
+                const amount = storages.reduce((s, m) => {
+                    return s + m.resources[res].amount;
+                }, 0);
+                const max = storages.reduce((s, m) => {
+                    return s + m.resources[res].max;
+                }, 0);
+                let per_second = MakerMachine.maker_machines.filter(m => {
+                    if (m.paused || !m.can_produce()) return false;
+
+                    return m.consumes.some(([r]) => r == res) || m.produces.some(([r]) => r == res);
+                }).reduce((ps, m) => {
+                    const pro = m.produces.find(([r]) => r == res);
+                    const mult = m.max_produce_multiplier();
+                    if (pro) {
+                        ps += pro[1] * mult;
+                    }
+                    const con = m.consumes.find(([r]) => r == res);
+                    if (con) {
+                        ps -= con[1] * mult;
+                    }
+                    return ps;
+                }, 0);
+                if (Math.abs(per_second) < 1e-3) per_second = 0;
+
+                return {res, amount, max, per_second};
+            }).filter(d => d != null).sort((a, b) => {
+                if (a.max != b.max) return a.max - b.max;
+                if (a.per_second != b.per_second) return a.per_second - b.per_second;
+                if (a.amount != b.amount) return a.amount - b.amount;
+                return a.res > b.res;
+            }).forEach(data => {
+                const {res, amount, max, per_second} = data;
+
+                let a = beautify(amount);
+                if (per_second) a = stable_pad_number(a);
+                const m = beautify(max);
+                const {color, name} = Resource.resource(res);
+                let ps = '';
+                if (per_second) {
+                    ps = beautify(per_second);
+                    if (per_second > 0) ps = `+${ps}`;
+                    ps = `${ps}/s`.padStart;
+                }
+
+                const text = `${name}: ${a}/${m}`;
+                const cut_text = cut_lines(text);
+                canvas_write(text, x, y, {base_text_color: color});
+
+                y += (cut_text.length + .5) * font_size;
+            });
         },
     },
 };

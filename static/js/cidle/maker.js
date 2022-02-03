@@ -311,7 +311,7 @@ export class MakerMachine extends Machine {
          */
         const results = {};
         this.#last_multiplier = multiplier;
-        multiplier *= this.#max_produce_multiplier();
+        multiplier *= this.max_produce_multiplier();
 
         if (require) {
             if (group_relations) results.with = [];
@@ -420,7 +420,7 @@ export class MakerMachine extends Machine {
     /**
      * Computes the maximum multiplier for a scaling maker
      */
-    #max_produce_multiplier() {
+    max_produce_multiplier() {
         if (this.type == 'fixed') return 1;
 
         /** @type {number[]} */
@@ -627,6 +627,13 @@ export class MakerMachine extends Machine {
             [{content: [gettext('games_cidle_machine_changes')]}],
         ];
         const next_level = this.level + 1;
+
+        // Type change
+        const type_cur = this.type;
+        const type_next = Array.isArray(this.#type) ? (this.#type[next_level] ?? 'fixed') : this.#type(next_level);
+        if (type_cur != type_next) content.push([{
+            content: [`${type_cur} ⇒ ${type_next}`],
+        }]);
 
         // Requirement changes
         const req_cur = this.requires;
@@ -1013,7 +1020,7 @@ export class MakerMachine extends Machine {
 
         // We can't do anything without a target
         if ((!from.length) != (!this.consumes.length) || (!to.length) != (!this.produces.length)) return;
-        multiplier *= this.#max_produce_multiplier();
+        multiplier *= this.max_produce_multiplier();
 
         // Consume resources
         this.consumes.forEach(([res, con]) => {
@@ -1133,6 +1140,29 @@ export class MakerMachine extends Machine {
 }
 export default MakerMachine;
 
+/**
+ * Current time speed
+ *
+ * Each active time consumer multiplies time by `<total consumption> + 1`
+ *
+ * @returns {number}
+ */
+export function time_speed() {
+    let multiplier = 1;
+
+    MakerMachine.maker_machines
+        .filter(m => !m.paused && m.consumes.some(([res]) => res == 'time') && m.can_produce())
+        .forEach(m => {
+            const time_lost = m.consumes
+                .filter(([res]) => res == 'time')
+                .map(([_, time]) => time)
+                .reduce((a, b) => a + b, 0);
+            multiplier *= time_lost + 1;
+        });
+
+    return multiplier;
+}
+
 export function make_makers() {
     /**
      * @type {{
@@ -1201,6 +1231,11 @@ export function make_makers() {
             name: gettext('games_cidle_maker_rock_crusher'),
             produces: [[['gravel', 1]]],
             consumes: [[['stone', .1]]],
+        },
+        {
+            id: 'water_well',
+            name: gettext('games_cidle_maker_water_well'),
+            produces: [[['water', .5]]],
         },
         // Unpausable makers
         {

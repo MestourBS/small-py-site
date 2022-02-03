@@ -355,6 +355,23 @@ const recipes = {
             unlocked: () => StorageMachine.any_storage_for('stone'),
             position: 4,
         },
+        'water_bucket': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['wood', c * 1_000 + 1_500], ['stone', 500 * c + 1_500]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('stone'),
+            position: 5,
+        },
         'wood_burner': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
@@ -375,6 +392,25 @@ const recipes = {
             unlocked: () => StorageMachine.any_storage_for('fire'),
             position: 5,
         },
+        'water_well': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 1) {
+                        cost = [['wood', c * 500 + 1_000], ['stone', 500 * c + 1_500]];
+                    } else if (c <= 5 && StorageMachine.any_storage_for('brick')) {
+                        cost = [['wood', c * 250 + 1_000], ['stone', 150 * c + 250]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('water'),
+            position: 7,
+        },
         'brick_pile': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
@@ -386,7 +422,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => ['stone', 'fire'].every(res => StorageMachine.any_storage_for(res)),
-            position: 6,
+            position: 8,
         },
         'brick_furnace': {
             resources: crafted => {
@@ -406,7 +442,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('brick'),
-            position: 7,
+            position: 9,
         },
         'gravel_box': {
             resources: crafted => {
@@ -423,7 +459,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('brick'),
-            position: 8,
+            position: 10,
         },
         'rock_crusher': {
             resources: crafted => {
@@ -440,7 +476,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('gravel'),
-            position: 9,
+            position: 11,
         },
         'giant_clock': {
             resources: crafted => {
