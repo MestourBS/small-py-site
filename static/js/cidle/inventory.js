@@ -138,7 +138,7 @@ const inventory = {
                             globals.game_tab = 'world';
                             Machine.machines.forEach(m => m.moving = false);
                             globals.adding['world'] = (x, y, event) => {
-                                if (!event.shiftKey) {
+                                if (event.shiftKey == globals.press_to_snap) {
                                     x = Math.round(x / grid_spacing) * grid_spacing;
                                     y = Math.round(y / grid_spacing) * grid_spacing;
                                 }
@@ -407,6 +407,40 @@ const recipes = {
             },
             unlocked: () => StorageMachine.any_storage_for('brick'),
             position: 7,
+        },
+        'gravel_box': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['wood', c * 200 + 1_000], ['brick', 256 * c + 256]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('brick'),
+            position: 8,
+        },
+        'rock_crusher': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['stone', c * 400 + 2_000], ['brick', 128 * 2 ** c + 256]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('gravel'),
+            position: 9,
         },
         'giant_clock': {
             resources: crafted => {

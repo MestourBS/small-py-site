@@ -18,11 +18,18 @@ import globals from './globals.js';
  * @prop {string} inventory_color_fill
  * @prop {string} tab_selected_color_fill
  * @prop {string} tab_selected_text_color_fill
+ * @prop {string} machine_upgrade_lower_req_fill
+ * @prop {string} machine_upgrade_lower_con_fill
+ * @prop {string} machine_upgrade_lower_pro_fill
+ * @prop {string} machine_upgrade_higher_req_fill
+ * @prop {string} machine_upgrade_higher_con_fill
+ * @prop {string} machine_upgrade_higher_pro_fill
  * @prop {string} machine_upgrade_can_afford_fill
  * @prop {string} machine_upgrade_cant_afford_fill
  *
  * @prop {string} tab_color_border
  * @prop {string} pane_color_border
+ * @prop {string} grid_color_border
  * @prop {string} maker_color_border
  * @prop {string} storage_color_border
  * @prop {string} inventory_color_border
@@ -50,11 +57,18 @@ const styles = {
         inventory_color_fill: '#fff',
         tab_selected_color_fill: '#00f',
         tab_selected_text_color_fill: '#fff',
+        machine_upgrade_lower_req_fill: '#070',
+        machine_upgrade_lower_con_fill: '#070',
+        machine_upgrade_lower_pro_fill: '#700',
+        machine_upgrade_higher_req_fill: '#700',
+        machine_upgrade_higher_con_fill: '#700',
+        machine_upgrade_higher_pro_fill: '#070',
         machine_upgrade_can_afford_fill: '#0f0',
         machine_upgrade_cant_afford_fill: '#f00',
 
         tab_color_border: '#000',
         pane_color_border: '#000',
+        grid_color_border: '#eee',
         maker_color_border: '#000',
         storage_color_border: '#000',
         inventory_color_border: '#000',

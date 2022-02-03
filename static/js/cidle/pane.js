@@ -140,8 +140,8 @@ export class Pane {
 
         x += display_size.width / 2 - globals.position[0];
         y += display_size.height / 2 - globals.position[1];
-        const max_x = x + this.#table_widths().reduce((s, w) => s + w, 0);
-        const max_y = y + this.#table_heights().reduce((s, h) => s + h, 0);
+        const max_x = x + this.table_widths().reduce((s, w) => s + w, 0);
+        const max_y = y + this.table_heights().reduce((s, h) => s + h, 0);
 
         return (x < display_size.width || max_x > 0) && (y < display_size.height || max_y > 0);
     }
@@ -186,7 +186,7 @@ export class Pane {
     /**
      * Calculates the widths of the content table columns
      */
-    #table_widths({context=canvas_context}={}) {
+    table_widths({context=canvas_context}={}) {
         if (!this.#cut_content) this.#cut_content_lines({context});
         if (!this.#cut_content) return;
         // Turn rows into columns of cells
@@ -211,7 +211,7 @@ export class Pane {
     /**
      * Calculates the heights of the content table rows
      */
-    #table_heights() {
+    table_heights() {
         if (!this.#cut_content) this.#cut_content_lines({context});
         if (!this.#cut_content) return;
 
@@ -233,8 +233,8 @@ export class Pane {
             point.x += display_size.width / 2 - globals.position[0];
             point.y += display_size.height / 2 - globals.position[1];
         }
-        const width = this.#table_widths().reduce((s, w) => s + w, 0);
-        const height = this.#table_heights().reduce((s, h) => s + h, 0);
+        const width = this.table_widths().reduce((s, w) => s + w, 0);
+        const height = this.table_heights().reduce((s, h) => s + h, 0);
 
         return rect_contains_point(point, this.#x, this.#x + width, this.#y, this.#y + height);
     }
@@ -259,13 +259,13 @@ export class Pane {
         let x_checked = 0;
         let y_checked = 0;
 
-        this.#table_heights().forEach(h => {
+        this.table_heights().forEach(h => {
             if (y_checked >= y) return;
 
             y_grid++;
             y_checked += h;
         });
-        this.#table_widths().forEach(w => {
+        this.table_widths().forEach(w => {
             if (x_checked >= x) return;
 
             x_grid++;
@@ -273,6 +273,7 @@ export class Pane {
         });
 
         const row = this.#content[y_grid];
+        if (!row) return;
         let x_index = 0;
         /** @type {null|{content: (string | (() => string))[]; click?: (() => void)[]; width?: number;}} */
         let cell_selected = null;
@@ -306,13 +307,13 @@ export class Pane {
         let x_checked = 0;
         let y_checked = 0;
 
-        this.#table_heights().forEach(h => {
+        this.table_heights().forEach(h => {
             if (y_checked >= y) return;
 
             y_grid++;
             y_checked += h;
         });
-        this.#table_widths().forEach(w => {
+        this.table_widths().forEach(w => {
             if (x_checked >= x) return;
 
             x_grid++;
@@ -351,10 +352,10 @@ export class Pane {
         y -= this.y;
 
         const space = 20;
-        const width = this.#table_widths().reduce((s, w) => s + w, 0);
+        const width = this.table_widths().reduce((s, w) => s + w, 0);
         if (x < -space || x > width + space) return;
 
-        const heights = this.#table_heights();
+        const heights = this.table_heights();
         const in_range = y >= -space && y < space + heights[0];
 
         if (in_range) {
@@ -408,8 +409,8 @@ export class Pane {
             x += display_size.width / 2 - globals.position[0];
             y += display_size.height / 2 - globals.position[1];
         }
-        const widths = this.#table_widths({context});
-        const heights = this.#table_heights();
+        const widths = this.table_widths({context});
+        const heights = this.table_heights();
         const width = widths.reduce((s, w) => s + w, 0);
         const height = heights.reduce((s, h) => s + h, 0);
 

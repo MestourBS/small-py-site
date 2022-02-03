@@ -8,7 +8,7 @@ import { Pane } from './pane.js';
  * @typedef {keyof game_tabs} GameTab
  */
 
-//todo draw snapping grid
+//todo resources tab
 
 /**
  * Canvas of the game
@@ -46,6 +46,7 @@ const game_tabs = {
             return this._cut_name;
         },
         draw: () => {
+            draw_grid();
             MakerMachine.maker_machines.filter(m => m.can_produce()).forEach(m => m.draw_connections({context}));
             Machine.visible_machines.forEach(m => m.draw({context}));
             Pane.get_visible_panes('world').forEach(p => p.draw({context}));
@@ -187,6 +188,27 @@ function draw_tabs({context=canvas.getContext('2d')}={}) {
     y += (x != 0);
 
     return y * y_diff;
+}
+/**
+ * Draws a light grid
+ */
+function draw_grid() {
+    context.strokeStyle = theme('grid_color_border');
+    context.beginPath();
+    let x = -grid_spacing - globals.position[0] % grid_spacing + canvas.width / 2 % grid_spacing;
+    let y = -grid_spacing - globals.position[1] % grid_spacing + canvas.height / 2 % grid_spacing;
+    for (;x < canvas.width; x += grid_spacing) {
+        if (x <= 0) continue;
+        context.moveTo(x, 0);
+        context.lineTo(x, canvas.height);
+    }
+    for (;y < canvas.height; y += grid_spacing) {
+        if (y <= 0) continue;
+        context.moveTo(0, y);
+        context.lineTo(canvas.width, y);
+    }
+    context.stroke();
+    context.closePath();
 }
 /**
  * Computes the tabs heights

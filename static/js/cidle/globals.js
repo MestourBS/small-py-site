@@ -42,6 +42,12 @@ export const globals = {
      * @type {{[game_tab: string]: (x: number, y: number, event: MouseEvent) => boolean}}
      */
     adding: {},
+    /**
+     * Whether shift must be pressed to snap machines to grid
+     *
+     * @type {boolean}
+     */
+    press_to_snap: false,
 };
 export default globals;
 

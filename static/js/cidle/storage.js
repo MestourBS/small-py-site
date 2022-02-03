@@ -11,7 +11,6 @@ import { beautify } from './primitives.js';
  * @typedef {'fraction'|'logarithm'} FillType
  */
 
-//todo move upgrading to its own pane
 //todo level-based resources value
 //todo add fill level support for images
 
@@ -277,8 +276,57 @@ export class StorageMachine extends Machine {
         const x = this.x + this.radius;
         const y = this.y - this.radius;
         if (this.upgrade_costs !== false) {
-            content.push([{content: [gettext('games_cidle_maker_upgrade')], width: 2, click: [() => this.upgrade()]}]);
-            content.push(...this.upgrade_costs.map(([res, cost]) => {
+            content.push([{
+                content: [gettext('games_cidle_machine_upgrade')],
+                width: 2,
+                click: [() => {
+                    const contents = this.#upgrade_pane_contents();
+                    const pane_id = contents.id;
+                    let p = Pane.pane(pane_id);
+                    if (p) {
+                        p.remove();
+                        return;
+                    }
+
+                    p = new Pane(contents);
+                }],
+            }]);
+        }
+
+        return {x, y, id: pane_id, content, title: this.name};
+    }
+
+    /**
+     * @param {MouseEvent} event
+     * @returns {{
+     *  x: number,
+     *  y: number,
+     *  pinned?: boolean,
+     *  id: string,
+     *  content?: {
+     *      content: (string|() => string)[],
+     *      click?: (() => void)[],
+     *      width?: number,
+     *  }[][],
+     *  title?: string|false,
+     *  tab?: GameTab
+     * }?}
+     */
+    #upgrade_pane_contents() {
+        const costs = this.upgrade_costs;
+        if (costs === false) return null;
+
+        const id = this.index == -1 ? this.id : this.index;
+        const pane_id = `${globals.game_tab}_maker_${id}_upgrade_pane`;
+        const title = gettext('games_cidle_machine_upgrading', {obj: this.name});
+        const next_mult = this.#level_formula(this.level + 1);
+        /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
+        const content = [
+            [{
+                content: [gettext('games_cidle_machine_upgrade_costs')],
+                click: [() => this.upgrade()],
+            }],
+            ...costs.map(([res, cost]) => {
                 const resource = Resource.resource(res);
                 const cost_func = () => {
                     let sum = 0;
@@ -299,10 +347,32 @@ export class StorageMachine extends Machine {
                 }, {
                     content: [cost_func],
                 }];
-            }));
+            }),
+            [{content: [gettext('games_cidle_machine_changes')]}],
+            ...Object.entries(this.#resources).map(([res, {max}]) => {
+                const resource = Resource.resource(res);
+                const c_max = this.resources[res].max;
+
+                return [{
+                    content: [`{color:${resource.color}}${resource.name}`]
+                }, {
+                    content: [`{color:${resource.color}}${beautify(c_max)} ⇒ ${beautify(max * next_mult)}`],
+                }];
+            }),
+        ];
+
+        let x, y;
+        const own_id = this.panecontents().id;
+        const own_pane = Pane.pane(own_id);
+        if (own_pane) {
+            x = own_pane.x + own_pane.table_widths().reduce((s, w) => s + w, 0);
+            y = own_pane.y;
+        } else {
+            x = this.x + this.radius;
+            y = this.y - this.radius;
         }
 
-        return {x, y, id: pane_id, content, title: this.name};
+        return {x, y, id: pane_id, content, title};
     }
 
     /** @param {MouseEvent} event */
@@ -471,6 +541,8 @@ export class StorageMachine extends Machine {
             this.click({shiftKey: false});
             this.click({shiftKey: false});
         }
+        const up_pane = this.#upgrade_pane_contents();
+        Pane.pane(up_pane.id)?.remove?.();
     }
 }
 export default StorageMachine;
@@ -531,6 +603,14 @@ export function make_storages() {
                 brick: {max: 512},
             },
         },
+        {
+            id: 'gravel_box',
+            name: gettext('games_cidle_storage_gravel_box'),
+            resources: {
+                gravel: {},
+            },
+        },
+        // Time storages
         {
             id: 'giant_clock',
             name: gettext('games_cidle_storage_giant_clock'),

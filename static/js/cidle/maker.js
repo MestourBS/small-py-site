@@ -14,7 +14,6 @@ import { beautify } from './primitives.js';
  */
 
 //todo display recipe type
-//todo move upgrading to its own pane
 //todo allow maker to be visible under some conditions
 
 export class MakerMachine extends Machine {
@@ -41,9 +40,9 @@ export class MakerMachine extends Machine {
      * @param {MakerType[]|(level: number) => MakerType} [params.type]
      * @param {boolean} [params.paused]
      * @param {boolean} [params.unpausable]
-     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.consumes]
-     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.produces]
-     * @param {[string, number][][]|((level: number) => [string, number][]|false)?} [params.requires]
+     * @param {[string, number][][]|((level: number) => [string, number][])?} [params.consumes]
+     * @param {[string, number][][]|((level: number) => [string, number][])?} [params.produces]
+     * @param {[string, number][][]|((level: number) => [string, number][])?} [params.requires]
      * @param {[string, number][][]|((level: number) => [string, number][]|false|null)?} [params.upgrade_costs]
      * @param {number?} [params.max_level]
      */
@@ -80,6 +79,25 @@ export class MakerMachine extends Machine {
         }
 
         super({id, x, y, name, level, image, insert});
+
+        if (Array.isArray(requires)) requires.forEach(req => req.sort(([ares, areq], [bres, breq]) => {
+            if (ares != bres) {
+                return ares > bres;
+            }
+            return areq - breq;
+        }));
+        if (Array.isArray(consumes)) consumes.forEach(con => con.sort(([ares, acon], [bres, bcon]) => {
+            if (ares != bres) {
+                return ares > bres;
+            }
+            return acon - bcon;
+        }));
+        if (Array.isArray(produces)) produces.forEach(pro => pro.sort(([ares, apro], [bres, brpo]) => {
+            if (ares != bres) {
+                return ares > bres;
+            }
+            return apro - brpo;
+        }));
 
         this.#consumes = consumes;
         this.#produces = produces;
@@ -533,8 +551,58 @@ export class MakerMachine extends Machine {
             }));
         }
         if (this.upgrade_costs !== false) {
-            content.push([{content: [gettext('games_cidle_maker_upgrade')], width: 2, click: [() => this.upgrade()]}]);
-            content.push(...this.upgrade_costs.map(([res, cost]) => {
+            content.push([{
+                content: [gettext('games_cidle_machine_upgrade')],
+                width: 2,
+                click: [() => {
+                    const contents = this.#upgrade_pane_contents();
+                    const pane_id = contents.id;
+                    let p = Pane.pane(pane_id);
+                    if (p) {
+                        p.remove();
+                        return;
+                    }
+
+                    p = new Pane(contents);
+                }],
+            }]);
+        }
+        const x = this.x + this.radius;
+        const y = this.y - this.radius;
+
+        return {x, y, id: pane_id, content, title: this.name};
+    }
+
+    /**
+     * @param {MouseEvent} event
+     * @returns {{
+     *  x: number,
+     *  y: number,
+     *  pinned?: boolean,
+     *  id: string,
+     *  content?: {
+     *      content: (string|() => string)[],
+     *      click?: (() => void)[],
+     *      width?: number,
+     *  }[][],
+     *  title?: string|false,
+     *  tab?: GameTab
+     * }?}
+     */
+    #upgrade_pane_contents() {
+        const costs = this.upgrade_costs;
+        if (costs === false) return null;
+
+        const id = this.index == -1 ? this.id : this.index;
+        const pane_id = `${globals.game_tab}_maker_${id}_upgrade_pane`;
+        const title = gettext('games_cidle_machine_upgrading', {obj: this.name});
+        /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
+        const content = [
+            [{
+                content: [gettext('games_cidle_machine_upgrade_costs')],
+                click: [() => this.upgrade()],
+            }],
+            ...costs.map(([res, cost]) => {
                 const resource = Resource.resource(res);
                 const cost_func = () => {
                     let sum = 0;
@@ -555,12 +623,116 @@ export class MakerMachine extends Machine {
                 }, {
                     content: [cost_func],
                 }];
-            }));
-        }
-        const x = this.x + this.radius;
-        const y = this.y - this.radius;
+            }),
+            [{content: [gettext('games_cidle_machine_changes')]}],
+        ];
+        const next_level = this.level + 1;
 
-        return {x, y, id: pane_id, content, title: this.name};
+        // Requirement changes
+        const req_cur = this.requires;
+        const req_next = Array.isArray(this.#requires) ? (this.#requires[next_level] ?? []) : this.#requires(next_level);
+        const req_diff = (req_cur.length || req_next.length) && (req_cur.length != req_next.length || req_cur.some(([cres, creq], i) => {
+            let [nres, nreq] = req_next[i];
+
+            return nres != cres || nreq != creq;
+        }));
+        if (req_diff) {
+            const obj_cur = Object.fromEntries(req_cur);
+            const obj_next = Object.fromEntries(req_next);
+            const resources = new Set(req_cur.map(([res]) => res));
+            req_next.forEach(([res]) => resources.add(res));
+            resources.forEach(res => {
+                const creq = obj_cur[res] ?? 0;
+                const nreq = obj_next[res] ?? 0;
+                if (creq == nreq) return;
+
+                const {color, name} = Resource.resource(res);
+                const change_color = theme(creq > nreq ? 'machine_upgrade_lower_req_fill' : 'machine_upgrade_higher_req_fill');
+
+                const text = `{color:${color}}${beautify(creq)} ⇒ {color:${change_color}}${beautify(nreq)}`;
+
+                content.push([{
+                    content: [`{color:${color}}${name}`],
+                }, {
+                    content: [text],
+                }]);
+            });
+        }
+
+        // Consumption changes
+        const con_cur = this.consumes;
+        const con_next = Array.isArray(this.#consumes) ? (this.#consumes[next_level] ?? []) : this.#consumes(next_level);
+        const con_diff = (con_cur.length || con_next.length) && (con_cur.length != con_next.length || con_cur.some(([cres, ccon], i) => {
+            let [nres, ncon] = con_next[i];
+
+            return nres != cres || ccon != ncon;
+        }));
+        if (con_diff) {
+            const obj_cur = Object.fromEntries(con_cur);
+            const obj_next = Object.fromEntries(con_next);
+            const resources = new Set(con_cur.map(([res]) => res));
+            con_next.forEach(([res]) => resources.add(res));
+            resources.forEach(res => {
+                const ccon = obj_cur[res] ?? 0;
+                const ncon = obj_next[res] ?? 0;
+                if (ccon == ncon) return;
+
+                const {color, name} = Resource.resource(res);
+                const change_color = theme(ccon > ncon ? 'machine_upgrade_lower_con_fill' : 'machine_upgrade_higher_con_fill');
+
+                const text = `{color:${color}}${beautify(-ccon)}/s ⇒ {color:${change_color}}${beautify(-ncon)}/s`;
+
+                content.push([{
+                    content: [`{color:${color}}${name}`],
+                }, {
+                    content: [text],
+                }]);
+            });
+        }
+
+        // Production changes
+        const pro_cur = this.produces;
+        const pro_next = Array.isArray(this.#produces) ? (this.#produces[next_level] ?? []) : this.#produces(next_level);
+        const pro_diff = (pro_cur.length || pro_next.length) && (pro_cur.length != pro_next.length || pro_cur.some(([cres, cpro], i) => {
+            let [nres, npro] = pro_next[i];
+
+            return nres != cres || npro != cpro;
+        }));
+        if (pro_diff) {
+            const obj_cur = Object.fromEntries(pro_cur);
+            const obj_next = Object.fromEntries(pro_next);
+            const resources = new Set(pro_cur.map(([res]) => res));
+            pro_next.forEach(([res]) => resources.add(res));
+            resources.forEach(res => {
+                const cpro = obj_cur[res] ?? 0;
+                const npro = obj_next[res] ?? 0;
+                if (cpro == npro) return;
+
+                const {color, name} = Resource.resource(res);
+                const change_color = theme(cpro > npro ? 'machine_upgrade_lower_pro_fill' : 'machine_upgrade_higher_pro_fill');
+
+                const text = `{color:${color}}${beautify(cpro)}/s ⇒ {color:${change_color}}${beautify(npro)}/s`;
+
+                content.push([{
+                    content: [`{color:${color}}${name}`],
+                }, {
+                    content: [text],
+                }]);
+            });
+        }
+
+        let x, y;
+        const own_id = this.panecontents().id;
+        const own_pane = Pane.pane(own_id);
+        if (own_pane) {
+            x = own_pane.x + own_pane.table_widths().reduce((s, w) => s + w, 0);
+            y = own_pane.y;
+        } else {
+            x = this.x + this.radius;
+            y = this.y - this.radius;
+        }
+
+        return {x, y, id: pane_id, content, title};
     }
 
     /** @param {MouseEvent} event */
@@ -948,6 +1120,8 @@ export class MakerMachine extends Machine {
                     cost -= loss;
                 });
         });
+        const up_pane = this.#upgrade_pane_contents();
+        Pane.pane(up_pane.id)?.remove?.();
         this.level++;
         const pane = this.panecontents();
         let p = Pane.pane(pane.id);
@@ -969,9 +1143,9 @@ export function make_makers() {
      *  unpausable?: boolean,
      *  max_level?: number,
      *  type?: MakerType[]|(level: number) => MakerType,
-     *  consumes?: [string, number][][]|(level: number) => [string, number][]|false,
-     *  produces?: [string, number][][]|(level: number) => [string, number][]|false,
-     *  requires?: [string, number][][]|(level: number) => [string, number][]|false,
+     *  consumes?: [string, number][][]|(level: number) => [string, number][],
+     *  produces?: [string, number][][]|(level: number) => [string, number][],
+     *  requires?: [string, number][][]|(level: number) => [string, number][],
      *  upgrade_costs?: [string, number][][]|(level: number) => [string, number][]|false|null,
      * }[]}
      */
@@ -1023,6 +1197,13 @@ export function make_makers() {
             consumes: [[['stone', 5], ['fire', 1]]],
         },
         {
+            id: 'rock_crusher',
+            name: gettext('games_cidle_maker_rock_crusher'),
+            produces: [[['gravel', 1]]],
+            consumes: [[['stone', .1]]],
+        },
+        // Unpausable makers
+        {
             id: 'fire_extinguisher',
             name: gettext('games_cidle_maker_fire_extinguisher'),
             requires: [[['fire', 1e-1]]],
@@ -1030,6 +1211,7 @@ export function make_makers() {
             type: ['scaling'],
             unpausable: true,
         },
+        // Time machines
         {
             id: 'sundial',
             name: gettext('games_cidle_maker_sundial'),
@@ -1053,9 +1235,9 @@ export function insert_makers() {
      *  insert?: boolean,
      *  hidden?: boolean,
      *  type?: MakerType[]|(level: number) => MakerType,
-     *  consumes?: [string, number][][]|(level: number) => [string, number][]|false,
-     *  produces?: [string, number][][]|(level: number) => [string, number][]|false,
-     *  requires?: [string, number][][]|(level: number) => [string, number][]|false,
+     *  consumes?: [string, number][][]|(level: number) => [string, number][],
+     *  produces?: [string, number][][]|(level: number) => [string, number][],
+     *  requires?: [string, number][][]|(level: number) => [string, number][],
      * }][]}
      */
     const makers = [

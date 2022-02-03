@@ -5,6 +5,8 @@ import { Pane } from './pane.js';
 import { click as click_inventory, is_clickable as is_clickable_inventory } from './inventory.js';
 
 //todo show transparent when placing
+//todo exit dragging when mouse exits canvas
+//todo add zooming
 
 /**
  * Game keybinds
@@ -362,6 +364,9 @@ document.addEventListener('keyup', keyup);
 document.addEventListener('blur', () => {
     globals.focused = false;
     clicking = false;
+    dragging = false;
+    currently_dragging = null;
+    canvas.style.cursor = null;
 });
 document.addEventListener('focus', () => {
     globals.focused = true;

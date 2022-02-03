@@ -4,55 +4,6 @@ import { number_between } from './primitives.js';
  * @typedef {{x: number, y: number}} Point
  */
 
-class Shape {
-    /** @type {{[points: string]: Shape}} */
-    static #shapes = {};
-    /**
-     * Gets an existing shape
-     *
-     * @param {...PointLike} points
-     * @returns {Shape}
-     */
-    static get_shape(...points) {
-        points = points.map(to_point);
-
-        const json = JSON.stringify(points);
-
-        return (this.#shapes[json] ??= new Shape(...points));
-    }
-
-    /** @param {...PointLike} points */
-    constructor(...points) {
-        this.#points = points.map(to_point);
-    }
-
-    #points;
-    get points() { return this.#points.map(to_point); }
-
-    /**
-     * Draws the shape
-     *
-     * @param {CanvasRenderingContext2D} context
-     * @param {Object} [options]
-     * @param {boolean} [options.fill]
-     * @param {boolean} [options.stroke]
-     * @param {boolean} [options.x_offset] Offset for x position
-     * @param {boolean} [options.y_offset] Offset for y position
-     */
-    draw(context, {fill=false, stroke=true, x_offset=0, y_offset=0}={}) {
-        if (!stroke && !fill) return;
-        const points = this.#points;
-        const last = points[points.length - 1];
-
-        context.beginPath();
-        context.moveTo(last.x, last.y);
-        points.forEach(({x, y}) => context.lineTo(x + x_offset, y + y_offset));
-        if (fill) context.fill();
-        if (stroke) context.stroke();
-        context.closePath();
-    }
-}
-
 /**
  * Tries to convert something into a coordinates object ({x: number, y: number})
  *
