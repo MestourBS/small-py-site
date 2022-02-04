@@ -7,6 +7,7 @@ import globals from './globals.js';
 import Resource from './resource.js';
 import { beautify, stable_pad_number } from './primitives.js';
 
+//todo prevent craft pane from being outside of sight
 //todo show affordable
 
 /**
@@ -203,8 +204,10 @@ const inventory = {
                                     };
                                     return [{
                                         content: [`{color:${resource.color}}${resource.name}`],
+                                        color: resource.background_color,
                                     }, {
                                         content: [cost_func],
+                                        color: resource.background_color,
                                     }];
                                 }),
                             );
@@ -274,7 +277,7 @@ const recipes = {
                     } else if (c <= 3 && StorageMachine.any_storage_for('stone')) {
                         cost = [['wood', c * 500 + 1_000], ['stone', c * 1_000 - 500]];
                     } else if (c <= 6 && StorageMachine.any_storage_for('brick')) {
-                        cost = [['wood', c * 250 + 1_000], ['brick', c * 500]];
+                        cost = [['wood', c * 250 + 1_000], ['brick', (c - 1) * 300]];
                     }
                     costs[0] = cost;
                 }
@@ -545,6 +548,40 @@ const recipes = {
             unlocked: () => ['copper', 'sand'].every(res => StorageMachine.any_storage_for(res)),
             position: 14,
         },
+        'glass_container': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['copper', 5 ** c * 20 + 80]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => recipes.machines['gravel_washer'].crafted?.reduce((s, n) => s + n, 0) > 0,
+            position: 15,
+        },
+        'glass_blower': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['copper', 2 ** c * 50 + 50], ['brick', 64 * 2 ** c + 256]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('glass'),
+            position: 16,
+        },
         'giant_clock': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
@@ -579,11 +616,23 @@ const recipes = {
                 const costs = [];
                 { // 0
                     const c = crafted[0] ?? 0;
-                    costs[0] = [['stone', 1e3 * 10 ** c], ['time', 10 * 2 ** c]];
+                    costs[0] = [['stone', 1_000 * 10 ** c], ['time', 10 * 2 ** c]];
                 }
                 return costs;
             },
             unlocked: () => ['time', 'stone'].every(res => StorageMachine.any_storage_for(res)),
+        },
+        'hourglass': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    costs[0] = [['glass', 100 * 10 ** c], ['sand', 50 * 10 ** c], ['time', 10 * 3 ** c]];
+                }
+                return costs;
+            },
+            unlocked: () => ['time', 'glass'].every(res => StorageMachine.any_storage_for(res)),
         },
     },
 };
@@ -604,7 +653,7 @@ function init() {
     });
 
     // Tries to unlock recipes every 15 seconds
-    setInterval(() => unlock_recipes(), 15 * 1e3);
+    setInterval(() => unlock_recipes(), 15 * 1_000);
 }
 /**
  * Makes a thing, or returns false

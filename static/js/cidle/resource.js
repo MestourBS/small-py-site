@@ -27,9 +27,10 @@ export class Resource {
      * @param {string} params.id
      * @param {string} [params.name]
      * @param {string} [params.color]
+     * @param {string?} [params.background_color]
      * @param {string?} [params.image]
      */
-    constructor({id, name=null, color='#000', image=null}) {
+    constructor({id, name=null, color='#000', background_color=null, image=null}) {
         id += '';
         name = name?.toString() ?? '';
         if (image != null) {
@@ -41,6 +42,7 @@ export class Resource {
         this.#id = id + '';
         this.#name = name;
         this.#color = color;
+        this.#background_color = background_color;
         this.#image = image;
 
         if (!(id in Resource.#resources)) {
@@ -51,6 +53,7 @@ export class Resource {
     #id;
     #name;
     #color;
+    #background_color;
     /** @type {null|HTMLImageElement} */
     #image;
 
@@ -58,6 +61,7 @@ export class Resource {
     get name() { return this.#name; }
     get color() { return this.#color; }
     get image() { return this.#image; }
+    get background_color() { return this.#background_color; }
 }
 export default Resource;
 
@@ -67,6 +71,7 @@ export function make_resources() {
      *  id: string,
      *  name?: string
      *  color?: string,
+     *  background_color?: string,
      *  image?: string|null,
      * }[]}
      */
@@ -110,6 +115,12 @@ export function make_resources() {
             id: 'sand',
             name: gettext('games_cidle_resource_sand'),
             color: '#990',
+        },
+        {
+            id: 'glass',
+            name: gettext('games_cidle_resource_glass'),
+            color: '#fff',
+            background_color: '#ccc',
         },
         // Time resources
         {

@@ -4,7 +4,6 @@ import Machine from './machine.js';
 import { Pane } from './pane.js';
 import { click as click_inventory, is_clickable as is_clickable_inventory } from './inventory.js';
 
-//todo exit dragging when mouse exits canvas
 //todo add zooming
 
 /**
@@ -384,8 +383,11 @@ document.addEventListener('focus', () => {
 document.addEventListener('mousemove', e => {
     let x = e.x - canvas.offsetLeft;
     let y = e.y - canvas.offsetTop;
+    if (x < 0 || x > canvas.width) return;
+    if (y < 0 || y > canvas.height) return;
     mouse_event = e;
     e.preventDefault();
+
 
     if (clicking) {
         dragging = true;

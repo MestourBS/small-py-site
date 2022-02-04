@@ -15,8 +15,15 @@ import { beautify, stable_pad_number } from './primitives.js';
 
 //todo move production to a single all consuming / producing function
 //todo allow recipes secondary outputs (no blocking when full)
-//todo display recipe type
-//todo allow maker to be visible under some conditions
+
+const pause_text = {
+    'true': gettext('games_cidle_maker_paused'),
+    'false': gettext('games_cidle_maker_unpaused'),
+};
+const type_text = {
+    'fixed': gettext('games_cidle_maker_type_fixed'),
+    'scaling': gettext('games_cidle_maker_type_scaling'),
+};
 
 export class MakerMachine extends Machine {
     /** @type {MakerMachine[]} */
@@ -30,6 +37,15 @@ export class MakerMachine extends Machine {
     }
 
     /**
+     * Tries to see if hidden makers can become visible
+     */
+    static unhide_makers() {
+        if (this != MakerMachine) MakerMachine.unhide_makers();
+
+        this.#maker_machines.filter(m => typeof m.#hidden == 'function').forEach(m => m.hidden);
+    }
+
+    /**
      * @param {Object} params
      * @param {string?} [params.id]
      * @param {number?} [params.x]
@@ -38,7 +54,7 @@ export class MakerMachine extends Machine {
      * @param {number?} [params.level]
      * @param {string|HTMLImageElement?} [params.image]
      * @param {boolean} [params.insert]
-     * @param {boolean} [params.hidden]
+     * @param {boolean|() => boolean} [params.hidden]
      * @param {MakerType[]|(level: number) => MakerType} [params.type]
      * @param {boolean} [params.paused]
      * @param {boolean} [params.unpausable]
@@ -105,7 +121,7 @@ export class MakerMachine extends Machine {
         this.#produces = produces;
         this.#requires = requires;
         this.#upgrade_costs = upgrade_costs;
-        this.#hidden = !!hidden;
+        this.#hidden = typeof hidden == 'function' ? hidden : !!hidden;
         this.#type = type;
         this.#paused = !!paused;
         this.#unpausable = !!unpausable;
@@ -139,6 +155,7 @@ export class MakerMachine extends Machine {
     /** @type {null|MakerType} */
     #type_leveled = null;
     #max_level = 0;
+    /** @type {null|boolean} */
     #can_upgrade = null;
 
     /** @type {[string, number][]} */
@@ -178,7 +195,7 @@ export class MakerMachine extends Machine {
         return this.#upgrade_costs_leveled ?? false;
     }
     get is_visible() {
-        if (this.#hidden) return false;
+        if (this.hidden) return false;
 
         let {x, y} = this;
         if (x == null || y == null) return false;
@@ -194,7 +211,16 @@ export class MakerMachine extends Machine {
         return (min_x < display_size.width || max_x > 0) && (min_y < display_size.height || max_y > 0);
     }
     get radius() { return 25; }
-    get hidden() { return this.#hidden; }
+    get hidden() {
+        if (typeof this.#hidden == 'function') {
+            if (!this.#hidden()) {
+                this.#hidden = false;
+                Machine.visible_machines.push(this);
+            }
+            else return true;
+        }
+        return this.#hidden;
+    }
     get type() {
         if (this.#type_leveled == null) {
             if (typeof this.#type == 'function') this.#type_leveled = this.#type(this.level);
@@ -214,7 +240,7 @@ export class MakerMachine extends Machine {
             this.#produces_leveled = null;
             this.#requires_leveled = null;
             this.#type_leveled = null;
-            this.#can_upgrade = null;
+            Machine.machines.filter(m => 'can_upgrade' in m && m.can_upgrade).forEach(m => m.can_upgrade = false);
         }
     }
     get can_upgrade() {
@@ -223,16 +249,24 @@ export class MakerMachine extends Machine {
             else this.#can_upgrade = this.upgrade_costs.every(([res, cost]) => {
                 const {amount} = StorageMachine.stored_resource(res);
                 return cost <= amount;
-            });
+            }) || null;
         }
         return this.#can_upgrade ?? false;
     }
+    set can_upgrade(can) {
+        if (!can) this.#can_upgrade = null;
+        else this.#can_upgrade = true;
+    }
 
     toJSON() {
-        return Object.assign(super.toJSON(), {
+        /** @type {{hidden?: boolean, paused: boolean}} */
+        const obj = {
             hidden: this.#hidden,
-            paused: this.paused,
-        });
+            paused: this.#paused,
+        };
+        if (typeof obj.hidden == 'function') delete obj.hidden;
+
+        return Object.assign(super.toJSON(), obj);
     }
 
     destroy() {
@@ -523,24 +557,27 @@ export class MakerMachine extends Machine {
         if (this.#unpausable) {
             content.push([{content: [gettext('games_cidle_maker_unpausable')], width: 2}]);
         } else {
-            const pause_text = {
-                'true': gettext('games_cidle_maker_paused'),
-                'false': gettext('games_cidle_maker_unpaused'),
-            };
             content.push([{
                 content: [() => pause_text[this.paused]],
                 width: 2,
                 click: [() => this.pause_toggle()],
             }])
         }
+        const type_func = () => {
+            if (this.type == 'fixed') return type_text['fixed'];
+            else return `${type_text['scaling']} (*${beautify(this.max_produce_multiplier())})`;
+        };
+        content.unshift([{content: [() => type_func()]}]);
         if (this.requires.length) {
             content.push([{content: [gettext('games_cidle_maker_requires')], width: 2}]);
             content.push(...this.requires.map(([res, req]) => {
                 const resource = Resource.resource(res);
                 return [{
                     content: [`{color:${resource.color}}${resource.name}`],
+                    color: resource.background_color,
                 }, {
                     content: [`{color:${resource.color}}${beautify(req)}`],
+                    color: resource.background_color,
                 }];
             }));
         }
@@ -550,8 +587,10 @@ export class MakerMachine extends Machine {
                 const resource = Resource.resource(res);
                 return [{
                     content: [`{color:${resource.color}}${resource.name}`],
+                    color: resource.background_color,
                 }, {
                     content: [`{color:${resource.color}}${beautify(-con)}/s`],
+                    color: resource.background_color,
                 }];
             }));
         }
@@ -561,15 +600,17 @@ export class MakerMachine extends Machine {
                 const resource = Resource.resource(res);
                 return [{
                     content: [`{color:${resource.color}}${resource.name}`],
+                    color: resource.background_color,
                 }, {
                     content: [`{color:${resource.color}}${beautify(pro)}/s`],
+                    color: resource.background_color,
                 }];
             }));
         }
         if (upgrade_marker && this.upgrade_costs !== false) {
             const up_text = () => {
                 let text = gettext('games_cidle_machine_upgrade');
-                if (this.can_upgrade) text += `{color:rainbow} ↑`;
+                if (this.can_upgrade) text += `{color:rainbow} ▲`;
 
                 return text;
             };
@@ -621,7 +662,7 @@ export class MakerMachine extends Machine {
         /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
         const content = [
             [{
-                content: [gettext('games_cidle_machine_upgrade_costs') + ' {color:rainbow}↑'.repeat(this.can_upgrade)],
+                content: [gettext('games_cidle_machine_upgrade_costs') + ' {color:rainbow}▲'.repeat(this.can_upgrade)],
                 click: [() => this.upgrade()],
             }],
             ...costs.map(([res, cost]) => {
@@ -639,8 +680,10 @@ export class MakerMachine extends Machine {
                 };
                 return [{
                     content: [`{color:${resource.color}}${resource.name}`],
+                    color: resource.background_color,
                 }, {
                     content: [cost_func],
+                    color: resource.background_color,
                 }];
             }),
             [{content: [gettext('games_cidle_machine_changes')]}],
@@ -672,15 +715,17 @@ export class MakerMachine extends Machine {
                 const nreq = obj_next[res] ?? 0;
                 if (creq == nreq) return;
 
-                const {color, name} = Resource.resource(res);
+                const {color, name, background_color} = Resource.resource(res);
                 const change_color = theme(creq > nreq ? 'machine_upgrade_lower_req_fill' : 'machine_upgrade_higher_req_fill');
 
                 const text = `{color:${color}}${beautify(creq)} ⇒ {color:${change_color}}${beautify(nreq)}`;
 
                 content.push([{
                     content: [`{color:${color}}${name}`],
+                    color: background_color,
                 }, {
                     content: [text],
+                    color: background_color,
                 }]);
             });
         }
@@ -703,15 +748,17 @@ export class MakerMachine extends Machine {
                 const ncon = obj_next[res] ?? 0;
                 if (ccon == ncon) return;
 
-                const {color, name} = Resource.resource(res);
+                const {color, name, background_color} = Resource.resource(res);
                 const change_color = theme(ccon > ncon ? 'machine_upgrade_lower_con_fill' : 'machine_upgrade_higher_con_fill');
 
                 const text = `{color:${color}}${beautify(-ccon)}/s ⇒ {color:${change_color}}${beautify(-ncon)}/s`;
 
                 content.push([{
                     content: [`{color:${color}}${name}`],
+                    color: background_color,
                 }, {
                     content: [text],
+                    color: background_color,
                 }]);
             });
         }
@@ -734,15 +781,17 @@ export class MakerMachine extends Machine {
                 const npro = obj_next[res] ?? 0;
                 if (cpro == npro) return;
 
-                const {color, name} = Resource.resource(res);
+                const {color, name, background_color} = Resource.resource(res);
                 const change_color = theme(cpro > npro ? 'machine_upgrade_lower_pro_fill' : 'machine_upgrade_higher_pro_fill');
 
                 const text = `{color:${color}}${beautify(cpro)}/s ⇒ {color:${change_color}}${beautify(npro)}/s`;
 
                 content.push([{
                     content: [`{color:${color}}${name}`],
+                    color: background_color,
                 }, {
                     content: [text],
+                    color: background_color,
                 }]);
             });
         }
@@ -788,7 +837,7 @@ export class MakerMachine extends Machine {
      * @param {boolean} [params.upgrade_marker]
      */
     draw({context=canvas_context, x=null, y=null, transparent=false, upgrade_marker=true}={}) {
-        if (this.#hidden) return;
+        if (this.hidden) return;
 
         if (x == null) {
             ({x} = this);
@@ -847,7 +896,7 @@ export class MakerMachine extends Machine {
         }
 
         if (upgrade_marker && this.can_upgrade) {
-            canvas_write('↑', this.x, this.y, {text_align: 'right', base_text_color: theme('machine_upgrade_can_afford_fill')});
+            canvas_write('▲', x + this.radius, y, {text_align: 'right', base_text_color: theme('machine_upgrade_can_afford_fill')});
         }
 
         if (transparent) context.globalAlpha = 1;
@@ -857,7 +906,7 @@ export class MakerMachine extends Machine {
      * Draws the machine's connections, if they are visible
      */
     draw_connections({context=canvas_context, multiplier=this.#last_multiplier}) {
-        if (this.#hidden) return;
+        if (this.hidden) return;
         if (this.paused) {
             context.setLineDash([10]);
         }
@@ -981,7 +1030,7 @@ export class MakerMachine extends Machine {
      * @param {number?} [params.level]
      * @param {string|HTMLImageElement?} [params.image]
      * @param {boolean?} [params.insert]
-     * @param {boolean?} [params.hidden]
+     * @param {boolean|(() => boolean)?} [params.hidden]
      * @param {boolean?} [params.unpausable]
      * @param {MakerType[]|((level: number) => MakerType)?} [params.type]
      * @param {boolean} [params.hidden]
@@ -996,7 +1045,7 @@ export class MakerMachine extends Machine {
         y ??= this.y;
         name ??= this.name;
         level ??= this.level;
-        hidden ??= this.hidden;
+        hidden ??= this.#hidden;
         type ??= this.#type;
         consumes ??= this.#consumes;
         produces ??= this.#produces;
@@ -1169,6 +1218,10 @@ export class MakerMachine extends Machine {
 }
 export default MakerMachine;
 
+setInterval(() => {
+    MakerMachine.unhide_makers();
+}, 15 * 1e3);
+
 /**
  * Current time speed
  *
@@ -1198,7 +1251,7 @@ export function make_makers() {
      *  id?: string,
      *  name?: string,
      *  image?: string|HTMLImageElement,
-     *  hidden?: boolean,
+     *  hidden?: boolean|() => boolean,
      *  unpausable?: boolean,
      *  max_level?: number,
      *  type?: MakerType[]|(level: number) => MakerType,
@@ -1244,22 +1297,33 @@ export function make_makers() {
         {
             id: 'wood_burner',
             name: gettext('games_cidle_maker_wood_burner'),
-            produces: [[['fire', 1]], [['fire', 3]]],
-            consumes: [[['wood', 1]], [['wood', 1.5]]],
+            produces: [[['fire', 1]], [['fire', 3]], [['fire', 5]]],
+            consumes: [[['wood', 1]], [['wood', 1.5]], [['wood', 2]]],
             upgrade_costs: (level) => {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('brick')) return [['brick', 200]];
+                    return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('glass')) return [['glass', 200]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 2,
+        },
+        {
+            id: 'brick_furnace',
+            name: gettext('games_cidle_maker_brick_furnace'),
+            produces: [[['brick', 1]], [['brick', 2]]],
+            consumes: [[['stone', 5], ['fire', 1]], [['stone', 5], ['fire', 1.5]]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('glass')) return [['glass', 200]];
                     return null;
                 }
                 return false;
             },
             max_level: 1,
-        },
-        {
-            id: 'brick_furnace',
-            name: gettext('games_cidle_maker_brick_furnace'),
-            produces: [[['brick', 1]]],
-            consumes: [[['stone', 5], ['fire', 1]]],
         },
         {
             id: 'rock_crusher',
@@ -1278,6 +1342,12 @@ export function make_makers() {
             produces: [[['copper', .1], ['sand', .9]]],
             consumes: [[['water', 1], ['gravel', 1]]],
         },
+        {
+            id: 'glass_blower',
+            name: gettext('games_cidle_maker_glass_blower'),
+            produces: [[['glass', 1]]],
+            consumes: [[['sand', 1], ['fire', 3]]],
+        },
         // Unpausable makers
         {
             id: 'fire_extinguisher',
@@ -1286,12 +1356,18 @@ export function make_makers() {
             consumes: [[['fire', 1e-3]]],
             type: ['scaling'],
             unpausable: true,
+            hidden: () => !StorageMachine.any_storage_for('fire'),
         },
         // Time machines
         {
             id: 'sundial',
             name: gettext('games_cidle_maker_sundial'),
             consumes: [[['time', 1]]],
+        },
+        {
+            id: 'hourglass',
+            name: gettext('games_cidle_maker_hourglass'),
+            consumes: [[['time', 1.5]]],
         },
     ];
 

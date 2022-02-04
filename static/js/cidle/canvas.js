@@ -144,7 +144,7 @@ const game_tabs = {
                 let a = beautify(amount);
                 if (per_second) a = stable_pad_number(a);
                 const m = beautify(max);
-                const {color, name} = Resource.resource(res);
+                const {color, name, background_color} = Resource.resource(res);
                 let ps = '';
                 if (per_second) {
                     ps = beautify(per_second);
@@ -156,6 +156,10 @@ const game_tabs = {
 
                 const text = `${name}: ${a}/${m}${ps}`;
                 const cut_text = cut_lines(text);
+                if (background_color) {
+                    context.fillStyle = background_color;
+                    context.fillRect(0, y, canvas.width, (cut_text.length + .5) * font_size);
+                }
                 canvas_write(text, x, y, {base_text_color: color});
 
                 y += (cut_text.length + .5) * font_size;

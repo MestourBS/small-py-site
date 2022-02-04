@@ -56,7 +56,7 @@ export class Pane {
      * @param {number} params.y
      * @param {boolean} [params.pinned] Whether the pane moves around with the focus
      * @param {string} params.id
-     * @param {{content: (string|() => string)[], click?: (() => void)[], width?: number}[][]} [params.content]
+     * @param {{content: (string|() => string)[], click?: (() => void)[], width?: number, color?: string}[][]} [params.content]
      * @param {string|false} [params.title]
      * @param {GameTab} [params.tab]
      * @param {boolean} [params.pinnable] Whether the tab can be (un)pinned afterwards
@@ -128,7 +128,7 @@ export class Pane {
     #pinned;
     #id;
     #content;
-    /** @type {false|{content: string[], click?: (() => void)[], width?: number}[][]} */
+    /** @type {false|{content: string[], click?: (() => void)[], width?: number, color?: string}[][]} */
     #cut_content = false;
     #tab;
 
@@ -160,7 +160,7 @@ export class Pane {
 
         this.#cut_content = this.#content.map(row => {
             return row.map(cell => {
-                let {content, click=false, width=false} = cell;
+                let {content, click=false, width=false, color=null} = cell;
 
                 content = content.map(c => typeof c == 'function' ? c() : c);
 
@@ -169,9 +169,10 @@ export class Pane {
                  *  content: string[],
                  *  click?: (() => void)[],
                  *  width?: number,
+                 *  color?: string,
                  * }}
                  */
-                let copy = {content};
+                let copy = {content, color};
                 if (click !== false) copy.click = click;
                 if (width !== false) copy.width = width;
 
@@ -191,7 +192,7 @@ export class Pane {
         if (!this.#cut_content) return;
         // Turn rows into columns of cells
         const columns = array_group_by(this.#cut_content.map(row => {
-            return row.map(/** @return {[{content: string[], click?: (() => void)[], width?: number}, number][]} */(c, i) => {
+            return row.map(/** @return {[{content: string[], click?: (() => void)[], width?: number, color?: string}, number][]} */(c, i) => {
                 let width = c.width ?? 1;
                 let cols = [];
                 for (let j = i; j < i + width; j++) cols.push([c, j]);
@@ -275,7 +276,7 @@ export class Pane {
         const row = this.#content[y_grid];
         if (!row) return;
         let x_index = 0;
-        /** @type {null|{content: (string | (() => string))[]; click?: (() => void)[]; width?: number;}} */
+        /** @type {null|{content: (string | (() => string))[]; click?: (() => void)[]; width?: number; color?: string}} */
         let cell_selected = null;
         row.forEach(cell => {
             const min = x_index;
@@ -323,7 +324,7 @@ export class Pane {
         const row = this.#content[y_grid];
         if (!row) return false;
         let x_index = 0;
-        /** @type {null|{content: (string | (() => string))[]; click?: (() => void)[]; width?: number;}} */
+        /** @type {null|{content: (string | (() => string))[]; click?: (() => void)[]; width?: number; color?: string}} */
         let cell_selected = null;
         row.forEach(cell => {
             const min = x_index;
@@ -436,15 +437,18 @@ export class Pane {
             row.forEach((cell, cx) => {
                 const px = widths.filter((_, i) => i < cx).reduce((s, w) => s + w, 0) + x;
                 const width = widths.filter((_, i) => i >= cx && i < cx + (cell.width ?? 1)).reduce((s, w) => s + w, 0);
+                const background = cell.color;
 
                 // Draw cell borders
                 context.strokeStyle = theme('pane_color_border');
+                if (background) context.fillStyle = background;
                 context.beginPath();
                 context.moveTo(px, py);
                 context.lineTo(px + width, py);
                 context.lineTo(px + width, py + height);
                 context.lineTo(px, py + height);
                 context.lineTo(px, py);
+                if (background) context.fill();
                 context.stroke();
                 context.closePath();
 

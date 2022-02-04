@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-02-04 10:56+0100\n"
+"POT-Creation-Date: 2022-02-04 14:55+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -509,19 +509,19 @@ msgstr ""
 "progrès depuis votre dernier prestige, mais vous allez gagner des "
 "nouvelle ressources"
 
-#: static/js/cidle/canvas.js:40
+#: static/js/cidle/canvas.js:42
 msgid "games_cidle_tab_world"
 msgstr "Monde"
 
-#: static/js/cidle/canvas.js:64
+#: static/js/cidle/canvas.js:66
 msgid "games_cidle_tab_inventory"
 msgstr "Inventaire"
 
-#: static/js/cidle/canvas.js:83
+#: static/js/cidle/canvas.js:85
 msgid "games_cidle_tab_resources"
 msgstr "Resources"
 
-#: static/js/cidle/canvas.js:105
+#: static/js/cidle/canvas.js:107
 msgid "games_cidle_time_speed"
 msgstr "Vitesse du Temps: %(speed)s secondes par seconde"
 
@@ -533,98 +533,109 @@ msgstr "Clair"
 msgid "games_cidle_inventory_machines"
 msgstr "Machines"
 
-#: static/js/cidle/inventory.js:139
+#: static/js/cidle/inventory.js:140
 msgid "games_cidle_place"
 msgstr "Placer %(obj)s"
 
-#: static/js/cidle/inventory.js:182
+#: static/js/cidle/inventory.js:183
 msgid "games_cidle_make"
 msgstr "Faire %(obj)s"
 
-#: static/js/cidle/inventory.js:192
+#: static/js/cidle/inventory.js:193
 msgid "games_cidle_craft_costs"
 msgstr "Cout de fabrication"
 
-#: static/js/cidle/inventory.js:213
-#, fuzzy
-msgid "games_cidle_cannot_make"
-msgstr "Faire %(obj)s"
-
-#: static/js/cidle/maker.js:527
-msgid "games_cidle_maker_unpausable"
-msgstr "Ne peut pas être sur pause"
-
-#: static/js/cidle/maker.js:530
+#: static/js/cidle/maker.js:22
 msgid "games_cidle_maker_paused"
 msgstr "Sur pause"
 
-#: static/js/cidle/maker.js:531
+#: static/js/cidle/maker.js:23
 msgid "games_cidle_maker_unpaused"
 msgstr "Pas sur pause"
 
-#: static/js/cidle/maker.js:540
+#: static/js/cidle/maker.js:26
+msgid "games_cidle_maker_type_fixed"
+msgstr "La production est fixée"
+
+#: static/js/cidle/maker.js:27
+msgid "games_cidle_maker_type_scaling"
+msgstr "La production est proportionnelle"
+
+#: static/js/cidle/maker.js:561
+msgid "games_cidle_maker_unpausable"
+msgstr "Ne peut pas être sur pause"
+
+#: static/js/cidle/maker.js:575
 msgid "games_cidle_maker_requires"
 msgstr "A Besoin de"
 
-#: static/js/cidle/maker.js:551
+#: static/js/cidle/maker.js:586
 msgid "games_cidle_maker_consumes"
 msgstr "Utilise"
 
-#: static/js/cidle/maker.js:562
+#: static/js/cidle/maker.js:597
 msgid "games_cidle_maker_produces"
 msgstr "Produit"
 
-#: static/js/cidle/maker.js:574 static/js/cidle/storage.js:317
+#: static/js/cidle/maker.js:609 static/js/cidle/storage.js:330
 msgid "games_cidle_machine_upgrade"
 msgstr "Amélioration"
 
-#: static/js/cidle/maker.js:617 static/js/cidle/storage.js:358
+#: static/js/cidle/maker.js:658 static/js/cidle/storage.js:377
 msgid "games_cidle_machine_upgrading"
 msgstr "Améliorer %(obj)s"
 
-#: static/js/cidle/maker.js:621 static/js/cidle/storage.js:363
+#: static/js/cidle/maker.js:662 static/js/cidle/storage.js:382
 msgid "games_cidle_machine_upgrade_costs"
 msgstr "Cout d'amélioration"
 
-#: static/js/cidle/maker.js:641 static/js/cidle/storage.js:383
+#: static/js/cidle/maker.js:684 static/js/cidle/storage.js:404
 msgid "games_cidle_machine_changes"
 msgstr "Changements"
 
-#: static/js/cidle/maker.js:1226
+#: static/js/cidle/maker.js:1276
 msgid "games_cidle_maker_tree_chopper"
 msgstr "Coupeur de Bois"
 
-#: static/js/cidle/maker.js:1242
+#: static/js/cidle/maker.js:1292
 msgid "games_cidle_maker_stone_miner"
 msgstr "Mineur de Pierre"
 
-#: static/js/cidle/maker.js:1258
+#: static/js/cidle/maker.js:1308
 msgid "games_cidle_maker_wood_burner"
 msgstr "Bruleur de Bois"
 
-#: static/js/cidle/maker.js:1272
+#: static/js/cidle/maker.js:1322
 msgid "games_cidle_maker_brick_furnace"
 msgstr "Four en Briques"
 
-#: static/js/cidle/maker.js:1278
+#: static/js/cidle/maker.js:1328
 msgid "games_cidle_maker_rock_crusher"
 msgstr "Destructeur de Pierre"
 
-#: static/js/cidle/maker.js:1284
+#: static/js/cidle/maker.js:1334
 msgid "games_cidle_maker_water_well"
 msgstr "Puis à Eau"
 
-#: static/js/cidle/maker.js:1289
+#: static/js/cidle/maker.js:1339
 msgid "games_cidle_maker_gravel_washer"
 msgstr "Laveur de Gravier"
 
-#: static/js/cidle/maker.js:1297
+#: static/js/cidle/maker.js:1345
+msgid "games_cidle_maker_glass_blower"
+msgstr "Soufflerie"
+
+#: static/js/cidle/maker.js:1353
 msgid "games_cidle_maker_fire_extinguisher"
 msgstr "Feu qui s'éteint"
 
-#: static/js/cidle/maker.js:1307
+#: static/js/cidle/maker.js:1364
 msgid "games_cidle_maker_sundial"
 msgstr "Cadran Solaire"
+
+#: static/js/cidle/maker.js:1369
+msgid "games_cidle_maker_hourglass"
+msgstr "Sablier"
 
 #: static/js/cidle/resource.js:76
 msgid "games_cidle_resource_wood"
@@ -658,47 +669,55 @@ msgstr "Cuivre"
 msgid "games_cidle_resource_sand"
 msgstr "Sable"
 
-#: static/js/cidle/resource.js:118
+#: static/js/cidle/resource.js:116
+msgid "games_cidle_resource_glass"
+msgstr "Verre"
+
+#: static/js/cidle/resource.js:123
 msgid "games_cidle_resource_time"
 msgstr "Temps"
 
-#: static/js/cidle/storage.js:293
+#: static/js/cidle/storage.js:306
 msgid "cidle_storage_contents"
 msgstr "Contenu Stocké"
 
-#: static/js/cidle/storage.js:605
+#: static/js/cidle/storage.js:704
 msgid "games_cidle_storage_wood_storage"
 msgstr "Stockage de Bois"
 
-#: static/js/cidle/storage.js:619
+#: static/js/cidle/storage.js:718
 msgid "games_cidle_storage_stone_storage"
 msgstr "Stockage de Pierre"
 
-#: static/js/cidle/storage.js:633
+#: static/js/cidle/storage.js:732
 msgid "games_cidle_storage_fire_pit"
 msgstr "Foyer"
 
-#: static/js/cidle/storage.js:647
+#: static/js/cidle/storage.js:746
 msgid "games_cidle_storage_brick_pile"
 msgstr "Pile de Briques"
 
-#: static/js/cidle/storage.js:661
+#: static/js/cidle/storage.js:760
 msgid "games_cidle_storage_gravel_box"
 msgstr "Boite de Gravier"
 
-#: static/js/cidle/storage.js:668
+#: static/js/cidle/storage.js:767
 msgid "games_cidle_storage_water_bucket"
 msgstr "Seau d'Eau"
 
-#: static/js/cidle/storage.js:682
+#: static/js/cidle/storage.js:782
 msgid "games_cidle_storage_copper_crate"
 msgstr "Packet de Cuivre"
 
-#: static/js/cidle/storage.js:689
+#: static/js/cidle/storage.js:789
 msgid "games_cidle_storage_sand_box"
 msgstr "Boite de Sable"
 
-#: static/js/cidle/storage.js:698
+#: static/js/cidle/storage.js:796
+msgid "games_cidle_storage_glass_container"
+msgstr "Conteneur de Verre"
+
+#: static/js/cidle/storage.js:805
 msgid "games_cidle_storage_giant_clock"
 msgstr "Horloge Géante"
 
@@ -1258,4 +1277,7 @@ msgstr "Jeux"
 
 #~ msgid "games_cidle"
 #~ msgstr "Idle Canevas"
+
+#~ msgid "games_cidle_cannot_make"
+#~ msgstr "Faire %(obj)s"
 
