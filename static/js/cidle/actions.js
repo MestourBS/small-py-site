@@ -68,6 +68,13 @@ let dragging = false;
  * @type {null|{drag: (x: number, y: number, x_diff: number, y_diff: number, event: MouseEvent) => void}}
  */
 let currently_dragging = null;
+/** @type {MouseEvent|null} */
+let mouse_event = null;
+export const mouse_position = {
+    get x() { return mouse_event ? mouse_event.x - canvas.offsetLeft : 0; },
+    get y() { return mouse_event ? mouse_event.y - canvas.offsetTop : 0; },
+    get event() { return mouse_event; },
+};
 
 /**
  * Starts the actions that corresponds to the key pressed
@@ -163,10 +170,12 @@ function click(x, y, event) {
         return;
     }
 
-    if (globals.game_tab in game_tabs) {
-        game_tabs[globals.game_tab].click(x, y, event);
+    const game_tab = globals.game_tab;
+
+    if (game_tab in game_tabs) {
+        game_tabs[game_tab].click(x, y, event);
     } else {
-        console.error(`Unknown game tab ${globals.game_tab}`);
+        console.error(`Unknown game tab ${game_tab}`);
     }
 }
 /**
@@ -180,9 +189,7 @@ function click_world(x, y, event) {
     x -= display_size.width / 2 - globals.position[0];
     y -= display_size.height / 2 - globals.position[1];
 
-    if ('world' in globals.adding) {
-        if (globals.adding['world'](x, y, event)) return;
-    }
+    if (globals.adding[globals.game_tab]?.click(x, y, event)) return;
 
     const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([x, y]));
 
@@ -210,10 +217,12 @@ function is_clickable(x, y, event) {
         return true;
     }
 
-    if (globals.game_tab in game_tabs) {
-        return game_tabs[globals.game_tab].can_click(x, y, event);
+    const game_tab = globals.game_tab;
+
+    if (game_tab in game_tabs) {
+        return game_tab in globals.adding || game_tabs[game_tab].can_click(x, y, event);
     } else {
-        console.error(`Unknown game tab ${globals.game_tab}`);
+        console.error(`Unknown game tab ${game_tab}`);
     }
 
     return false;
@@ -227,10 +236,6 @@ function is_clickable(x, y, event) {
  * @returns {boolean}
  */
 function is_clickable_world(x, y, event) {
-    if ('world' in globals.adding) {
-        return true;
-    }
-
     x -= display_size.width / 2 - globals.position[0];
     y -= display_size.height / 2 - globals.position[1];
 
@@ -379,6 +384,7 @@ document.addEventListener('focus', () => {
 document.addEventListener('mousemove', e => {
     let x = e.x - canvas.offsetLeft;
     let y = e.y - canvas.offsetTop;
+    mouse_event = e;
     e.preventDefault();
 
     if (clicking) {
@@ -393,6 +399,7 @@ document.addEventListener('mousemove', e => {
     }
 });
 canvas.addEventListener('click', e => {
+    mouse_event = e;
     if (!dragging) {
         let x = e.x - canvas.offsetLeft;
         let y = e.y - canvas.offsetTop;
@@ -404,12 +411,17 @@ canvas.addEventListener('click', e => {
     }
     dragging = false;
 });
-canvas.addEventListener('mousedown', e => clicking = true);
+canvas.addEventListener('mousedown', e => {
+    clicking = true;
+    mouse_event = e;
+});
 canvas.addEventListener('mouseup', e => {
+    mouse_event = e;
     clicking = false;
     currently_dragging = null;
 });
 canvas.addEventListener('contextmenu', e => {
+    mouse_event = e;
     let x = e.x - canvas.offsetLeft;
     let y = e.y - canvas.offsetTop;
     e.preventDefault();

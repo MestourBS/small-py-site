@@ -321,6 +321,7 @@ export class Pane {
         });
 
         const row = this.#content[y_grid];
+        if (!row) return false;
         let x_index = 0;
         /** @type {null|{content: (string | (() => string))[]; click?: (() => void)[]; width?: number;}} */
         let cell_selected = null;

@@ -1,9 +1,8 @@
+import { is_valid_tab } from './canvas.js';
+import { is_valid_theme } from './display.js';
 /**
  * @typedef {import('./canvas.js').GameTab} GameTab
  */
-
-import { is_valid_tab } from './canvas.js';
-import { is_valid_theme } from './display.js';
 
 export const globals = {
     /**
@@ -37,9 +36,14 @@ export const globals = {
      */
     game_tab: 'world',
     /**
-     * Objects being placed on the next click
+     * Functions called on the next click for a tab
      *
-     * @type {{[game_tab: string]: (x: number, y: number, event: MouseEvent) => boolean}}
+     * If a draw function is specified, it will also be called on the current tab
+     *
+     * @type {{[game_tab: string]: {
+     *  click: (x: number, y: number, event: MouseEvent) => boolean,
+     *  draw?: (x: number, y: number, event: MouseEvent) => void,
+     * }}}
      */
     adding: {},
     /**
@@ -48,6 +52,12 @@ export const globals = {
      * @type {boolean}
      */
     press_to_snap: false,
+    /**
+     * Whether the resource order is stable (always the same)
+     *
+     * @type {boolean}
+     */
+    stable_resource_order: true,
 };
 export default globals;
 
@@ -59,6 +69,8 @@ export default globals;
  *  theme?: string,
  *  strict?: boolean,
  *  tab?: string,
+ *  snap?: boolean,
+ *  stable?: boolean,
  * }}
  */
 export function save_data() {
@@ -67,12 +79,16 @@ export function save_data() {
         theme: globals.current_theme,
         strict: globals.strict_keys,
         tab: globals.game_tab,
+        snap: globals.press_to_snap,
+        stable: globals.stable_resource_order,
     };
 
     if (data.pos.every(n => n == 0)) delete data.pos;
     if (data.theme == 'light') delete data.theme;
     if (data.strict == true) delete data.strict;
     if (data.tab == 'world') delete data.tab;
+    if (data.snap == true) delete data.snap;
+    if (data.stable == true) delete data.stable;
 
     return data;
 }
@@ -84,11 +100,13 @@ export function save_data() {
  * @param {string?} [data.theme]
  * @param {boolean?} [data.strict]
  * @param {string?} [data.tab]
+ * @param {boolean?} [data.snap]
+ * @param {boolean?} [data.stable]
  */
 export function load_data(data={}) {
     if (!data) return;
 
-    const {pos=null, theme=null, strict=null, tab=null} = data;
+    const {pos=null, theme=null, strict=null, tab=null, snap=null, stable=null} = data;
     if (Array.isArray(pos) && pos.length == 2 && !pos.some(n => isNaN(n))) {
         for (let i = 0; i < pos.length; i++) globals.position[i] = pos[i];
     }
@@ -100,5 +118,11 @@ export function load_data(data={}) {
     }
     if (is_valid_tab(tab)) {
         globals.game_tab = tab;
+    }
+    if (snap != null) {
+        globals.press_to_snap = !!snap;
+    }
+    if (stable != null) {
+        globals.stable_resource_order = !!stable;
     }
 }

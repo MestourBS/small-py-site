@@ -1,9 +1,9 @@
-import { save_data as save_inventory, load_data as load_inventory } from './inventory.js';
+import './actions.js';
 import { canvas_refresh } from './canvas.js';
+import { save_data as save_inventory, load_data as load_inventory } from './inventory.js';
 import MakerMachine, { insert_makers, make_makers, time_speed } from './maker.js';
 import { make_resources } from './resource.js';
 import StorageMachine, { insert_storages, make_storages } from './storage.js';
-import './actions.js';
 import { save_data as save_globals, load_data as load_globals } from './globals.js';
 import { save_data as save_machines, load_data as load_machines } from './machine.js';
 

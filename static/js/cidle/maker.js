@@ -13,6 +13,7 @@ import { beautify } from './primitives.js';
  * @typedef {'fixed'|'scaling'} MakerType
  */
 
+//todo display when upgrade is possible
 //todo display recipe type
 //todo allow maker to be visible under some conditions
 
@@ -765,8 +766,9 @@ export class MakerMachine extends Machine {
      * @param {CanvasRenderingContext2D} [params.context]
      * @param {number?} [params.x] Override for the x position
      * @param {number?} [params.y] Override for the y position
+     * @param {boolean} [params.transparent]
      */
-    draw({context=canvas_context, x=null, y=null}={}) {
+    draw({context=canvas_context, x=null, y=null, transparent=false}={}) {
         if (this.#hidden) return;
 
         if (x == null) {
@@ -788,6 +790,10 @@ export class MakerMachine extends Machine {
 
             context.fillStyle = theme('maker_color_fill');
             context.strokeStyle = theme('maker_color_border');
+            if (transparent) {
+                context.fillStyle += '77';
+                context.strokeStyle += '77';
+            }
             context.beginPath();
             context.moveTo(x - this.radius, y);
             context.lineTo(x, y - this.radius);
@@ -1183,28 +1189,34 @@ export function make_makers() {
         {
             id: 'tree_chopper',
             name: gettext('games_cidle_maker_tree_chopper'),
-            produces: [[['wood', 1]], [['wood', 2]]],
+            produces: (level) => [['wood', 2 ** level]],
             upgrade_costs: (level) => {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('stone')) return [['stone', 100]];
                     return null;
-                }
-                return false;
-            },
-            max_level: 1,
-        },
-        {
-            id: 'stone_miner',
-            name: gettext('games_cidle_maker_stone_miner'),
-            produces: [[['stone', 1]], [['stone', 3]]],
-            upgrade_costs: (level) => {
-                if (level == 0) {
-                    if (StorageMachine.any_storage_for('brick')) return [['brick', 100]];
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 10]];
                     return null;
                 }
                 return false;
             },
-            max_level: 1,
+            max_level: 2,
+        },
+        {
+            id: 'stone_miner',
+            name: gettext('games_cidle_maker_stone_miner'),
+            produces: (level) => [['stone', 3 ** level]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('brick')) return [['brick', 100]];
+                    return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 25]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 2,
         },
         {
             id: 'wood_burner',
@@ -1236,6 +1248,12 @@ export function make_makers() {
             id: 'water_well',
             name: gettext('games_cidle_maker_water_well'),
             produces: [[['water', .5]]],
+        },
+        {
+            id: 'gravel_washer',
+            name: gettext('games_cidle_maker_gravel_washer'),
+            produces: [[['copper', .1]]],
+            consumes: [[['water', 1], ['gravel', 1]]],
         },
         // Unpausable makers
         {

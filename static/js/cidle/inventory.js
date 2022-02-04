@@ -134,18 +134,29 @@ const inventory = {
                         click: [() => {
                             this.click(x,arg_y,event);
                             const row = inventory.machines.contents.find(([i]) => i == id);
-                            row[1]--;
                             globals.game_tab = 'world';
                             Machine.machines.forEach(m => m.moving = false);
-                            globals.adding['world'] = (x, y, event) => {
-                                if (event.shiftKey == globals.press_to_snap) {
-                                    x = Math.round(x / grid_spacing) * grid_spacing;
-                                    y = Math.round(y / grid_spacing) * grid_spacing;
-                                }
-                                delete globals.adding['world'];
-                                machine.clone({x, y});
-                                event.preventDefault();
-                                return true;
+                            globals.adding['world'] = {
+                                click: (x, y, event) => {
+                                    row[1]--;
+                                    if (event.shiftKey == globals.press_to_snap) {
+                                        x = Math.round(x / grid_spacing) * grid_spacing;
+                                        y = Math.round(y / grid_spacing) * grid_spacing;
+                                    }
+                                    delete globals.adding['world'];
+                                    machine.clone({x, y});
+                                    event.preventDefault();
+                                    return true;
+                                },
+                                draw: (x, y, event) => {
+                                    if (event?.shiftKey == globals.press_to_snap) {
+                                        let x_off = (display_size.width / 2) % grid_spacing - globals.position[0] % grid_spacing;
+                                        let y_off = (display_size.height / 2) % grid_spacing - globals.position[1] % grid_spacing;
+                                        x = Math.round((x - x_off) / grid_spacing) * grid_spacing + x_off;
+                                        y = Math.round((y - y_off) / grid_spacing) * grid_spacing + y_off;
+                                    }
+                                    machine.draw({x, y: y, transparent: true});
+                                },
                             };
                         }],
                         width: 2,
@@ -352,7 +363,7 @@ const recipes = {
                 }
                 return costs;
             },
-            unlocked: () => StorageMachine.any_storage_for('stone'),
+            unlocked: () => recipes.machines['stone_miner'].crafted?.reduce((s, n) => s + n, 0) > 0,
             position: 4,
         },
         'water_bucket': {
@@ -369,7 +380,7 @@ const recipes = {
                 }
                 return costs;
             },
-            unlocked: () => StorageMachine.any_storage_for('stone'),
+            unlocked: () => recipes.machines['stone_miner'].crafted?.reduce((s, n) => s + n, 0) > 0,
             position: 5,
         },
         'wood_burner': {
@@ -421,7 +432,7 @@ const recipes = {
                 }
                 return costs;
             },
-            unlocked: () => ['stone', 'fire'].every(res => StorageMachine.any_storage_for(res)),
+            unlocked: () => recipes.machines['wood_burner'].crafted?.reduce((s, n) => s + n, 0) > 0,
             position: 8,
         },
         'brick_furnace': {
@@ -458,7 +469,7 @@ const recipes = {
                 }
                 return costs;
             },
-            unlocked: () => StorageMachine.any_storage_for('brick'),
+            unlocked: () => recipes.machines['brick_furnace'].crafted?.reduce((s, n) => s + n, 0) > 0,
             position: 10,
         },
         'rock_crusher': {
@@ -477,6 +488,42 @@ const recipes = {
             },
             unlocked: () => StorageMachine.any_storage_for('gravel'),
             position: 11,
+        },
+        'copper_crate': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['wood', c * 500 + 2_500], ['brick', 256 * c + 256]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => recipes.machines['rock_crusher'].crafted?.reduce((s, n) => s + n, 0) > 0,
+            position: 12,
+        },
+        'gravel_washer': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c == 0) {
+                        cost = [['stone', c * 500 + 2_000], ['brick', 128 * 2 ** c + 256]];
+                    } else if (c <= 5) {
+                        cost = [['copper', 2 ** c * 100 + 100]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('copper'),
+            position: 13,
         },
         'giant_clock': {
             resources: crafted => {

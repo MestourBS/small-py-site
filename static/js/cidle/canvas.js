@@ -1,3 +1,4 @@
+import { mouse_position } from './actions.js';
 import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
 import { draw as draw_inventory } from './inventory.js';
@@ -11,7 +12,6 @@ import StorageMachine from './storage.js';
  * @typedef {keyof game_tabs} GameTab
  */
 
-//todo show transparent when placing
 //todo show resources sources
 
 /**
@@ -54,6 +54,9 @@ const game_tabs = {
             MakerMachine.maker_machines.filter(m => m.can_produce()).forEach(m => m.draw_connections({context}));
             Machine.visible_machines.forEach(m => m.draw({context}));
             Pane.get_visible_panes('world').forEach(p => p.draw({context}));
+
+            let {x, y, event} = mouse_position;
+            globals.adding[globals.game_tab]?.draw?.(x, y, event);
         },
     },
     inventory: {
@@ -134,9 +137,11 @@ const game_tabs = {
 
                 return {res, amount, max, per_second};
             }).filter(d => d != null).sort((a, b) => {
-                if (a.max != b.max) return a.max - b.max;
-                if (a.per_second != b.per_second) return a.per_second - b.per_second;
-                if (a.amount != b.amount) return a.amount - b.amount;
+                if (!globals.stable_resource_order) {
+                    if (a.max != b.max) return a.max - b.max;
+                    if (a.per_second != b.per_second) return a.per_second - b.per_second;
+                    if (a.amount != b.amount) return a.amount - b.amount;
+                }
                 return a.res > b.res;
             }).forEach(data => {
                 const {res, amount, max, per_second} = data;
@@ -149,10 +154,12 @@ const game_tabs = {
                 if (per_second) {
                     ps = beautify(per_second);
                     if (per_second > 0) ps = `+${ps}`;
-                    ps = `${ps}/s`.padStart;
+                    ps += '/s';
+                    if (res != 'time') ps += ` *${speed}`;
+                    ps = ps.padStart(ps.length + 4, ' ');
                 }
 
-                const text = `${name}: ${a}/${m}`;
+                const text = `${name}: ${a}/${m}${ps}`;
                 const cut_text = cut_lines(text);
                 canvas_write(text, x, y, {base_text_color: color});
 

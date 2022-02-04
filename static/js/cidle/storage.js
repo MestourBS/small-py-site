@@ -11,6 +11,7 @@ import { beautify, stable_pad_number } from './primitives.js';
  * @typedef {'fraction'|'logarithm'} FillType
  */
 
+//todo display when upgrade is possible
 //todo level-based resources value
 //todo add fill level support for images
 
@@ -402,8 +403,9 @@ export class StorageMachine extends Machine {
      * @param {FillType} [params.fillstyle]
      * - Fraction fills at percentile of storage (`amount/max`)
      * - Logarithm fills at percentile of logarithm storage (`log(amount)/log(max)`)
+     * @param {boolean} [params.transparent]
      */
-    draw({context=canvas_context, x=null, y=null, fillstyle=this.filltype}={}) {
+    draw({context=canvas_context, x=null, y=null, fillstyle=this.filltype, transparent=false}={}) {
         if (x == null) {
             ({x} = this);
             if (x == null) return;
@@ -419,6 +421,7 @@ export class StorageMachine extends Machine {
             context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
         } else {
             context.fillStyle = theme('storage_color_fill');
+            if (transparent) context.fillStyle += '77';
             context.beginPath();
             context.arc(x, y, this.radius, 0, 2 * Math.PI);
             context.fill();
@@ -449,6 +452,7 @@ export class StorageMachine extends Machine {
                 const end = 2 * (i + 1) / length * Math.PI;
 
                 context.fillStyle = resource.color;
+                if (transparent) context.fillStyle += '77';
                 context.beginPath();
                 context.moveTo(x, y);
                 context.arc(x, y, this.radius * fill, start, end);
@@ -460,6 +464,7 @@ export class StorageMachine extends Machine {
             if (this.moving) context.setLineDash([5]);
 
             context.strokeStyle = theme('storage_color_border');
+            if (transparent) context.strokeStyle += '77';
             context.beginPath();
             context.arc(x, y, this.radius, 0, 2 * Math.PI);
             context.stroke();
@@ -582,6 +587,13 @@ export function make_storages() {
             resources: {
                 stone: {},
             },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 5]];
+                    return null;
+                }
+                return false;
+            },
         },
         {
             id: 'fire_pit',
@@ -603,6 +615,13 @@ export function make_storages() {
             resources: {
                 brick: {max: 512},
             },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 15]];
+                    return null;
+                }
+                return false;
+            },
         },
         {
             id: 'gravel_box',
@@ -616,6 +635,20 @@ export function make_storages() {
             name: gettext('games_cidle_storage_water_bucket'),
             resources: {
                 water: {}
+            },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 5]];
+                    return null;
+                }
+                return false;
+            },
+        },
+        {
+            id: 'copper_crate',
+            name: gettext('games_cidle_storage_copper_crate'),
+            resources: {
+                copper: {max: 100},
             },
         },
         // Time storages

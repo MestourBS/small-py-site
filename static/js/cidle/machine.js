@@ -1,4 +1,4 @@
-import { context as canvas_context, grid_spacing } from './canvas.js';
+import { context as canvas_context, display_size, grid_spacing } from './canvas.js';
 import globals from './globals.js';
 /**
  * @typedef {import('./canvas.js').GameTab} GameTab
@@ -181,8 +181,9 @@ export class Machine {
      * @param {CanvasRenderingContext2D} [params.context]
      * @param {number?} [params.x] Override for the x position
      * @param {number?} [params.y] Override for the y position
+     * @param {boolean} [params.transparent]
      */
-    draw({context=canvas_context, x=null, y=null}={}) { if (this.constructor != Machine) throw new Error(`${this.constructor.name} has no draw function!`); }
+    draw({context=canvas_context, x=null, y=null, transparent=false}={}) { if (this.constructor != Machine) throw new Error(`${this.constructor.name} has no draw function!`); }
 
     /**
      * Copies the machine
@@ -231,17 +232,28 @@ export class Machine {
     click(event) {
         if (event.shiftKey) {
             this.#moving = true;
-            globals.adding['world'] = (x, y, event) => {
-                if (event.shiftKey == globals.press_to_snap) {
-                    x = Math.round(x / grid_spacing) * grid_spacing;
-                    y = Math.round(y / grid_spacing) * grid_spacing;
-                }
-                this.#x = x;
-                this.#y = y;
-                this.#moving = false;
-                delete globals.adding['world'];
-                event.preventDefault();
-                return true;
+            globals.adding['world'] = {
+                click: (x, y, event) => {
+                    if (event.shiftKey == globals.press_to_snap) {
+                        x = Math.round(x / grid_spacing) * grid_spacing;
+                        y = Math.round(y / grid_spacing) * grid_spacing;
+                    }
+                    this.#x = x;
+                    this.#y = y;
+                    this.#moving = false;
+                    delete globals.adding['world'];
+                    event.preventDefault();
+                    return true;
+                },
+                draw: (x, y, event) => {
+                    if (event?.shiftKey == globals.press_to_snap) {
+                        let x_off = (display_size.width / 2) % grid_spacing - globals.position[0] % grid_spacing;
+                        let y_off = (display_size.height / 2) % grid_spacing - globals.position[1] % grid_spacing;
+                        x = Math.round((x - x_off) / grid_spacing) * grid_spacing + x_off;
+                        y = Math.round((y - y_off) / grid_spacing) * grid_spacing + y_off;
+                    }
+                    this.draw({x, y: y, transparent: true});
+                },
             };
         }
     }
