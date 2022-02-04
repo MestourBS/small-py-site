@@ -1,4 +1,4 @@
-import { context as canvas_context, display_size } from './canvas.js';
+import { context as canvas_context, display_size, canvas_write } from './canvas.js';
 import globals from './globals.js';
 import Machine from './machine.js';
 import { coords_distance as distance, parallel_perpendicular, rect_contains_point, to_point } from './position.js';
@@ -6,14 +6,15 @@ import { StorageMachine } from './storage.js';
 import Resource from './resource.js';
 import { get_theme_value as theme } from './display.js';
 import { Pane } from './pane.js';
-import { beautify } from './primitives.js';
+import { beautify, stable_pad_number } from './primitives.js';
 /**
  * @typedef {import('./position.js').PointLike} PointLike
  *
  * @typedef {'fixed'|'scaling'} MakerType
  */
 
-//todo display when upgrade is possible
+//todo move production to a single all consuming / producing function
+//todo allow recipes secondary outputs (no blocking when full)
 //todo display recipe type
 //todo allow maker to be visible under some conditions
 
@@ -138,6 +139,7 @@ export class MakerMachine extends Machine {
     /** @type {null|MakerType} */
     #type_leveled = null;
     #max_level = 0;
+    #can_upgrade = null;
 
     /** @type {[string, number][]} */
     get consumes() {
@@ -212,7 +214,18 @@ export class MakerMachine extends Machine {
             this.#produces_leveled = null;
             this.#requires_leveled = null;
             this.#type_leveled = null;
+            this.#can_upgrade = null;
         }
+    }
+    get can_upgrade() {
+        if (this.#can_upgrade == null) {
+            if (!this.upgrade_costs) this.#can_upgrade = this.#upgrade_costs_leveled;
+            else this.#can_upgrade = this.upgrade_costs.every(([res, cost]) => {
+                const {amount} = StorageMachine.stored_resource(res);
+                return cost <= amount;
+            });
+        }
+        return this.#can_upgrade ?? false;
     }
 
     toJSON() {
@@ -485,7 +498,9 @@ export class MakerMachine extends Machine {
     contextmenu(event) { this.pause_toggle(); }
 
     /**
-     * @param {MouseEvent} event
+     * @param {Object} [params]
+     * @param {MouseEvent} [params.event]
+     * @param {boolean} [params.upgrade_marker]
      * @returns {{
      *  x: number,
      *  y: number,
@@ -500,7 +515,7 @@ export class MakerMachine extends Machine {
      *  tab?: GameTab
      * }?}
      */
-    panecontents(event) {
+    panecontents({event=null, upgrade_marker=true}={}) {
         const id = this.index == -1 ? this.id : this.index;
         const pane_id = `${globals.game_tab}_maker_${id}_pane`;
         /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
@@ -551,9 +566,15 @@ export class MakerMachine extends Machine {
                 }];
             }));
         }
-        if (this.upgrade_costs !== false) {
+        if (upgrade_marker && this.upgrade_costs !== false) {
+            const up_text = () => {
+                let text = gettext('games_cidle_machine_upgrade');
+                if (this.can_upgrade) text += `{color:rainbow} ↑`;
+
+                return text;
+            };
             content.push([{
-                content: [gettext('games_cidle_machine_upgrade')],
+                content: [() => up_text()],
                 width: 2,
                 click: [() => {
                     const contents = this.#upgrade_pane_contents();
@@ -600,24 +621,21 @@ export class MakerMachine extends Machine {
         /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
         const content = [
             [{
-                content: [gettext('games_cidle_machine_upgrade_costs')],
+                content: [gettext('games_cidle_machine_upgrade_costs') + ' {color:rainbow}↑'.repeat(this.can_upgrade)],
                 click: [() => this.upgrade()],
             }],
             ...costs.map(([res, cost]) => {
                 const resource = Resource.resource(res);
                 const cost_func = () => {
-                    let sum = 0;
-                    StorageMachine.storages_for(res).forEach(m => {
-                        if (sum >= cost) return;
-
-                        sum += m.resources[res].amount;
-                    });
-                    let can_afford = sum >= cost;
+                    const {amount} = StorageMachine.stored_resource(res);
+                    const can_afford = amount >= cost;
                     let cost_color;
                     if (can_afford) cost_color = theme('machine_upgrade_can_afford_fill');
                     else cost_color = theme('machine_upgrade_cant_afford_fill');
 
-                    return `{color:${cost_color}}${beautify(cost)}`;
+                    const amount_str = (stable_pad_number(beautify(amount))+'/').repeat(!can_afford);
+
+                    return `{color:${cost_color}}${amount_str}${beautify(cost)}`;
                 };
                 return [{
                     content: [`{color:${resource.color}}${resource.name}`],
@@ -750,7 +768,7 @@ export class MakerMachine extends Machine {
             return;
         }
 
-        const contents = this.panecontents(event);
+        const contents = this.panecontents({event});
         const pane_id = contents.id;
         let p = Pane.pane(pane_id);
         if (p) {
@@ -767,8 +785,9 @@ export class MakerMachine extends Machine {
      * @param {number?} [params.x] Override for the x position
      * @param {number?} [params.y] Override for the y position
      * @param {boolean} [params.transparent]
+     * @param {boolean} [params.upgrade_marker]
      */
-    draw({context=canvas_context, x=null, y=null, transparent=false}={}) {
+    draw({context=canvas_context, x=null, y=null, transparent=false, upgrade_marker=true}={}) {
         if (this.#hidden) return;
 
         if (x == null) {
@@ -782,18 +801,16 @@ export class MakerMachine extends Machine {
             y += display_size.height / 2 - globals.position[1];
         }
 
+        if (transparent) context.globalAlpha = .5;
+
         if (this.image) {
             context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
         } else {
             if (this.#unpausable) context.lineWidth = 2;
-            if (this.moving) context.setLineDash([5]);
+            if (this.moving && !transparent) context.setLineDash([5]);
 
             context.fillStyle = theme('maker_color_fill');
             context.strokeStyle = theme('maker_color_border');
-            if (transparent) {
-                context.fillStyle += '77';
-                context.strokeStyle += '77';
-            }
             context.beginPath();
             context.moveTo(x - this.radius, y);
             context.lineTo(x, y - this.radius);
@@ -805,8 +822,8 @@ export class MakerMachine extends Machine {
             context.closePath();
 
             // Resets line to prevent problems with other lines
-            if (this.moving) context.setLineDash([]);
-            if (this.#unpausable) context.lineWidth = 1;
+            context.setLineDash([]);
+            context.lineWidth = 1;
         }
 
         if (this.paused) {
@@ -828,6 +845,12 @@ export class MakerMachine extends Machine {
             context.fill();
             context.closePath();
         }
+
+        if (upgrade_marker && this.can_upgrade) {
+            canvas_write('↑', this.x, this.y, {text_align: 'right', base_text_color: theme('machine_upgrade_can_afford_fill')});
+        }
+
+        if (transparent) context.globalAlpha = 1;
     }
 
     /**
@@ -1069,7 +1092,7 @@ export class MakerMachine extends Machine {
             pro *= multiplier;
 
             to.forEach(machine => {
-                if (pro <= 0) return;
+                if (pro <= 0 || !(res in machine.resources)) return;
 
                 const resobj = machine.resources[res];
                 const space = resobj.max - resobj.amount;
@@ -1252,7 +1275,7 @@ export function make_makers() {
         {
             id: 'gravel_washer',
             name: gettext('games_cidle_maker_gravel_washer'),
-            produces: [[['copper', .1]]],
+            produces: [[['copper', .1], ['sand', .9]]],
             consumes: [[['water', 1], ['gravel', 1]]],
         },
         // Unpausable makers

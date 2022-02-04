@@ -1,4 +1,4 @@
-import { context as canvas_context, display_size } from './canvas.js';
+import { canvas_write, context as canvas_context, display_size } from './canvas.js';
 import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
 import Machine from './machine.js';
@@ -11,9 +11,9 @@ import { beautify, stable_pad_number } from './primitives.js';
  * @typedef {'fraction'|'logarithm'} FillType
  */
 
-//todo display when upgrade is possible
 //todo level-based resources value
 //todo add fill level support for images
+//todo clockwise/counterclockwise/transparency fill modes
 
 export class StorageMachine extends Machine {
     /** @type {StorageMachine[]} */
@@ -53,6 +53,24 @@ export class StorageMachine extends Machine {
 
         return resource in this.#filtered_storages && this.#filtered_storages[resource].length > 0;
     }
+    /**
+     * Computes the current amount and maximum of a resource
+     *
+     * @param {string} resource
+     * @returns {{amount: number, max: number}}
+     */
+    static stored_resource(resource) {
+        if (this != StorageMachine) return StorageMachine.stored_resource(resource);
+
+        const data = {amount: 0, max: 0};
+        if (resource in this.#filtered_storages) {
+            this.#filtered_storages[resource].forEach(m => {
+                data.amount += m.resources[resource].amount;
+                data.max += m.resources[resource].max;
+            });
+        }
+        return data;
+    }
 
     /**
      * @param {Object} params
@@ -76,7 +94,7 @@ export class StorageMachine extends Machine {
         if (typeof level_formula != 'function') throw new TypeError(`Storage machine level_formula must be a function (${level_formula})`);
         if (typeof upgrade_costs == 'function');
         else if (!Array.isArray(upgrade_costs) || upgrade_costs.some(row => row.some(([r, a]) => typeof r != 'string' || typeof a != 'number'))) throw new TypeError(`Maker machine upgrade_costs must be an array of arrays of [resources,numbers] (${upgrade_costs})`);
-        if (!['fraction', 'logarithm'].includes(filltype)) throw new TypeError(`Storage machine filltype must be either 'fraction' or 'logarithm' (${filltype})`);
+        if (!is_fill_type(filltype)) throw new TypeError(`Storage machine filltype must be either 'fraction' or 'logarithm' (${filltype})`);
 
         super({id, x, y, name, level, image, insert});
 
@@ -121,6 +139,8 @@ export class StorageMachine extends Machine {
      */
     #upgrade_costs_leveled = null;
     #filltype;
+    /** @type {boolean|null} */
+    #can_upgrade = null;
 
     /** @type {{[id: string]: {amount: number, max: number}}} */
     get resources() {
@@ -171,6 +191,17 @@ export class StorageMachine extends Machine {
         return this.#upgrade_costs_leveled ?? false;
     }
     get filltype() { return this.#filltype; }
+    get can_upgrade() {
+        if (this.#can_upgrade == null) {
+            if (!this.#upgrade_costs_leveled) this.#can_upgrade = this.#upgrade_costs_leveled;
+            else this.#can_upgrade == this.#upgrade_costs_leveled.every(([res, cost]) => {
+                const storages = StorageMachine.storages_for(res);
+                const total = storages.map(m => m.resources[res].amount).reduce((s, n) => s + n, 0);
+                return cost <= total;
+            });
+        }
+        return this.#can_upgrade ?? false;
+    }
 
     toJSON() {
         return Object.assign(super.toJSON(), {
@@ -228,7 +259,9 @@ export class StorageMachine extends Machine {
     }
 
     /**
-     * @param {MouseEvent} event
+     * @param {Object} [params]
+     * @param {MouseEvent} [params.event]
+     * @param {boolean} [params.upgrade_marker]
      * @returns {{
      *  x: number,
      *  y: number,
@@ -243,7 +276,7 @@ export class StorageMachine extends Machine {
      *  tab?: GameTab
      * }?}
      */
-    panecontents(event) {
+    panecontents({event=null, upgrade_marker=true}={}) {
         const id = this.index == -1 ? this.id : this.index;
         const pane_id = `${globals.game_tab}_maker_${id}_pane`;
         /**
@@ -263,7 +296,7 @@ export class StorageMachine extends Machine {
                     let amount = beautify(data.amount);
                     if (data.amount < data.max) amount = stable_pad_number(amount);
                     if (isFinite(data.max)) {
-                        amount += ` / ${beautify(data.max)}`;
+                        amount += `/${beautify(data.max)}`;
                     }
                     return `{color:${resource.color}}${amount}`;
                 };
@@ -277,9 +310,15 @@ export class StorageMachine extends Machine {
         ];
         const x = this.x + this.radius;
         const y = this.y - this.radius;
-        if (this.upgrade_costs !== false) {
+        if (upgrade_marker && this.upgrade_costs !== false) {
+            const up_text = () => {
+                let text = gettext('games_cidle_machine_upgrade');
+                if (this.can_upgrade) text += `{color:rainbow} ↑`;
+
+                return text;
+            };
             content.push([{
-                content: [gettext('games_cidle_machine_upgrade')],
+                content: [() => up_text()],
                 width: 2,
                 click: [() => {
                     const contents = this.#upgrade_pane_contents();
@@ -325,24 +364,21 @@ export class StorageMachine extends Machine {
         /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
         const content = [
             [{
-                content: [gettext('games_cidle_machine_upgrade_costs')],
+                content: [gettext('games_cidle_machine_upgrade_costs') + ' {color:rainbow}↑'.repeat(this.can_upgrade)],
                 click: [() => this.upgrade()],
             }],
             ...costs.map(([res, cost]) => {
                 const resource = Resource.resource(res);
                 const cost_func = () => {
-                    let sum = 0;
-                    StorageMachine.storages_for(res).forEach(m => {
-                        if (sum >= cost) return;
-
-                        sum += m.resources[res].amount;
-                    });
-                    let can_afford = sum >= cost;
+                    const {amount} = StorageMachine.stored_resource(res);
+                    const can_afford = amount >= cost;
                     let cost_color;
                     if (can_afford) cost_color = theme('machine_upgrade_can_afford_fill');
                     else cost_color = theme('machine_upgrade_cant_afford_fill');
 
-                    return `{color:${cost_color}}${beautify(cost)}`;
+                    const amount_str = (stable_pad_number(beautify(amount))+'/').repeat(!can_afford);
+
+                    return `{color:${cost_color}}${amount_str}${beautify(cost)}`;
                 };
                 return [{
                     content: [`{color:${resource.color}}${resource.name}`],
@@ -384,7 +420,7 @@ export class StorageMachine extends Machine {
             return;
         }
 
-        const contents = this.panecontents(event);
+        const contents = this.panecontents({event});
         const pane_id = contents.id;
         let p = Pane.pane(pane_id);
         if (p) {
@@ -404,8 +440,9 @@ export class StorageMachine extends Machine {
      * - Fraction fills at percentile of storage (`amount/max`)
      * - Logarithm fills at percentile of logarithm storage (`log(amount)/log(max)`)
      * @param {boolean} [params.transparent]
+     * @param {boolean} [params.upgrade_marker]
      */
-    draw({context=canvas_context, x=null, y=null, fillstyle=this.filltype, transparent=false}={}) {
+    draw({context=canvas_context, x=null, y=null, fillstyle=this.filltype, transparent=false, upgrade_marker=true}={}) {
         if (x == null) {
             ({x} = this);
             if (x == null) return;
@@ -417,11 +454,12 @@ export class StorageMachine extends Machine {
             y += display_size.height / 2 - globals.position[1];
         }
 
+        if (transparent) context.globalAlpha = .5;
+
         if (this.image) {
             context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
         } else {
             context.fillStyle = theme('storage_color_fill');
-            if (transparent) context.fillStyle += '77';
             context.beginPath();
             context.arc(x, y, this.radius, 0, 2 * Math.PI);
             context.fill();
@@ -452,7 +490,6 @@ export class StorageMachine extends Machine {
                 const end = 2 * (i + 1) / length * Math.PI;
 
                 context.fillStyle = resource.color;
-                if (transparent) context.fillStyle += '77';
                 context.beginPath();
                 context.moveTo(x, y);
                 context.arc(x, y, this.radius * fill, start, end);
@@ -461,17 +498,24 @@ export class StorageMachine extends Machine {
                 context.closePath();
             }
 
-            if (this.moving) context.setLineDash([5]);
+            if (this.moving && !transparent) context.setLineDash([5]);
 
             context.strokeStyle = theme('storage_color_border');
-            if (transparent) context.strokeStyle += '77';
             context.beginPath();
             context.arc(x, y, this.radius, 0, 2 * Math.PI);
             context.stroke();
             context.closePath();
 
             if (this.moving) context.setLineDash([]);
+
+            if (this.can_upgrade) canvas_write('↑', this.x + this.radius, this.y + this.radius, {text_align: 'right', base_text_color: theme('machine_upgrade_can_afford_fill')});
         }
+
+        if (upgrade_marker && this.can_upgrade) {
+            canvas_write('↑', this.x, this.y, {text_align: 'right', base_text_color: theme('machine_upgrade_can_afford_fill')});
+        }
+
+        if (transparent) context.globalAlpha = 1;
     }
 
     /**
@@ -552,6 +596,16 @@ export class StorageMachine extends Machine {
     }
 }
 export default StorageMachine;
+
+/**
+ * Checks if a string is a filltype
+ *
+ * @param {string} type
+ * @returns {type is FillType}
+ */
+function is_fill_type(type) {
+    return ['fraction', 'logarithm'].includes(type);
+}
 
 export function make_storages() {
     /**
@@ -649,6 +703,13 @@ export function make_storages() {
             name: gettext('games_cidle_storage_copper_crate'),
             resources: {
                 copper: {max: 100},
+            },
+        },
+        {
+            id: 'sand_box',
+            name: gettext('games_cidle_storage_sand_box'),
+            resources: {
+                sand: {},
             },
         },
         // Time storages

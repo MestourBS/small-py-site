@@ -5,7 +5,9 @@ import Machine from './machine.js';
 import { Pane } from './pane.js';
 import globals from './globals.js';
 import Resource from './resource.js';
-import { beautify } from './primitives.js';
+import { beautify, stable_pad_number } from './primitives.js';
+
+//todo show affordable
 
 /**
  * Current inventory
@@ -74,6 +76,7 @@ const inventory = {
                     context,
                     x: x * (max_diameter + padding * 2) + machine.radius + padding,
                     y: y * (max_diameter + padding * 2) + machine.radius + padding + top,
+                    upgrade_marker: false,
                 };
                 machine.draw(machine_draw);
 
@@ -116,7 +119,7 @@ const inventory = {
                     entry[2] = machine = copy_machine(id);
                 }
 
-                const pane = machine.panecontents(event);
+                const pane = machine.panecontents({event, upgrade_marker: false});
                 const pane_id = pane.id;
                 let p = Pane.pane(pane_id);
 
@@ -167,46 +170,46 @@ const inventory = {
                     const recipe = recipes.machines[id];
                     let cost_list = recipe.resources;
                     if (typeof cost_list == 'function') cost_list = cost_list(recipe.crafted ?? []);
-                    if (Array.isArray(cost_list)) [...cost_list].reverse().forEach((cost, i) => {
-                        if (cost === false) return;
-                        pane.content.unshift(
-                            [{
-                                content: [gettext('games_cidle_make', {obj: name})],
-                                click: [() => {
-                                    if (craft(id, cost_list.length - i - 1, 'machines')) {
-                                        this.click(x,arg_y,event);
-                                        this.click(x,arg_y,event);
-                                    }
+                    if (Array.isArray(cost_list)) {
+                        [...cost_list].reverse().forEach((cost, i) => {
+                            if (cost === false) return;
+                            pane.content.unshift(
+                                [{
+                                    content: [gettext('games_cidle_make', {obj: name})],
+                                    click: [() => {
+                                        if (craft(id, cost_list.length - i - 1, 'machines')) {
+                                            this.click(x,arg_y,event);
+                                            this.click(x,arg_y,event);
+                                        }
+                                    }],
+                                    width: 2,
                                 }],
-                                width: 2,
-                            }],
-                            [{
-                                content: [gettext('games_cidle_craft_costs')]
-                            }],
-                            ...cost.map(/**@param {[string, number]}*/([res, cost]) => {
-                                const resource = Resource.resource(res);
-                                const cost_func = () => {
-                                    let sum = 0;
-                                    StorageMachine.storages_for(res).forEach(m => {
-                                        if (sum >= cost) return;
+                                [{
+                                    content: [gettext('games_cidle_craft_costs')]
+                                }],
+                                ...cost.map(/**@param {[string, number]}*/([res, cost]) => {
+                                    const resource = Resource.resource(res);
+                                    const cost_func = () => {
+                                        const {amount, max} = StorageMachine.stored_resource(res);
+                                        const will_afford = max >= cost;
+                                        const can_afford = will_afford && amount >= cost;
+                                        let cost_color;
+                                        if (can_afford) cost_color = theme('machine_upgrade_can_afford_fill');
+                                        else cost_color = theme('machine_upgrade_cant_afford_fill');
 
-                                        sum += m.resources[res].amount;
-                                    });
-                                    let can_afford = sum >= cost;
-                                    let cost_color;
-                                    if (can_afford) cost_color = theme('machine_upgrade_can_afford_fill');
-                                    else cost_color = theme('machine_upgrade_cant_afford_fill');
+                                        const amount_str = (stable_pad_number(beautify(amount))+'/').repeat(!can_afford);
 
-                                    return `{color:${cost_color}}${beautify(cost)}`;
-                                };
-                                return [{
-                                    content: [`{color:${resource.color}}${resource.name}`],
-                                }, {
-                                    content: [cost_func],
-                                }];
-                            }),
-                        );
-                    });
+                                        return `{color:${cost_color}}${amount_str}${beautify(cost)}`;
+                                    };
+                                    return [{
+                                        content: [`{color:${resource.color}}${resource.name}`],
+                                    }, {
+                                        content: [cost_func],
+                                    }];
+                                }),
+                            );
+                        });
+                    }
                 }
                 pane.x = (cell_x + 1) * (max_diameter + padding * 2);
                 pane.y = cell_y * (max_diameter + padding * 2) + tabs_heights() + global_tabs_heights();
@@ -269,7 +272,7 @@ const recipes = {
                     if (c <= 1) {
                         cost = [['wood', c * 500 + 500]];
                     } else if (c <= 3 && StorageMachine.any_storage_for('stone')) {
-                        cost = [['wood', c * 500 + 1_000], ['stone', c * 1_000]];
+                        cost = [['wood', c * 500 + 1_000], ['stone', c * 1_000 - 500]];
                     } else if (c <= 6 && StorageMachine.any_storage_for('brick')) {
                         cost = [['wood', c * 250 + 1_000], ['brick', c * 500]];
                     }
@@ -299,7 +302,7 @@ const recipes = {
                 }
                 return costs;
             },
-            unlocked: () => recipes.machines['wood_storage'].crafted?.reduce((s, n) => s + n, 0) > 0,
+            unlocked: true,
             position: 1,
         },
         'stone_storage': {
@@ -313,7 +316,7 @@ const recipes = {
                     if (c == 0) {
                         cost = [['wood', 2_000]];
                     } else if (c <= 3) {
-                        cost = [['stone', c * 500], ['wood', c * 500 + 2_000]];
+                        cost = [['stone', c * 500], ['wood', c * 400 + 2_100]];
                     } else if (c <= 9 && StorageMachine.any_storage_for('brick')) {
                         cost = [['brick', (c - 3) * 250], ['wood', c * 250 + 2_750]];
                     }
@@ -506,6 +509,23 @@ const recipes = {
             unlocked: () => recipes.machines['rock_crusher'].crafted?.reduce((s, n) => s + n, 0) > 0,
             position: 12,
         },
+        'sand_box': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['wood', c * 125 + 1_250], ['brick', 64 * c + 256]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => recipes.machines['rock_crusher'].crafted?.reduce((s, n) => s + n, 0) > 0,
+            position: 13,
+        },
         'gravel_washer': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
@@ -522,8 +542,8 @@ const recipes = {
                 }
                 return costs;
             },
-            unlocked: () => StorageMachine.any_storage_for('copper'),
-            position: 13,
+            unlocked: () => ['copper', 'sand'].every(res => StorageMachine.any_storage_for(res)),
+            position: 14,
         },
         'giant_clock': {
             resources: crafted => {

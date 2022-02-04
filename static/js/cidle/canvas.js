@@ -13,6 +13,7 @@ import StorageMachine from './storage.js';
  */
 
 //todo show resources sources
+//todo table formatting for resources [resource name, amount, /max, gain per second]
 
 /**
  * Canvas of the game
@@ -108,15 +109,9 @@ const game_tabs = {
 
             // Show resources
             Resource.all_resources().map(res => {
-                const storages = StorageMachine.storages_for(res);
-                if (!storages.length) return null;
+                const {amount, max} = StorageMachine.stored_resource(res);
+                if (!max) return;
 
-                const amount = storages.reduce((s, m) => {
-                    return s + m.resources[res].amount;
-                }, 0);
-                const max = storages.reduce((s, m) => {
-                    return s + m.resources[res].max;
-                }, 0);
                 let per_second = MakerMachine.maker_machines.filter(m => {
                     if (m.paused || !m.can_produce()) return false;
 
@@ -155,7 +150,7 @@ const game_tabs = {
                     ps = beautify(per_second);
                     if (per_second > 0) ps = `+${ps}`;
                     ps += '/s';
-                    if (res != 'time') ps += ` *${speed}`;
+                    if (res != 'time' && speed != 1) ps += ` *${speed}`;
                     ps = ps.padStart(ps.length + 4, ' ');
                 }
 

@@ -7,8 +7,6 @@ import StorageMachine, { insert_storages, make_storages } from './storage.js';
 import { save_data as save_globals, load_data as load_globals } from './globals.js';
 import { save_data as save_machines, load_data as load_machines } from './machine.js';
 
-//todo move production to a single all consuming / producing function
-
 /** @type {number} */
 let last_production;
 

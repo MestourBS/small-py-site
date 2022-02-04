@@ -182,8 +182,11 @@ export class Machine {
      * @param {number?} [params.x] Override for the x position
      * @param {number?} [params.y] Override for the y position
      * @param {boolean} [params.transparent]
+     * @param {boolean} [params.upgrade_marker]
      */
-    draw({context=canvas_context, x=null, y=null, transparent=false}={}) { if (this.constructor != Machine) throw new Error(`${this.constructor.name} has no draw function!`); }
+    draw({context=canvas_context, x=null, y=null, transparent=false, upgrade_marker=true}={}) {
+        if (this.constructor != Machine) throw new Error(`${this.constructor.name} has no draw function!`);
+    }
 
     /**
      * Copies the machine
@@ -208,6 +211,9 @@ export class Machine {
     /**
      * Computes the pane arguments for a pane
      *
+     * @param {Object} [params]
+     * @param {MouseEvent} [params.event]
+     * @param {boolean} [params.upgrade_marker]
      * @returns {{
      *  x: number,
      *  y: number,
@@ -222,7 +228,7 @@ export class Machine {
      *  tab?: GameTab
      * }?}
      */
-    panecontents(event) { return null; }
+    panecontents({event=null, upgrade_marker=true}={}) { return null; }
 
     /**
      * Action to perform on click

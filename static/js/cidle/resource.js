@@ -106,6 +106,11 @@ export function make_resources() {
             name: gettext('games_cidle_resource_copper'),
             color: '#b30',
         },
+        {
+            id: 'sand',
+            name: gettext('games_cidle_resource_sand'),
+            color: '#990',
+        },
         // Time resources
         {
             id: 'time',
