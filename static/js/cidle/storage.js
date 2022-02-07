@@ -182,7 +182,7 @@ export class StorageMachine extends Machine {
         if (!isNaN(level)) {
             this.#resources_leveled = false;
             this.#upgrade_costs_leveled = null;
-            Machine.machines.filter(m => 'can_upgrade' in m && m.can_upgrade).forEach(m => m.can_upgrade = false);
+            Machine.machines.forEach(m => m.can_upgrade = false);
             super.level = level;
         }
     }
@@ -800,12 +800,26 @@ export function make_storages() {
                 glass: {},
             },
         },
+        {
+            id: 'gold_crate',
+            name: gettext('games_cidle_storage_gold_crate'),
+            resources: {
+                gold: {max: 100},
+            },
+        },
         // Time storages
         {
             id: 'giant_clock',
             name: gettext('games_cidle_storage_giant_clock'),
             resources: {
                 time: {max: 3_600},
+            },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('gold')) return [['gold', 60]];
+                    return null;
+                }
+                return false;
             },
             fillmode: 'clockwise',
         },

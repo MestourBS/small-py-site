@@ -133,7 +133,9 @@ export class Pane {
     #tab;
 
     get x() { return this.#x; }
+    set x(x) { if (!isNaN(x)) this.#x = x; }
     get y() { return this.#y; }
+    set y(y) { if (!isNaN(y)) this.#y = y; }
     get pinned() { return this.#pinned; }
     get is_visible() {
         let {x, y} = this;

@@ -119,6 +119,8 @@ export class Machine {
 
     get level() { return this.#level; }
     set level(level) { if (!isNaN(level)) this.#level = Math.max(0, level); }
+    get can_upgrade() { return false; }
+    set can_upgrade(can) {}
 
     toJSON() {
         return {

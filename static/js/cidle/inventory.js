@@ -7,7 +7,6 @@ import globals from './globals.js';
 import Resource from './resource.js';
 import { beautify, stable_pad_number } from './primitives.js';
 
-//todo prevent craft pane from being outside of sight
 //todo show affordable
 
 /**
@@ -218,9 +217,12 @@ const inventory = {
                 pane.y = cell_y * (max_diameter + padding * 2) + tabs_heights() + global_tabs_heights();
                 pane.pinned = true;
                 pane.pinnable = false;
-                //pane.pinned = true;
                 p = new Pane(pane);
-                return;
+                const width = p.table_widths().reduce((s, w) => s + w, 0);
+                if (p.x + width > display_size.width) {
+                    let antx = display_size.width - p.x - width;
+                    p.x += antx;
+                }
             }
         },
         is_clickable: function(x, y, event) {
@@ -565,6 +567,23 @@ const recipes = {
             unlocked: () => recipes.machines['gravel_washer'].crafted?.reduce((s, n) => s + n, 0) > 0,
             position: 15,
         },
+        'gold_crate': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['wood', c * 1_000 + 2_000], ['brick', 384 * c + 128]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => recipes.machines['gravel_washer'].crafted?.reduce((s, n) => s + n, 0) > 0,
+            position: 16,
+        },
         'glass_blower': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
@@ -580,7 +599,24 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('glass'),
-            position: 16,
+            position: 17,
+        },
+        'sand_washer': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['copper', 2 ** c * 200]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('gold'),
+            position: 18,
         },
         'giant_clock': {
             resources: crafted => {
@@ -715,6 +751,7 @@ function craft(id, recipe_id=0, type=subtab) {
     }
     cell[1]++;
     recipe.crafted[recipe_id]++;
+    Machine.machines.forEach(m => m.can_upgrade = false);
     return true;
 }
 /**

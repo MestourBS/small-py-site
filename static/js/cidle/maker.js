@@ -240,7 +240,7 @@ export class MakerMachine extends Machine {
             this.#produces_leveled = null;
             this.#requires_leveled = null;
             this.#type_leveled = null;
-            Machine.machines.filter(m => 'can_upgrade' in m && m.can_upgrade).forEach(m => m.can_upgrade = false);
+            Machine.machines.forEach(m => m.can_upgrade = false);
         }
     }
     get can_upgrade() {
@@ -1239,7 +1239,7 @@ export function time_speed() {
                 .filter(([res]) => res == 'time')
                 .map(([_, time]) => time)
                 .reduce((a, b) => a + b, 0);
-            multiplier *= time_lost + 1;
+            multiplier *= (time_lost ** 1.76) + 1;
         });
 
     return multiplier;
@@ -1297,8 +1297,8 @@ export function make_makers() {
         {
             id: 'wood_burner',
             name: gettext('games_cidle_maker_wood_burner'),
-            produces: [[['fire', 1]], [['fire', 3]], [['fire', 5]]],
-            consumes: [[['wood', 1]], [['wood', 1.5]], [['wood', 2]]],
+            produces: (level) => [['fire', 1 + level * 2]],
+            consumes: (level) => [['wood', 1 + level / 2]],
             upgrade_costs: (level) => {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('brick')) return [['brick', 200]];
@@ -1347,6 +1347,12 @@ export function make_makers() {
             name: gettext('games_cidle_maker_glass_blower'),
             produces: [[['glass', 1]]],
             consumes: [[['sand', 1], ['fire', 3]]],
+        },
+        {
+            id: 'sand_washer',
+            name: gettext('games_cidle_maker_sand_washer'),
+            produces: [[['gold', .1]]],
+            consumes: [[['water', 1], ['sand', 1]]],
         },
         // Unpausable makers
         {

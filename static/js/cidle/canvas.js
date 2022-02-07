@@ -150,7 +150,7 @@ const game_tabs = {
                     ps = beautify(per_second);
                     if (per_second > 0) ps = `+${ps}`;
                     ps += '/s';
-                    if (res != 'time' && speed != 1) ps += ` *${speed}`;
+                    if (res != 'time' && speed != 1) ps += ` *${beautify(speed)}`;
                     ps = ps.padStart(ps.length + 4, ' ');
                 }
 

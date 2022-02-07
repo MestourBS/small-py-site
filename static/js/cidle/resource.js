@@ -122,6 +122,11 @@ export function make_resources() {
             color: '#fff',
             background_color: '#ccc',
         },
+        {
+            id: 'gold',
+            name: gettext('games_cidle_resource_gold'),
+            color: '#ffd700',
+        },
         // Time resources
         {
             id: 'time',
