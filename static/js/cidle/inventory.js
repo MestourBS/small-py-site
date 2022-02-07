@@ -584,6 +584,23 @@ const recipes = {
             unlocked: () => recipes.machines['gravel_washer'].crafted?.reduce((s, n) => s + n, 0) > 0,
             position: 16,
         },
+        'tin_crate': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['gold', c * 10 + 100], ['brick', 256 * c + 512]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('gold', 2),
+            position: 17,
+        },
         'glass_blower': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
@@ -599,7 +616,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('glass'),
-            position: 17,
+            position: 18,
         },
         'sand_washer': {
             resources: crafted => {
@@ -616,8 +633,9 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('gold'),
-            position: 18,
+            position: 19,
         },
+        // Time machines
         'giant_clock': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */

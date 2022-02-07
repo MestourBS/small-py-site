@@ -13,7 +13,7 @@ import StorageMachine from './storage.js';
  */
 
 //todo show resources sources
-//todo table formatting for resources [resource name, amount, /max, gain per second]
+//todo help/changelog tabs
 
 /**
  * Canvas of the game
@@ -85,6 +85,7 @@ const game_tabs = {
         _cut_name: false,
         /** @type {false|string} @private */
         _cut_params: false,
+        /** @returns {string} */
         cut_name(params) {
             const p = JSON.stringify(params);
             if (this._cut_params != p) {
@@ -97,6 +98,7 @@ const game_tabs = {
             const x = theme('tab_padding');
             let y = theme('tab_padding') + tabs_heights();
             const font_size = theme('font_size');
+            const dont_width = ['res'];
 
             // Show time speed
             const speed = time_speed();
@@ -107,8 +109,15 @@ const game_tabs = {
                 y += (cut_time_speed.length + 1) * font_size;
             }
 
-            // Show resources
-            Resource.all_resources().map(res => {
+            /**
+             * @type {{
+             *  res: string,
+             *  name: string,
+             *  amount: string,
+             *  per_second: string,
+             * }[]}
+             */
+            const table = Resource.all_resources().map(res => {
                 const {amount, max} = StorageMachine.stored_resource(res);
                 if (!max) return;
 
@@ -119,14 +128,8 @@ const game_tabs = {
                 }).reduce((ps, m) => {
                     const pro = m.produces.find(([r]) => r == res);
                     const mult = m.max_produce_multiplier();
-                    if (pro) {
-                        ps += pro[1] * mult;
-                    }
                     const con = m.consumes.find(([r]) => r == res);
-                    if (con) {
-                        ps -= con[1] * mult;
-                    }
-                    return ps;
+                    return ps + ((pro?.[1] ?? 0) - (con?.[1] ?? 0)) * mult;
                 }, 0);
                 if (Math.abs(per_second) < 1e-3) per_second = 0;
 
@@ -138,31 +141,57 @@ const game_tabs = {
                     if (a.amount != b.amount) return a.amount - b.amount;
                 }
                 return a.res > b.res;
-            }).forEach(data => {
+            }).map(data => {
                 const {res, amount, max, per_second} = data;
+                const {name} = Resource.resource(res);
 
-                let a = beautify(amount);
-                if (per_second) a = stable_pad_number(a);
-                const m = beautify(max);
-                const {color, name, background_color} = Resource.resource(res);
+                let a = `${beautify(amount)}`;
                 let ps = '';
+
                 if (per_second) {
+                    a = stable_pad_number(a);
+
                     ps = beautify(per_second);
                     if (per_second > 0) ps = `+${ps}`;
                     ps += '/s';
-                    if (res != 'time' && speed != 1) ps += ` *${beautify(speed)}`;
-                    ps = ps.padStart(ps.length + 4, ' ');
-                }
 
-                const text = `${name}: ${a}/${m}${ps}`;
-                const cut_text = cut_lines(text);
+                    if (res != 'time' && speed != 1) ps += ` x${beautify(speed)}`;
+                }
+                a += `/${beautify(max)}`;
+
+                return {res, name, amount: a, per_second: ps};
+            });
+
+            const max_width = display_size.width / Object.keys(table[0]).length;
+
+            /** @type {{[k: string]: number}} */
+            const table_widths = table.reduce((widths, data) => {
+                Object.entries(data).forEach(([key, value]) => {
+                    if (dont_width.includes(key)) return;
+                    widths[key] = Math.min(max_width, Math.max(widths[key] ?? 0, context.measureText(value).width));
+                });
+                return widths;
+            }, {});
+
+            table.forEach(data => {
+                const {res} = data;
+                const {color, background_color} = Resource.resource(res);
+
+                const height = (Object.values(data).map(s => cut_lines(s, {max_width}).length).reduce((h, l) => Math.max(h, l), 0) + .5) * font_size;
+                let data_x = x;
+
                 if (background_color) {
                     context.fillStyle = background_color;
                     context.fillRect(0, y, canvas.width, (cut_text.length + .5) * font_size);
                 }
-                canvas_write(text, x, y, {base_text_color: color});
+                Object.entries(data).forEach(([key, value]) => {
+                    if (!(key in table_widths)) return;
 
-                y += (cut_text.length + .5) * font_size;
+                    canvas_write(value, data_x, y, {base_text_color: color});
+                    data_x += table_widths[key] + grid_spacing;
+                });
+
+                y += height;
             });
         },
     },
@@ -488,7 +517,7 @@ export function cut_lines(lines, {
     context = canvas.getContext('2d'), max_width = canvas.width,
 }={}) {
     if (lines && !Array.isArray(lines)) lines = [lines];
-    if (!lines?.length) return [0, []];
+    if (!lines?.length) return [];
 
     lines = lines.map(l => l + '');
 
@@ -540,7 +569,7 @@ export function cut_lines(lines, {
                         slice = line.slice(0, len);
                         // Remove spaces for a more fluid display
                         const separator = separators.find(s => slice.lastIndexOf(s) == len);
-                        if (!separator.trim().length) len++;
+                        if (!separator?.trim?.()?.length) len++;
                     }
 
                     line = line.slice(len);

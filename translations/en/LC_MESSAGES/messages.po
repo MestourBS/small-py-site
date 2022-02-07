@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-02-07 09:53+0100\n"
+"POT-Creation-Date: 2022-02-07 15:09+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -508,15 +508,15 @@ msgstr ""
 "Are you sure you want to prestige? You will lose all your progress since "
 "the last prestige but gain new resources"
 
-#: static/js/cidle/canvas.js:42
+#: static/js/cidle/canvas.js:40
 msgid "games_cidle_tab_world"
 msgstr "World"
 
-#: static/js/cidle/canvas.js:66
+#: static/js/cidle/canvas.js:64
 msgid "games_cidle_tab_inventory"
 msgstr "Inventory"
 
-#: static/js/cidle/canvas.js:85
+#: static/js/cidle/canvas.js:83
 msgid "games_cidle_tab_resources"
 msgstr "Resources"
 
@@ -544,191 +544,199 @@ msgstr "Make %(obj)s"
 msgid "games_cidle_craft_costs"
 msgstr "Crafting Cost"
 
-#: static/js/cidle/maker.js:22
+#: static/js/cidle/maker.js:24
 msgid "games_cidle_maker_paused"
 msgstr "Paused"
 
-#: static/js/cidle/maker.js:23
+#: static/js/cidle/maker.js:25
 msgid "games_cidle_maker_unpaused"
 msgstr "Not Paused"
 
-#: static/js/cidle/maker.js:26
+#: static/js/cidle/maker.js:28
 msgid "games_cidle_maker_type_fixed"
 msgstr "Production is fixed"
 
-#: static/js/cidle/maker.js:27
+#: static/js/cidle/maker.js:29
 msgid "games_cidle_maker_type_scaling"
 msgstr "Production is scaling"
 
-#: static/js/cidle/maker.js:561
+#: static/js/cidle/maker.js:585
 msgid "games_cidle_maker_unpausable"
 msgstr "Unpausable"
 
-#: static/js/cidle/maker.js:575
+#: static/js/cidle/maker.js:599
 msgid "games_cidle_maker_requires"
 msgstr "Requires"
 
-#: static/js/cidle/maker.js:588
+#: static/js/cidle/maker.js:612
 msgid "games_cidle_maker_consumes"
 msgstr "Consumes"
 
-#: static/js/cidle/maker.js:601
+#: static/js/cidle/maker.js:625
 msgid "games_cidle_maker_produces"
 msgstr "Produces"
 
-#: static/js/cidle/maker.js:615 static/js/cidle/storage.js:333
+#: static/js/cidle/maker.js:644 static/js/cidle/storage.js:336
 msgid "games_cidle_machine_upgrade"
 msgstr "Upgrade"
 
-#: static/js/cidle/maker.js:664 static/js/cidle/storage.js:380
+#: static/js/cidle/maker.js:693 static/js/cidle/storage.js:383
 msgid "games_cidle_machine_upgrading"
 msgstr "Upgrade %(obj)s"
 
-#: static/js/cidle/maker.js:668 static/js/cidle/storage.js:385
+#: static/js/cidle/maker.js:697 static/js/cidle/storage.js:388
 msgid "games_cidle_machine_upgrade_costs"
 msgstr "Upgrade Cost"
 
-#: static/js/cidle/maker.js:692 static/js/cidle/storage.js:410
+#: static/js/cidle/maker.js:721 static/js/cidle/storage.js:413
 msgid "games_cidle_machine_changes"
 msgstr "Changes"
 
-#: static/js/cidle/maker.js:1290
+#: static/js/cidle/maker.js:1359
 msgid "games_cidle_maker_tree_chopper"
 msgstr "Tree Chopper"
 
-#: static/js/cidle/maker.js:1306
+#: static/js/cidle/maker.js:1375
 msgid "games_cidle_maker_stone_miner"
 msgstr "Stone Miner"
 
-#: static/js/cidle/maker.js:1322
+#: static/js/cidle/maker.js:1391
 msgid "games_cidle_maker_wood_burner"
 msgstr "Wood Burner"
 
-#: static/js/cidle/maker.js:1339
+#: static/js/cidle/maker.js:1408
 msgid "games_cidle_maker_brick_furnace"
 msgstr "Brick Furnace"
 
-#: static/js/cidle/maker.js:1353
+#: static/js/cidle/maker.js:1422
 msgid "games_cidle_maker_rock_crusher"
 msgstr "Rock Crusher"
 
-#: static/js/cidle/maker.js:1359
+#: static/js/cidle/maker.js:1428
 msgid "games_cidle_maker_water_well"
 msgstr "Water Well"
 
-#: static/js/cidle/maker.js:1364
+#: static/js/cidle/maker.js:1441
 msgid "games_cidle_maker_gravel_washer"
 msgstr "Gravel Washer"
 
-#: static/js/cidle/maker.js:1370
+#: static/js/cidle/maker.js:1455
 msgid "games_cidle_maker_glass_blower"
 msgstr "Glass Blower"
 
-#: static/js/cidle/maker.js:1376
+#: static/js/cidle/maker.js:1461
 msgid "games_cidle_maker_sand_washer"
 msgstr "Sand Washer"
 
-#: static/js/cidle/maker.js:1384
+#: static/js/cidle/maker.js:1469
 msgid "games_cidle_maker_fire_extinguisher"
 msgstr "Fire Burning Out"
 
-#: static/js/cidle/maker.js:1395
+#: static/js/cidle/maker.js:1480
 msgid "games_cidle_maker_sundial"
 msgstr "Sundial"
 
-#: static/js/cidle/maker.js:1400
+#: static/js/cidle/maker.js:1485
 msgid "games_cidle_maker_hourglass"
 msgstr "Hourglass"
 
-#: static/js/cidle/resource.js:81
+#: static/js/cidle/resource.js:86
 msgid "games_cidle_resource_wood"
 msgstr "Wood"
 
-#: static/js/cidle/resource.js:86
+#: static/js/cidle/resource.js:92
 msgid "games_cidle_resource_stone"
 msgstr "Stone"
 
-#: static/js/cidle/resource.js:91
+#: static/js/cidle/resource.js:98
 msgid "games_cidle_resource_fire"
 msgstr "Fire"
 
-#: static/js/cidle/resource.js:96
+#: static/js/cidle/resource.js:104
 msgid "games_cidle_resource_brick"
 msgstr "Brick"
 
-#: static/js/cidle/resource.js:101
+#: static/js/cidle/resource.js:110
 msgid "games_cidle_resource_gravel"
 msgstr "Gravel"
 
-#: static/js/cidle/resource.js:106
+#: static/js/cidle/resource.js:116
 msgid "games_cidle_resource_water"
 msgstr "Water"
 
-#: static/js/cidle/resource.js:111
+#: static/js/cidle/resource.js:122
 msgid "games_cidle_resource_copper"
 msgstr "Copper"
 
-#: static/js/cidle/resource.js:116
+#: static/js/cidle/resource.js:128
 msgid "games_cidle_resource_sand"
 msgstr "Sand"
 
-#: static/js/cidle/resource.js:121
+#: static/js/cidle/resource.js:134
 msgid "games_cidle_resource_glass"
 msgstr "Glass"
 
-#: static/js/cidle/resource.js:127
+#: static/js/cidle/resource.js:141
 msgid "games_cidle_resource_gold"
 msgstr "Gold"
 
-#: static/js/cidle/resource.js:134
+#: static/js/cidle/resource.js:147
+msgid "games_cidle_resource_tin"
+msgstr "Tin"
+
+#: static/js/cidle/resource.js:155
 msgid "games_cidle_resource_time"
 msgstr "Time"
 
-#: static/js/cidle/storage.js:306
+#: static/js/cidle/storage.js:309
 msgid "cidle_storage_contents"
 msgstr "Stored Contents"
 
-#: static/js/cidle/storage.js:709
+#: static/js/cidle/storage.js:714
 msgid "games_cidle_storage_wood_storage"
 msgstr "Wood Storage"
 
-#: static/js/cidle/storage.js:723
+#: static/js/cidle/storage.js:728
 msgid "games_cidle_storage_stone_storage"
 msgstr "Stone Storage"
 
-#: static/js/cidle/storage.js:737
+#: static/js/cidle/storage.js:742
 msgid "games_cidle_storage_fire_pit"
 msgstr "Fire Pit"
 
-#: static/js/cidle/storage.js:754
+#: static/js/cidle/storage.js:759
 msgid "games_cidle_storage_brick_pile"
 msgstr "Brick Pile"
 
-#: static/js/cidle/storage.js:768
+#: static/js/cidle/storage.js:773
 msgid "games_cidle_storage_gravel_box"
 msgstr "Gravel Box"
 
-#: static/js/cidle/storage.js:775
+#: static/js/cidle/storage.js:780
 msgid "games_cidle_storage_water_bucket"
 msgstr "Water Bucket"
 
-#: static/js/cidle/storage.js:790
+#: static/js/cidle/storage.js:795
 msgid "games_cidle_storage_copper_crate"
 msgstr "Copper Crate"
 
-#: static/js/cidle/storage.js:797
+#: static/js/cidle/storage.js:802
 msgid "games_cidle_storage_sand_box"
 msgstr "Sand Box"
 
-#: static/js/cidle/storage.js:804
+#: static/js/cidle/storage.js:809
 msgid "games_cidle_storage_glass_container"
 msgstr "Glass Container"
 
-#: static/js/cidle/storage.js:811
+#: static/js/cidle/storage.js:816
 msgid "games_cidle_storage_gold_crate"
 msgstr "Gold Crate"
 
-#: static/js/cidle/storage.js:820
+#: static/js/cidle/storage.js:823
+msgid "games_cidle_storage_tin_crate"
+msgstr "Tin Crate"
+
+#: static/js/cidle/storage.js:832
 msgid "games_cidle_storage_giant_clock"
 msgstr "Giant Clock"
 

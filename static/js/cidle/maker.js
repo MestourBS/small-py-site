@@ -6,7 +6,7 @@ import { StorageMachine } from './storage.js';
 import Resource from './resource.js';
 import { get_theme_value as theme } from './display.js';
 import { Pane } from './pane.js';
-import { beautify, stable_pad_number } from './primitives.js';
+import { array_group_by, beautify, number_between, stable_pad_number } from './primitives.js';
 /**
  * @typedef {import('./position.js').PointLike} PointLike
  *
@@ -14,7 +14,8 @@ import { beautify, stable_pad_number } from './primitives.js';
  */
 
 //todo move production to a single all consuming / producing function
-//todo allow recipes secondary outputs (no blocking when full)
+//todo show resource image if available
+//todo draw production/consumption amounts for scaling
 
 const pause_text = {
     'true': gettext('games_cidle_maker_paused'),
@@ -59,7 +60,7 @@ export class MakerMachine extends Machine {
      * @param {boolean} [params.paused]
      * @param {boolean} [params.unpausable]
      * @param {[string, number][][]|((level: number) => [string, number][])?} [params.consumes]
-     * @param {[string, number][][]|((level: number) => [string, number][])?} [params.produces]
+     * @param {[string, number, boolean?][][]|((level: number) => [string, number, boolean?][])?} [params.produces]
      * @param {[string, number][][]|((level: number) => [string, number][])?} [params.requires]
      * @param {[string, number][][]|((level: number) => [string, number][]|false|null)?} [params.upgrade_costs]
      * @param {number?} [params.max_level]
@@ -148,7 +149,7 @@ export class MakerMachine extends Machine {
     #upgrade_costs_leveled = null;
     /** @type {null|[string, number][]} */
     #consumes_leveled = null;
-    /** @type {null|[string, number][]} */
+    /** @type {null|[string, number, boolean?][]} */
     #produces_leveled = null;
     /** @type {null|[string, number][]} */
     #requires_leveled = null;
@@ -167,7 +168,7 @@ export class MakerMachine extends Machine {
         }
         return this.#consumes_leveled;
     }
-    /** @type {[string, number][]} */
+    /** @type {[string, number, boolean?][]} */
     get produces() {
         if (this.#produces_leveled == null) {
             if (typeof this.#produces == 'function') this.#produces_leveled = this.#produces(this.level);
@@ -432,8 +433,9 @@ export class MakerMachine extends Machine {
         if (produce) {
             if (group_relations) results.to = [];
 
-            this.produces.forEach(([res, pro]) => {
+            this.produces.forEach(([res, pro, optional=false]) => {
                 pro *= multiplier;
+
                 /**
                  * @type {{
                  *  machines?: StorageMachine[],
@@ -458,7 +460,7 @@ export class MakerMachine extends Machine {
                             result.to.push(m);
                         }
                     });
-                result.can_produce = pro <= 0;
+                result.can_produce = pro <= 0 || optional;
             });
         }
 
@@ -485,19 +487,6 @@ export class MakerMachine extends Machine {
                 return total / con;
             }));
         }
-        if (produces.length) {
-            multipliers.push(...produces.map(([res, pro]) => {
-                let total = 0;
-                StorageMachine.storages_for(res)
-                    .forEach(m => {
-                        const data = m.resources[res];
-                        const space = data.max - data.amount;
-
-                        total += space;
-                    });
-                return total / pro;
-            }));
-        }
         if (requires.length) {
             multipliers.push(...requires.map(([res, req]) => {
                 let total = 0;
@@ -507,6 +496,40 @@ export class MakerMachine extends Machine {
                     });
                 return total / req;
             }));
+        }
+        if (produces.length) {
+            const split = array_group_by(produces, ([,,optional=false]) => optional);
+            const required = split['false'];
+            const optional = split['true'];
+            multipliers.push(
+                required.map(([res, pro]) => {
+                    let total = 0;
+                    StorageMachine.storages_for(res)
+                        .forEach(m => {
+                            const data = m.resources[res];
+                            const space = data.max - data.amount;
+
+                            total += space;
+                        });
+                    return total / pro;
+                })
+            );
+
+            if (!multipliers.length) {
+                multipliers.push(
+                    optional.map(([res, pro]) => {
+                        let total = 0;
+                        StorageMachine.storages_for(res)
+                            .forEach(m => {
+                                const data = m.resources[res];
+                                const space = data.max - data.amount;
+
+                                total += space;
+                            });
+                        return total / pro;
+                    })
+                );
+            }
         }
 
         if (!multipliers.length) {
@@ -596,14 +619,19 @@ export class MakerMachine extends Machine {
         }
         if (this.produces.length) {
             content.push([{content: [gettext('games_cidle_maker_produces')], width: 2}]);
-            content.push(...this.produces.map(([res, pro]) => {
-                const resource = Resource.resource(res);
+            content.push(...this.produces.map(([res, pro, optional=false]) => {
+                const {color, name, background_color} = Resource.resource(res);
+                let production = `{color:${color}}`;
+                if (optional) {
+                    production += '0-';
+                }
+                production += `${beautify(pro)}/s`;
                 return [{
-                    content: [`{color:${resource.color}}${resource.name}`],
-                    color: resource.background_color,
+                    content: [`{color:${color}}${name}`],
+                    color: background_color,
                 }, {
-                    content: [`{color:${resource.color}}${beautify(pro)}/s`],
-                    color: resource.background_color,
+                    content: [production],
+                    color: background_color,
                 }];
             }));
         }
@@ -772,19 +800,24 @@ export class MakerMachine extends Machine {
             return nres != cres || npro != cpro;
         }));
         if (pro_diff) {
-            const obj_cur = Object.fromEntries(pro_cur);
-            const obj_next = Object.fromEntries(pro_next);
+            /** @type {{[res: string]: [number, boolean]}} */
+            const obj_cur = Object.fromEntries(pro_cur.map(([r, p, o=false]) => [r, [p, o]]));
+            /** @type {{[res: string]: [number, boolean]}} */
+            const obj_next = Object.fromEntries(pro_next.map(([r, p, o=false]) => [r, [p, o]]));
             const resources = new Set(pro_cur.map(([res]) => res));
             pro_next.forEach(([res]) => resources.add(res));
             resources.forEach(res => {
-                const cpro = obj_cur[res] ?? 0;
-                const npro = obj_next[res] ?? 0;
+                let [cpro=0, copt=false] = obj_cur[res];
+                let [npro=0, nopt=false] = obj_next[res];
                 if (cpro == npro) return;
 
                 const {color, name, background_color} = Resource.resource(res);
                 const change_color = theme(cpro > npro ? 'machine_upgrade_lower_pro_fill' : 'machine_upgrade_higher_pro_fill');
 
-                const text = `{color:${color}}${beautify(cpro)}/s ⇒ {color:${change_color}}${beautify(npro)}/s`;
+                cpro = '0-'.repeat(copt) + beautify(cpro);
+                npro = '0-'.repeat(nopt) + beautify(npro);
+
+                const text = `{color:${color}}${cpro}/s ⇒ {color:${change_color}}${npro}/s`;
 
                 content.push([{
                     content: [`{color:${color}}${name}`],
@@ -855,11 +888,10 @@ export class MakerMachine extends Machine {
         if (this.image) {
             context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
         } else {
-            if (this.#unpausable) context.lineWidth = 2;
+            context.lineWidth = 1.5 * (this.#unpausable + 1);
             if (this.moving && !transparent) context.setLineDash([5]);
 
             context.fillStyle = theme('maker_color_fill');
-            context.strokeStyle = theme('maker_color_border');
             context.beginPath();
             context.moveTo(x - this.radius, y);
             context.lineTo(x, y - this.radius);
@@ -867,8 +899,44 @@ export class MakerMachine extends Machine {
             context.lineTo(x, y + this.radius);
             context.lineTo(x - this.radius, y);
             context.fill();
-            context.stroke();
             context.closePath();
+
+            const res_arr = [...this.consumes, ...this.produces, ...this.requires].map(([s]) => s).sort();
+            let i = 0;
+            const corners = [0, 1, 2].map(n => n / 2 * Math.PI);
+            new Set(res_arr).forEach(res => {
+                const count = res_arr.filter(r => r == res).length;
+                const {border_color} = Resource.resource(res);
+
+                const start_angle = 2 * i / res_arr.length * Math.PI - Math.PI / 2;
+                const end_angle = 2 * (i + count) / res_arr.length * Math.PI - Math.PI / 2;
+
+                /** @type {(angle: number) => [number, number]} */
+                const angle_to_point = angle => {
+                    let cos = Math.cos(angle);
+                    let sin = Math.sin(angle);
+
+                    return [cos ** 2 * this.radius * Math.sign(cos) + x, sin ** 2 * this.radius * Math.sign(sin) + y]
+                        .map(n => Math.abs(n) < 1e-6 ? 0 : n);
+                };
+
+                /** @type {[number, number][]} */
+                const points = [
+                    angle_to_point(start_angle),
+                    ...corners.filter(c => number_between(c, start_angle, end_angle)).map(c => angle_to_point(c)),
+                    angle_to_point(end_angle),
+                ];
+
+                context.strokeStyle = border_color;
+                context.beginPath();
+                points.forEach(([x, y]) => {
+                    context.lineTo(x, y);
+                });
+                context.stroke();
+                context.closePath();
+
+                i += count;
+            });
 
             // Resets line to prevent problems with other lines
             context.setLineDash([]);
@@ -1239,7 +1307,7 @@ export function time_speed() {
                 .filter(([res]) => res == 'time')
                 .map(([_, time]) => time)
                 .reduce((a, b) => a + b, 0);
-            multiplier *= (time_lost ** 1.76) + 1;
+            multiplier *= time_lost ** 1.76 + m.max_produce_multiplier();
         });
 
     return multiplier;
@@ -1256,7 +1324,7 @@ export function make_makers() {
      *  max_level?: number,
      *  type?: MakerType[]|(level: number) => MakerType,
      *  consumes?: [string, number][][]|(level: number) => [string, number][],
-     *  produces?: [string, number][][]|(level: number) => [string, number][],
+     *  produces?: [string, number, boolean?][][]|(level: number) => [string, number, boolean?][],
      *  requires?: [string, number][][]|(level: number) => [string, number][],
      *  upgrade_costs?: [string, number][][]|(level: number) => [string, number][]|false|null,
      * }[]}
@@ -1334,13 +1402,29 @@ export function make_makers() {
         {
             id: 'water_well',
             name: gettext('games_cidle_maker_water_well'),
-            produces: [[['water', .5]]],
+            produces: (level) => [['water', (level + 2) / 4]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 20]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
         },
         {
             id: 'gravel_washer',
             name: gettext('games_cidle_maker_gravel_washer'),
-            produces: [[['copper', .1], ['sand', .9]]],
-            consumes: [[['water', 1], ['gravel', 1]]],
+            produces: [[['copper', .1], ['sand', .9, true]], [['copper', .35], ['sand', 1, true], ['tin', .15]]],
+            consumes: [[['water', 1], ['gravel', 1]], [['water', 1], ['gravel', 1.5]]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('tin')) return [['gold', 20]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
         },
         {
             id: 'glass_blower',
@@ -1394,7 +1478,7 @@ export function insert_makers() {
      *  hidden?: boolean,
      *  type?: MakerType[]|(level: number) => MakerType,
      *  consumes?: [string, number][][]|(level: number) => [string, number][],
-     *  produces?: [string, number][][]|(level: number) => [string, number][],
+     *  produces?: [string, number, boolean?][][]|(level: number) => [string, number, boolean?][],
      *  requires?: [string, number][][]|(level: number) => [string, number][],
      * }][]}
      */

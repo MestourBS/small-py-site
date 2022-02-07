@@ -14,6 +14,7 @@ import { beautify, stable_pad_number } from './primitives.js';
 
 //todo level-based resources value
 //todo add fill level support for images
+//todo show resource image if available
 
 export class StorageMachine extends Machine {
     /** @type {StorageMachine[]} */
@@ -45,13 +46,14 @@ export class StorageMachine extends Machine {
      * Checks whether there is any storage available for a resource
      *
      * @param {string} resource
+     * @param {number} [min] Minimum amount of storages to check for
      * @returns {boolean}
      */
-    static any_storage_for(resource) {
+    static any_storage_for(resource, min=1) {
         // Allows children classes to access it themselves
         if (this != StorageMachine) return StorageMachine.storages_for(resource);
 
-        return resource in this.#filtered_storages && this.#filtered_storages[resource].length > 0;
+        return resource in this.#filtered_storages && this.#filtered_storages[resource].length >= min;
     }
     /**
      * Computes the current amount and maximum of a resource
@@ -488,8 +490,11 @@ export class StorageMachine extends Machine {
             context.fill();
             context.closePath();
 
+            if (this.moving && !transparent) context.setLineDash([5]);
+            context.lineWidth = 1.5;
+
             // Partial fill for resources
-            const keys = Object.keys(this.resources);
+            const keys = Object.keys(this.resources).sort();
             const length = keys.length;
             for (let i = 0; i < length; i++) {
                 const res_id = keys[i];
@@ -510,8 +515,8 @@ export class StorageMachine extends Machine {
                         fill = amount / max;
                         break;
                 }
-                const start_angle = 2 * i / length * Math.PI;
-                const end_angle = 2 * (i + 1) / length * Math.PI;
+                const start_angle = 2 * i / length * Math.PI - Math.PI / 2;
+                const end_angle = 2 * (i + 1) / length * Math.PI - Math.PI / 2;
                 /** @type {[keyof context, any[]][]} */
                 const funcs = [];
                 switch (fillmode) {
@@ -526,7 +531,7 @@ export class StorageMachine extends Machine {
                     case 'clockwise':
                     case 'counterclockwise':
                         const clock_diff = 2 / length * Math.PI * fill;
-                        let clock_start = start_angle - Math.PI / 2;
+                        let clock_start = start_angle;
                         let clock_end = clock_start + clock_diff;
                         if (fillmode == 'counterclockwise') {
                             clock_end = clock_start;
@@ -563,16 +568,15 @@ export class StorageMachine extends Machine {
                 context.fill();
                 context.closePath();
                 context.restore();
+
+                context.strokeStyle = resource.border_color;
+                context.beginPath();
+                context.arc(x, y, this.radius, start_angle, end_angle);
+                context.stroke();
+                context.closePath();
             }
 
-            if (this.moving && !transparent) context.setLineDash([5]);
-
-            context.strokeStyle = theme('storage_color_border');
-            context.beginPath();
-            context.arc(x, y, this.radius, 0, 2 * Math.PI);
-            context.stroke();
-            context.closePath();
-
+            context.lineWidth = 1;
             if (this.moving) context.setLineDash([]);
         }
 
@@ -805,6 +809,13 @@ export function make_storages() {
             name: gettext('games_cidle_storage_gold_crate'),
             resources: {
                 gold: {max: 100},
+            },
+        },
+        {
+            id: 'tin_crate',
+            name: gettext('games_cidle_storage_tin_crate'),
+            resources: {
+                tin: {max: 100},
             },
         },
         // Time storages
