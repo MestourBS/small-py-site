@@ -6,6 +6,9 @@ import { array_group_by } from './primitives.js';
 /**
  * @typedef {import('./canvas.js').GameTab} GameTab
  * @typedef {import('./position.js').PointLike} PointLike
+ *
+ * @typedef {{content: (string|() => string)[], click?: (() => void)[], width?: number, color?: string, image?: string|HTMLImageElement}} PaneCell
+ * @typedef {{content: string[], click?: (() => void)[], width?: number, color?: string, image?: HTMLImageElement}} CachedPaneCell
  */
 
 export class Pane {
@@ -56,7 +59,7 @@ export class Pane {
      * @param {number} params.y
      * @param {boolean} [params.pinned] Whether the pane moves around with the focus
      * @param {string} params.id
-     * @param {{content: (string|() => string)[], click?: (() => void)[], width?: number, color?: string}[][]} [params.content]
+     * @param {PaneCell[][]} [params.content]
      * @param {string|false} [params.title]
      * @param {GameTab} [params.tab]
      * @param {boolean} [params.pinnable] Whether the tab can be (un)pinned afterwards
@@ -128,7 +131,7 @@ export class Pane {
     #pinned;
     #id;
     #content;
-    /** @type {false|{content: string[], click?: (() => void)[], width?: number, color?: string}[][]} */
+    /** @type {false|CachedPaneCell[][]} */
     #cut_content = false;
     #tab;
 
@@ -162,24 +165,27 @@ export class Pane {
 
         this.#cut_content = this.#content.map(row => {
             return row.map(cell => {
-                let {content, click=false, width=false, color=null} = cell;
+                let {content, click=false, width=false, color=null, image=null} = cell;
 
                 content = content.map(c => typeof c == 'function' ? c() : c);
+                let max_width = max_cell_width;
 
-                /**
-                 * @type {{
-                 *  content: string[],
-                 *  click?: (() => void)[],
-                 *  width?: number,
-                 *  color?: string,
-                 * }}
-                 */
+                /** @type {PaneCell} */
                 let copy = {content, color};
                 if (click !== false) copy.click = click;
                 if (width !== false) copy.width = width;
+                if (typeof image == 'string') {
+                    let i = new Image(theme('font_size'), theme('font_size'));
+                    i.src = image;
+                    image = i;
+                }
+                if (image instanceof Image) {
+                    copy.image = image;
+                    max_width -= theme('font_size');
+                }
 
-                if (copy.content.some(t => context.measureText(t).width > max_cell_width)) {
-                    copy.content = copy.content.map(text => cut_lines(text, 0, {max_width: max_cell_width, context})).flat();
+                if (copy.content.some(t => context.measureText(t).width > max_width)) {
+                    copy.content = copy.content.map(text => cut_lines(text, 0, {max_width, context})).flat();
                 }
                 return copy;
             });
@@ -194,7 +200,7 @@ export class Pane {
         if (!this.#cut_content) return;
         // Turn rows into columns of cells
         const columns = array_group_by(this.#cut_content.map(row => {
-            return row.map(/** @return {[{content: string[], click?: (() => void)[], width?: number, color?: string}, number][]} */(c, i) => {
+            return row.map(/** @return {[CachedPaneCell, number][]} */(c, i) => {
                 let width = c.width ?? 1;
                 let cols = [];
                 for (let j = i; j < i + width; j++) cols.push([c, j]);
@@ -278,7 +284,7 @@ export class Pane {
         const row = this.#content[y_grid];
         if (!row) return;
         let x_index = 0;
-        /** @type {null|{content: (string | (() => string))[]; click?: (() => void)[]; width?: number; color?: string}} */
+        /** @type {null|PaneCell} */
         let cell_selected = null;
         row.forEach(cell => {
             const min = x_index;
@@ -326,7 +332,7 @@ export class Pane {
         const row = this.#content[y_grid];
         if (!row) return false;
         let x_index = 0;
-        /** @type {null|{content: (string | (() => string))[]; click?: (() => void)[]; width?: number; color?: string}} */
+        /** @type {null|PaneCell} */
         let cell_selected = null;
         row.forEach(cell => {
             const min = x_index;
@@ -355,17 +361,8 @@ export class Pane {
         x -= this.x;
         y -= this.y;
 
-        const space = 20;
-        const width = this.table_widths().reduce((s, w) => s + w, 0);
-        if (x < -space || x > width + space) return;
-
-        const heights = this.table_heights();
-        const in_range = y >= -space && y < space + heights[0];
-
-        if (in_range) {
-            this.#x += x_diff;
-            this.#y += y_diff;
-        }
+        this.#x += x_diff;
+        this.#y += y_diff;
     }
 
     /**
@@ -454,9 +451,16 @@ export class Pane {
                 context.stroke();
                 context.closePath();
 
+                let tx = px;
                 let ty = py;
+                if (cell.image) {
+                    context.drawImage(cell.image, tx, ty, theme('font_size') * 1.25, theme('font_size') * 1.25);
+                    tx += theme('font_size');
+                }
+                tx += 5;
+
                 cell.content.forEach(t => {
-                    canvas_write(t, px+5, ty, {context});
+                    canvas_write(t, tx, ty, {context});
                     ty += theme('font_size');
                 });
             });

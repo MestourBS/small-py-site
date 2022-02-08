@@ -154,15 +154,13 @@ const game_tabs = {
                     ps = beautify(per_second);
                     if (per_second > 0) ps = `+${ps}`;
                     ps += '/s';
-
-                    if (res != 'time' && speed != 1) ps += ` x${beautify(speed)}`;
                 }
                 a += `/${beautify(max)}`;
 
                 return {res, name, amount: a, per_second: ps};
             });
 
-            const max_width = display_size.width / Object.keys(table[0]).length;
+            const max_width = display_size.width / (Object.keys(table[0]).length + (speed != 1));
 
             /** @type {{[k: string]: number}} */
             const table_widths = table.reduce((widths, data) => {
@@ -190,6 +188,9 @@ const game_tabs = {
                     canvas_write(value, data_x, y, {base_text_color: color});
                     data_x += table_widths[key] + grid_spacing;
                 });
+                if (speed != 1 && res != 'time') {
+                    canvas_write(`x${beautify(speed)}`, data_x, y, {base_text_color: color});
+                }
 
                 y += height;
             });

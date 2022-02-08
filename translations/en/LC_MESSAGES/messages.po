@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-02-07 16:16+0100\n"
+"POT-Creation-Date: 2022-02-08 09:21+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -524,23 +524,23 @@ msgstr "Resources"
 msgid "games_cidle_time_speed"
 msgstr "Time Speed: %(speed)s seconds per second"
 
-#: static/js/cidle/display.js:43
+#: static/js/cidle/display.js:44
 msgid "games_cidle_style_light"
 msgstr "Light"
 
-#: static/js/cidle/inventory.js:30
+#: static/js/cidle/inventory.js:27
 msgid "games_cidle_inventory_machines"
 msgstr "Machines"
 
-#: static/js/cidle/inventory.js:141
+#: static/js/cidle/inventory.js:142
 msgid "games_cidle_place"
 msgstr "Place %(obj)s"
 
-#: static/js/cidle/inventory.js:184
+#: static/js/cidle/inventory.js:185
 msgid "games_cidle_make"
 msgstr "Make %(obj)s"
 
-#: static/js/cidle/inventory.js:194
+#: static/js/cidle/inventory.js:195
 msgid "games_cidle_craft_costs"
 msgstr "Crafting Cost"
 
@@ -576,71 +576,75 @@ msgstr "Consumes"
 msgid "games_cidle_maker_produces"
 msgstr "Produces"
 
-#: static/js/cidle/maker.js:644 static/js/cidle/storage.js:336
+#: static/js/cidle/maker.js:644 static/js/cidle/storage.js:338
 msgid "games_cidle_machine_upgrade"
 msgstr "Upgrade"
 
-#: static/js/cidle/maker.js:693 static/js/cidle/storage.js:383
+#: static/js/cidle/maker.js:693 static/js/cidle/storage.js:385
 msgid "games_cidle_machine_upgrading"
 msgstr "Upgrade %(obj)s"
 
-#: static/js/cidle/maker.js:697 static/js/cidle/storage.js:388
+#: static/js/cidle/maker.js:697 static/js/cidle/storage.js:390
 msgid "games_cidle_machine_upgrade_costs"
 msgstr "Upgrade Cost"
 
-#: static/js/cidle/maker.js:721 static/js/cidle/storage.js:413
+#: static/js/cidle/maker.js:721 static/js/cidle/storage.js:415
 msgid "games_cidle_machine_changes"
 msgstr "Changes"
 
-#: static/js/cidle/maker.js:1359
+#: static/js/cidle/maker.js:1362
 msgid "games_cidle_maker_tree_chopper"
 msgstr "Tree Chopper"
 
-#: static/js/cidle/maker.js:1378
+#: static/js/cidle/maker.js:1381
 msgid "games_cidle_maker_stone_miner"
 msgstr "Stone Miner"
 
-#: static/js/cidle/maker.js:1397
+#: static/js/cidle/maker.js:1407
 msgid "games_cidle_maker_wood_burner"
 msgstr "Wood Burner"
 
-#: static/js/cidle/maker.js:1414
+#: static/js/cidle/maker.js:1424
 msgid "games_cidle_maker_brick_furnace"
 msgstr "Brick Furnace"
 
-#: static/js/cidle/maker.js:1428
+#: static/js/cidle/maker.js:1438
 msgid "games_cidle_maker_rock_crusher"
 msgstr "Rock Crusher"
 
-#: static/js/cidle/maker.js:1442
+#: static/js/cidle/maker.js:1452
 msgid "games_cidle_maker_water_well"
 msgstr "Water Well"
 
-#: static/js/cidle/maker.js:1458
+#: static/js/cidle/maker.js:1471
 msgid "games_cidle_maker_gravel_washer"
 msgstr "Gravel Washer"
 
-#: static/js/cidle/maker.js:1472
+#: static/js/cidle/maker.js:1511
+msgid "games_cidle_maker_gravel_crusher"
+msgstr "Gravel Crusher"
+
+#: static/js/cidle/maker.js:1517
 msgid "games_cidle_maker_glass_blower"
 msgstr "Glass Blower"
 
-#: static/js/cidle/maker.js:1478
+#: static/js/cidle/maker.js:1531
 msgid "games_cidle_maker_sand_washer"
 msgstr "Sand Washer"
 
-#: static/js/cidle/maker.js:1484
+#: static/js/cidle/maker.js:1545
 msgid "games_cidle_maker_bronze_foundry"
 msgstr "Bronze Foundry"
 
-#: static/js/cidle/maker.js:1492
+#: static/js/cidle/maker.js:1553
 msgid "games_cidle_maker_fire_extinguisher"
 msgstr "Fire Burning Out"
 
-#: static/js/cidle/maker.js:1503
+#: static/js/cidle/maker.js:1564
 msgid "games_cidle_maker_sundial"
 msgstr "Sundial"
 
-#: static/js/cidle/maker.js:1508
+#: static/js/cidle/maker.js:1569
 msgid "games_cidle_maker_hourglass"
 msgstr "Hourglass"
 
@@ -692,67 +696,75 @@ msgstr "Tin"
 msgid "games_cidle_resource_bronze"
 msgstr "Bronze"
 
-#: static/js/cidle/resource.js:161
+#: static/js/cidle/resource.js:159
+msgid "games_cidle_resource_aquamarine"
+msgstr "Aquamarine"
+
+#: static/js/cidle/resource.js:167
 msgid "games_cidle_resource_time"
 msgstr "Time"
 
-#: static/js/cidle/storage.js:309
+#: static/js/cidle/storage.js:311
 msgid "cidle_storage_contents"
 msgstr "Stored Contents"
 
-#: static/js/cidle/storage.js:714
+#: static/js/cidle/storage.js:716
 msgid "games_cidle_storage_wood_storage"
 msgstr "Wood Storage"
 
-#: static/js/cidle/storage.js:728
+#: static/js/cidle/storage.js:730
 msgid "games_cidle_storage_stone_storage"
 msgstr "Stone Storage"
 
-#: static/js/cidle/storage.js:742
+#: static/js/cidle/storage.js:744
 msgid "games_cidle_storage_fire_pit"
 msgstr "Fire Pit"
 
-#: static/js/cidle/storage.js:759
+#: static/js/cidle/storage.js:761
 msgid "games_cidle_storage_brick_pile"
 msgstr "Brick Pile"
 
-#: static/js/cidle/storage.js:773
+#: static/js/cidle/storage.js:775
 msgid "games_cidle_storage_gravel_box"
 msgstr "Gravel Box"
 
-#: static/js/cidle/storage.js:780
+#: static/js/cidle/storage.js:782
 msgid "games_cidle_storage_water_bucket"
 msgstr "Water Bucket"
 
-#: static/js/cidle/storage.js:795
+#: static/js/cidle/storage.js:797
 msgid "games_cidle_storage_copper_crate"
 msgstr "Copper Crate"
 
-#: static/js/cidle/storage.js:802
+#: static/js/cidle/storage.js:804
 msgid "games_cidle_storage_sand_box"
 msgstr "Sand Box"
 
-#: static/js/cidle/storage.js:809
+#: static/js/cidle/storage.js:811
 msgid "games_cidle_storage_glass_container"
 msgstr "Glass Container"
 
-#: static/js/cidle/storage.js:816
+#: static/js/cidle/storage.js:818
 msgid "games_cidle_storage_gold_crate"
 msgstr "Gold Crate"
 
-#: static/js/cidle/storage.js:823
+#: static/js/cidle/storage.js:825
 msgid "games_cidle_storage_tin_crate"
 msgstr "Tin Crate"
 
-#: static/js/cidle/storage.js:830
+#: static/js/cidle/storage.js:832
 msgid "games_cidle_storage_bronze_crate"
 msgstr "Bronze Crate"
 
 #: static/js/cidle/storage.js:841
+msgid "games_cidle_storage_jewel_box"
+msgstr "Jewel Box"
+
+#: static/js/cidle/storage.js:850
 msgid "games_cidle_storage_giant_clock"
 msgstr "Giant Clock"
 
-#: static/js/cidle/storage.js:859
+#: static/js/cidle/storage.js:868
 msgid "games_cidle_storage_rewinding_contraption"
 msgstr "Rewinding Contraption"
 

@@ -7,6 +7,9 @@ import globals from './globals.js';
 import Resource from './resource.js';
 import { beautify, stable_pad_number } from './primitives.js';
 import MakerMachine from './maker.js';
+import { coords_distance as distance } from './position.js';
+
+//todo resource crafting
 
 /**
  * Current inventory
@@ -191,7 +194,7 @@ const inventory = {
                                     content: [gettext('games_cidle_craft_costs')]
                                 }],
                                 ...cost.map(/**@param {[string, number]}*/([res, cost]) => {
-                                    const resource = Resource.resource(res);
+                                    const {color, name, background_color, image} = Resource.resource(res);
                                     const cost_func = () => {
                                         const {amount, max} = StorageMachine.stored_resource(res);
                                         const will_afford = max >= cost;
@@ -205,11 +208,12 @@ const inventory = {
                                         return `{color:${cost_color}}${amount_str}${beautify(cost)}`;
                                     };
                                     return [{
-                                        content: [`{color:${resource.color}}${resource.name}`],
-                                        color: resource.background_color,
+                                        content: [`{color:${color}}${name}`],
+                                        color: background_color,
+                                        image,
                                     }, {
                                         content: [cost_func],
-                                        color: resource.background_color,
+                                        color: background_color,
                                     }];
                                 }),
                             );
@@ -562,7 +566,7 @@ const recipes = {
                 }
                 return costs;
             },
-            unlocked: () => ['copper', 'sand'].every(res => StorageMachine.any_storage_for(res)),
+            unlocked: () => StorageMachine.any_storage_for('copper'),
             position: 14,
         },
         'glass_container': {
@@ -666,6 +670,25 @@ const recipes = {
             unlocked: () => StorageMachine.any_storage_for('gold'),
             position: 19,
         },
+        'jewel_box': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c == 0) {
+                        cost = [['gold', 150]];
+                    } else if (c <= 5) {
+                        cost = [['gold', 150 + 25 * c], ['aquamarine', c * 10 - 5]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('gold', 2),
+            position: 20,
+        },
         'bronze_crate': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
@@ -681,7 +704,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => MakerMachine.maker_machines.some(m => m.id == 'gravel_washer' && m.level >= 1),
-            position: 19,
+            position: 21,
         },
         'bronze_foundry': {
             resources: crafted => {
@@ -700,7 +723,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('bronze'),
-            position: 20,
+            position: 22,
         },
         // Time machines
         'giant_clock': {
@@ -758,7 +781,16 @@ const recipes = {
                 const costs = [];
                 { // 0
                     const c = crafted[0] ?? 0;
-                    costs[0] = [['stone', 1_000 * 10 ** c], ['time', 10 * 2 ** c]];
+                    /** @type {[string, number][]|false} */
+                    let cost = [['stone', 1_000 * 10 ** c], ['time', 10 * 2 ** c]];
+                    if (c >= 5) {
+                        if (StorageMachine.any_storage_for('aquamarine')) {
+                            cost.push(['aquamarine', (c - 4) ** 2]);
+                        } else {
+                            cost = false;
+                        }
+                    }
+                    costs[0] = cost;
                 }
                 return costs;
             },
@@ -793,6 +825,7 @@ function init() {
             machines.push([machine, 0, false]);
         }
     });
+    check_can_afford();
 
     // Tries to unlock recipes every 15 seconds
     setInterval(() => {
@@ -845,7 +878,9 @@ function craft(id, recipe_id=0, type=subtab) {
     if (!can_afford) return false;
 
     cost.forEach(([res, cost]) => {
-        StorageMachine.storages_for(res).forEach(m => {
+        StorageMachine.storages_for(res)
+        .sort((a,b) => distance([0, 0], a) - distance([0, 0], b))
+        .forEach(m => {
             if (cost <= 0) return;
 
             let loss = Math.min(m.resources[res].amount, cost);
@@ -1048,7 +1083,7 @@ function unlock_recipes() {
 /**
  * Checks whether any version of a recipe is affordable
  */
-function check_can_afford() {
+export function check_can_afford() {
     Object.values(recipes.machines).filter(r => !r.can_afford).forEach(recipe => {
         const {crafted=[]} = recipe;
         let {resources} = recipe;
@@ -1060,7 +1095,6 @@ function check_can_afford() {
         });
     });
 }
-//todo save/load can_afford
 /**
  * Returns an object containing the data to be saved
  *

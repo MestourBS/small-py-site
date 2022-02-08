@@ -154,6 +154,12 @@ export function make_resources() {
             color: '#CD7F32',
             border_color: '#B9722D',
         },
+        {
+            id: 'aquamarine',
+            name: gettext('games_cidle_resource_aquamarine'),
+            color: '#7FFFD4',
+            border_color: '#66FFCB',
+        },
         // Time resources
         {
             id: 'time',

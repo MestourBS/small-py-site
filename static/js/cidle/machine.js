@@ -1,9 +1,12 @@
 import { context as canvas_context, display_size, grid_spacing } from './canvas.js';
 import globals from './globals.js';
+import { check_can_afford } from './inventory.js';
 /**
  * @typedef {import('./canvas.js').GameTab} GameTab
  * @typedef {import('./position.js').PointLike} PointLike
  */
+
+//todo complete machines (storage & maker in one)
 
 export class Machine {
     /** @type {{[id: string]: Machine}} */
@@ -118,7 +121,13 @@ export class Machine {
     set name(name) { this.#name = name + ''; }
 
     get level() { return this.#level; }
-    set level(level) { if (!isNaN(level)) this.#level = Math.max(0, level); }
+    set level(level) {
+        if (!isNaN(level)) {
+            this.#level = Math.max(0, level);
+            Machine.machines.forEach(m => m.can_upgrade = false);
+            check_can_afford();
+        }
+    }
     get can_upgrade() { return false; }
     set can_upgrade(can) {}
 

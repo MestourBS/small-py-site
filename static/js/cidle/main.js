@@ -1,3 +1,7 @@
+/**
+ * Inspired by the first alkahistorian
+ */
+
 import './actions.js';
 import { canvas_refresh } from './canvas.js';
 import { save_data as save_inventory, load_data as load_inventory } from './inventory.js';
@@ -6,6 +10,7 @@ import { make_resources } from './resource.js';
 import StorageMachine, { insert_storages, make_storages } from './storage.js';
 import { save_data as save_globals, load_data as load_globals } from './globals.js';
 import { save_data as save_machines, load_data as load_machines } from './machine.js';
+import { coords_distance as distance } from './position.js';
 
 /** @type {number} */
 let last_production;
@@ -151,7 +156,7 @@ function load() {
         let seconds = (now - save) / 1e3;
 
         if (seconds > 0) {
-            const storages = StorageMachine.storages_for('time');
+            const storages = StorageMachine.storages_for('time').sort((a, b) => distance([0, 0], a) - distance([0, 0], b));
             storages.forEach(m => {
                 if (seconds <= 0) return;
 

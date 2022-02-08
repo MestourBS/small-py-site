@@ -3,18 +3,33 @@ import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
 import Machine from './machine.js';
 import { Pane } from './pane.js';
-import { coords_distance as distance } from './position.js';
+import { coords_distance as distance, angle_to_rhombus_point } from './position.js';
 import Resource from './resource.js';
-import { beautify, stable_pad_number } from './primitives.js';
+import { beautify, number_between, stable_pad_number } from './primitives.js';
 /**
  * @typedef {import('./position.js').PointLike} PointLike
- * @typedef {'fraction'|'logarithm'} FillType
- * @typedef {'clockwise'|'counterclockwise'|'transparency'|'circle'|'image'} FillMode
+ * @typedef {keyof filltypes} FillType
+ * @typedef {'clockwise'|'counterclockwise'|'transparency'|'circle'|'rhombus'|'linear'} FillMode
  */
 
 //todo level-based resources value
 //todo add fill level support for images
-//todo show resource image if available
+
+const filltypes = {
+    'fraction': {
+        /** @param {number} amount @param {number} max */
+        fill(amount, max) {
+            return amount / max;
+        },
+    },
+    'logarithm': {
+        /** @param {number} amount @param {number} max */
+        fill(amount, max) {
+            return Math.log(amount) / Math.log(max);
+        },
+    },
+    get 'default'() { return this['fraction']; },
+};
 
 export class StorageMachine extends Machine {
     /** @type {StorageMachine[]} */
@@ -182,10 +197,9 @@ export class StorageMachine extends Machine {
     get level() { return super.level; }
     set level(level) {
         if (!isNaN(level)) {
+            super.level = level;
             this.#resources_leveled = false;
             this.#upgrade_costs_leveled = null;
-            Machine.machines.forEach(m => m.can_upgrade = false);
-            super.level = level;
         }
     }
     /** @type {[string, number][]|false} */
@@ -303,23 +317,23 @@ export class StorageMachine extends Machine {
                 content: [gettext('cidle_storage_contents')],
             }],
             ...Object.entries(this.resources).map(([res, data]) => {
-                const resource = Resource.resource(res);
-                const background = resource.background_color;
+                const {color, background_color, name, image} = Resource.resource(res);
                 const get_amount = () => {
                     let amount = beautify(data.amount);
                     if (data.amount < data.max) amount = stable_pad_number(amount);
                     if (isFinite(data.max)) {
                         amount += `/${beautify(data.max)}`;
                     }
-                    return `{color:${resource.color}}${amount}`;
+                    return `{color:${color}}${amount}`;
                 };
 
                 return [{
-                    content: [`{color:${resource.color}}${resource.name}`],
-                    color: background,
+                    content: [`{color:${color}}${name}`],
+                    color: background_color,
+                    image,
                 }, {
                     content: [get_amount],
-                    color: background,
+                    color: background_color,
                 }];
             }),
         ];
@@ -383,8 +397,7 @@ export class StorageMachine extends Machine {
                 click: [() => this.upgrade()],
             }],
             ...costs.map(([res, cost]) => {
-                const resource = Resource.resource(res);
-                const background = resource.background_color;
+                const {color, background_color, name, image} = Resource.resource(res);
                 const cost_func = () => {
                     const {amount} = StorageMachine.stored_resource(res);
                     const can_afford = amount >= cost;
@@ -397,25 +410,26 @@ export class StorageMachine extends Machine {
                     return `{color:${cost_color}}${amount_str}${beautify(cost)}`;
                 };
                 return [{
-                    content: [`{color:${resource.color}}${resource.name}`],
-                    color: background,
+                    content: [`{color:${color}}${name}`],
+                    color: background_color,
+                    image,
                 }, {
                     content: [cost_func],
-                    color: background,
+                    color: background_color,
                 }];
             }),
             [{content: [gettext('games_cidle_machine_changes')]}],
             ...Object.entries(this.#resources).map(([res, {max}]) => {
-                const resource = Resource.resource(res);
-                const background = resource.background_color;
+                const {color, background_color, name, image} = Resource.resource(res);
                 const c_max = this.resources[res].max;
 
                 return [{
-                    content: [`{color:${resource.color}}${resource.name}`],
-                    color: background,
+                    content: [`{color:${color}}${name}`],
+                    color: background_color,
+                    image,
                 }, {
-                    content: [`{color:${resource.color}}${beautify(c_max)} ⇒ ${beautify(max * next_mult)}`],
-                    color: background,
+                    content: [`{color:${color}}${beautify(c_max)} ⇒ ${beautify(max * next_mult)}`],
+                    color: background_color,
                 }];
             }),
         ];
@@ -505,16 +519,7 @@ export class StorageMachine extends Machine {
                  * Number between 0 and 1 (both inclusive) that determines
                  * the part filled
                  */
-                let fill = 0;
-                switch (fillstyle) {
-                    case 'logarithm':
-                        fill = Math.log(amount) / Math.log(max);
-                        break;
-                    case 'fraction':
-                    default:
-                        fill = amount / max;
-                        break;
-                }
+                let fill = (filltypes[fillstyle] ?? filltypes.default).fill(amount, max);
                 const start_angle = 2 * i / length * Math.PI - Math.PI / 2;
                 const end_angle = 2 * (i + 1) / length * Math.PI - Math.PI / 2;
                 /** @type {[keyof context, any[]][]} */
@@ -549,6 +554,39 @@ export class StorageMachine extends Machine {
                             ['globalAlpha', [transparency_alpha]],
                             ['moveTo', [x, y]],
                             ['arc', [x, y, this.radius, start_angle, end_angle]],
+                            ['lineTo', [x, y]],
+                        );
+                        break;
+                    case 'linear':
+                        let linear_y = this.radius * (1 - 2 * fill);
+                        const linear_angle_start = Math.asin(linear_y / this.radius);
+                        let linear_x = Math.cos(linear_angle_start) * this.radius;
+                        let linear_angle_end = Math.acos(-linear_x / this.radius) * Math.sign(linear_y);
+                        if (fill == 1) linear_angle_end = linear_angle_start + Math.PI * 2;
+                        linear_x += x;
+                        linear_y += y;
+                        funcs.push(
+                            ['moveTo', [linear_x, linear_y]],
+                            ['arc', [x, y, this.radius, linear_angle_start, linear_angle_end]],
+                            ['lineTo', [linear_x, linear_y]],
+                        );
+                        break;
+                    case 'rhombus':
+                        const rhombus_corners = [0, 1, 2].map(n => n / 2 * Math.PI);
+                        const rhombus_angle_point = angle => {
+                            let [px, py] = angle_to_rhombus_point(angle);
+                            px = px * this.radius * fill + x;
+                            py = py * this.radius * fill + y;
+                            return [px, py];
+                        };
+                        const rhombus_points = [
+                            rhombus_angle_point(start_angle),
+                            ...rhombus_corners.filter(c => number_between(c, start_angle, end_angle)).map(c => rhombus_angle_point(c)),
+                            rhombus_angle_point(end_angle),
+                        ];
+                        funcs.push(
+                            ['moveTo', [x, y]],
+                            ...rhombus_points.map(([px, py]) => ['lineTo', [px, py]]),
                             ['lineTo', [x, y]],
                         );
                         break;
@@ -675,7 +713,7 @@ export default StorageMachine;
  * @returns {type is FillType}
  */
 function is_fill_type(type) {
-    return ['fraction', 'logarithm'].includes(type);
+    return type in filltypes;
 }
 /**
  * Checks if a string is a fillmode
@@ -684,7 +722,7 @@ function is_fill_type(type) {
  * @returns {mode is FillMode}
  */
 function is_fill_mode(mode) {
-    return ['circle', 'clockwise', 'counterclockwise', 'transparency', 'image'].includes(mode);
+    return ['circle', 'clockwise', 'counterclockwise', 'transparency', 'image', 'rhombus', 'linear'].includes(mode);
 }
 
 export function make_storages() {
@@ -826,6 +864,14 @@ export function make_storages() {
                 tin: {max: 50},
                 copper: {max: 50},
             },
+        },
+        {
+            id: 'jewel_box',
+            name: gettext('games_cidle_storage_jewel_box'),
+            resources: {
+                aquamarine: {max: 10},
+            },
+            fillmode: 'rhombus',
         },
         // Time storages
         {

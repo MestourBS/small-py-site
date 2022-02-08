@@ -109,3 +109,16 @@ export function rect_contains_point(point, minx, maxx, miny, maxy) {
 
     return number_between(point.x, minx, maxx) && number_between(point.y, miny, maxy);
 }
+
+/**
+ * Converts an angle to a point in a rhombus
+ *
+ * @param {number} angle Angle in multiple of PI
+ * @returns {[number, number]} A pair of ratios for the relative positions as [x, y]
+ */
+export function angle_to_rhombus_point(angle) {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+
+    return [cos ** 2 * Math.sign(cos), sin ** 2 * Math.sign(sin)].map(n => Math.abs(n) < 1e-6 ? 0 : n);
+}
