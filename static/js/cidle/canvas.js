@@ -1,7 +1,7 @@
 import { mouse_position } from './actions.js';
 import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
-import { draw as draw_inventory } from './inventory.js';
+import { check_can_afford, draw as draw_inventory } from './inventory.js';
 import Machine from './machine.js';
 import { MakerMachine, time_speed } from './maker.js';
 import { Pane } from './pane.js';
@@ -13,7 +13,7 @@ import StorageMachine from './storage.js';
  */
 
 //todo show resources sources
-//todo help/changelog tabs
+//todo changelog tab
 
 /**
  * Canvas of the game
@@ -78,6 +78,7 @@ const game_tabs = {
             draw_inventory({context, top});
             Pane.get_visible_panes('inventory').forEach(p => p.draw({context}));
         },
+        click: event => check_can_afford(),
     },
     resources: {
         name: gettext('games_cidle_tab_resources'),
@@ -194,6 +195,78 @@ const game_tabs = {
 
                 y += height;
             });
+        },
+    },
+    help: {
+        name: gettext('games_cidle_tab_help'),
+        /** @type {false|string[]} @private */
+        _cut_name: false,
+        /** @type {false|string} @private */
+        _cut_params: false,
+        /** @returns {string} */
+        cut_name(params) {
+            const p = JSON.stringify(params);
+            if (this._cut_params != p || !this._cut_name) {
+                this._cut_name = cut_lines(this.name, params);
+                this._cut_params = p;
+            }
+            return this._cut_name;
+        },
+        draw: () => {
+            const x = theme('tab_padding');
+            let y = theme('tab_padding') + tabs_heights();
+
+            /** @type {string[]} */
+            const machines_text = [
+                '{bold}' + gettext('games_cidle_help_machine_title'),
+                gettext('games_cidle_help_machine_intro'),
+                gettext('games_cidle_help_machine_pane'),
+                gettext('games_cidle_help_machine_type'),
+                gettext('games_cidle_help_machine_pause'),
+                gettext('games_cidle_help_machine_move'),
+            ];
+            if (Machine.machines.some(m => m.level > 0 || m.can_upgrade)) {
+                machines_text.push(gettext('games_cidle_help_machine_upgrade'));
+            }
+            if (MakerMachine.maker_machines.some(m => m.produces.some(([,,o=false]) => o))) {
+                machines_text.push(gettext('games_cidle_help_machine_optional'));
+            }
+            if (StorageMachine.any_storage_for('time')) {
+                machines_text.push(gettext('games_cidle_help_machine_time'));
+            }
+            if (MakerMachine.maker_machines.some(m => m.unpausable)) {
+                machines_text.push(gettext('games_cidle_help_machine_unpausable'));
+            }
+
+            /** @type {string[]} */
+            const inventory_text = [
+                '{bold}' + gettext('games_cidle_help_inventory_title'),
+                gettext('games_cidle_help_inventory_intro'),
+                gettext('games_cidle_help_inventory_craft'),
+                gettext('games_cidle_help_inventory_place'),
+                gettext('games_cidle_help_inventory_unlock'),
+            ];
+
+            /** @type {string[]} */
+            const resources_text = [
+                '{bold}' + gettext('games_cidle_help_resources_title'),
+                gettext('games_cidle_help_resources_intro'),
+            ];
+
+            const text = [
+                ...machines_text,
+                ' ',
+                ...inventory_text,
+                ' ',
+                ...resources_text,
+            ];
+
+            text.map(l => cut_lines(l, {max_width: display_size.width - x * 2}))
+                .flat()
+                .forEach(line => {
+                    canvas_write(line, x, y);
+                    y += theme('font_size') * 1.1;
+                });
         },
     },
 };
@@ -379,6 +452,8 @@ export function click(x, y, event) {
     const tab_index = tab_x + tab_y * max_tabs_per_line;
     if (tab_index in tabs) {
         globals.game_tab = tabs[tab_index];
+
+        if (globals.game_tab in game_tabs) game_tabs[globals.game_tab]?.click?.(event);
     }
 }
 /**

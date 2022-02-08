@@ -14,6 +14,7 @@ import { beautify, number_between, stable_pad_number } from './primitives.js';
 
 //todo level-based resources value
 //todo add fill level support for images
+//todo? fillmodes for different materials (theorically possible)
 
 const filltypes = {
     'fraction': {
@@ -866,10 +867,12 @@ export function make_storages() {
             },
         },
         {
-            id: 'jewel_box',
-            name: gettext('games_cidle_storage_jewel_box'),
+            id: 'ocean_box',
+            name: gettext('games_cidle_storage_ocean_box'),
             resources: {
+                water: {max: 500},
                 aquamarine: {max: 10},
+                blazing_aquamarine: {max: 10},
             },
             fillmode: 'rhombus',
         },

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-02-08 09:21+0100\n"
+"POT-Creation-Date: 2022-02-08 14:32+0100\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -509,143 +509,219 @@ msgstr ""
 "progrès depuis votre dernier prestige, mais vous allez gagner des "
 "nouvelle ressources"
 
-#: static/js/cidle/canvas.js:42
+#: static/js/cidle/canvas.js:43
 msgid "games_cidle_tab_world"
 msgstr "Monde"
 
-#: static/js/cidle/canvas.js:66
+#: static/js/cidle/canvas.js:68
 msgid "games_cidle_tab_inventory"
 msgstr "Inventaire"
 
-#: static/js/cidle/canvas.js:85
+#: static/js/cidle/canvas.js:89
 msgid "games_cidle_tab_resources"
-msgstr "Resources"
+msgstr "Ressources"
 
-#: static/js/cidle/canvas.js:109
+#: static/js/cidle/canvas.js:113
 msgid "games_cidle_time_speed"
 msgstr "Vitesse du Temps: %(speed)s secondes par seconde"
+
+#: static/js/cidle/canvas.js:210
+msgid "games_cidle_tab_help"
+msgstr "Aide"
+
+#: static/js/cidle/canvas.js:230
+msgid "games_cidle_help_machine_title"
+msgstr "A propos des machines"
+
+#: static/js/cidle/canvas.js:231
+msgid "games_cidle_help_machine_intro"
+msgstr "Les machines peuvent produire, consommer, et stocker des ressources, ce qui les rends utiles."
+
+#: static/js/cidle/canvas.js:232
+msgid "games_cidle_help_machine_pane"
+msgstr "En cliquant sur une machine, il est possible de voir ce qu'elle contient, produit, etc."
+
+#: static/js/cidle/canvas.js:233
+msgid "games_cidle_help_machine_type"
+msgstr "Les machines de fabrication peuvent être de type fixé ou proportionnel. Le type fixé produit uniquement ce qui est affiché, alors que le type proportionnel va dépendre des ressources disponibles. Le type proportionnel peut être limité par des besoins."
+
+#: static/js/cidle/canvas.js:234
+msgid "games_cidle_help_machine_pause"
+msgstr "Une machine de fabrication peut être mise sur pause en faisant un clic droit dessus ou en pressant le bouton pause dans son panneau. Une machine sur pause ne fait rien."
+
+#: static/js/cidle/canvas.js:235
+msgid "games_cidle_help_machine_move"
+msgstr "Les machines peuvent être déplacées en pressant majuscule et en faisant un clic dessus en même temps. Par défaut, le placement sera aligné à la grille, mais il est possible d'éviter ça en pressant majuscule."
+
+#: static/js/cidle/canvas.js:238
+msgid "games_cidle_help_machine_upgrade"
+msgstr "Plusieurs machines peuvent être améliorées. Elles affichent un triangle dans le coin quand c'est possible. C'est possible de voir le coût et les effets de l'amélioration dans le panneau d'amélioration de la machine (atteignable dans le panneau de la machine)"
+
+#: static/js/cidle/canvas.js:241
+msgid "games_cidle_help_machine_optional"
+msgstr "Certaines machines de fabrication peuvent avoir des productions optionnelles, affichées comme '0-nombre/s'. Si la production ne peut pas être mise dans un stockage, elle sera perdu mais n'arrêtera pas la machine."
+
+#: static/js/cidle/canvas.js:244
+msgid "games_cidle_help_machine_time"
+msgstr "Certaines machines de fabrication consomment du temps, mais accélèrent la vitesse des autres machines. Du temps peut être gagné en fermant l'onglet à la vitesse d'1 temps par seconde."
+
+#: static/js/cidle/canvas.js:247
+msgid "games_cidle_help_machine_unpausable"
+msgstr "J'ai menti. Certaines machines de fabrication ne peuvent pas être misent sur pause. Elles peuvent être reconnues avec leur bordure étant plus épaisse."
+
+#: static/js/cidle/canvas.js:252
+msgid "games_cidle_help_inventory_title"
+msgstr "A propos de l'inventaire"
+
+#: static/js/cidle/canvas.js:253
+msgid "games_cidle_help_inventory_intro"
+msgstr "L'inventaire permet d'assembler et de placer des nouvelles machines."
+
+#: static/js/cidle/canvas.js:254
+msgid "games_cidle_help_inventory_craft"
+msgstr "En cliquant sur une machine, il est possible de voir ses moyens d'assemblement. Les coûts sont affichés sur le panneau. S'il est possible de fabriquer une machine, sont fond sera vert clair."
+
+#: static/js/cidle/canvas.js:255
+msgid "games_cidle_help_inventory_place"
+msgstr "Une fois assemblées, une machine peuvent être placées en cliquant le bouton placer sur le panneau. Comme pour le déplacement, elle sera alignée à la grille, sauf si majuscule est pressé."
+
+#: static/js/cidle/canvas.js:256
+msgid "games_cidle_help_inventory_unlock"
+msgstr "Certaines machines sont cachées dans l'inventaire et doivent être débloquées. Le débloquage se fait automatiquement toutes les 15 secondes."
+
+#: static/js/cidle/canvas.js:261
+msgid "games_cidle_help_resources_title"
+msgstr "A propos des ressources"
+
+#: static/js/cidle/canvas.js:262
+msgid "games_cidle_help_resources_intro"
+msgstr "L'onglet ressources contient le nombre, maximum, et gain/perte par seconde de toutes les ressources débloquées."
 
 #: static/js/cidle/display.js:44
 msgid "games_cidle_style_light"
 msgstr "Clair"
 
-#: static/js/cidle/inventory.js:27
+#: static/js/cidle/inventory.js:31
 msgid "games_cidle_inventory_machines"
 msgstr "Machines"
 
-#: static/js/cidle/inventory.js:142
+#: static/js/cidle/inventory.js:146
 msgid "games_cidle_place"
 msgstr "Placer %(obj)s"
 
-#: static/js/cidle/inventory.js:185
+#: static/js/cidle/inventory.js:189
 msgid "games_cidle_make"
 msgstr "Faire %(obj)s"
 
-#: static/js/cidle/inventory.js:195
+#: static/js/cidle/inventory.js:199
 msgid "games_cidle_craft_costs"
 msgstr "Cout de fabrication"
 
-#: static/js/cidle/maker.js:24
+#: static/js/cidle/maker.js:28
 msgid "games_cidle_maker_paused"
 msgstr "Sur pause"
 
-#: static/js/cidle/maker.js:25
+#: static/js/cidle/maker.js:29
 msgid "games_cidle_maker_unpaused"
 msgstr "Pas sur pause"
 
-#: static/js/cidle/maker.js:28
+#: static/js/cidle/maker.js:32
 msgid "games_cidle_maker_type_fixed"
 msgstr "La production est fixée"
 
-#: static/js/cidle/maker.js:29
+#: static/js/cidle/maker.js:33
 msgid "games_cidle_maker_type_scaling"
 msgstr "La production est proportionnelle"
 
-#: static/js/cidle/maker.js:585
+#: static/js/cidle/maker.js:592
 msgid "games_cidle_maker_unpausable"
 msgstr "Ne peut pas être sur pause"
 
-#: static/js/cidle/maker.js:599
+#: static/js/cidle/maker.js:606
 msgid "games_cidle_maker_requires"
 msgstr "A Besoin de"
 
-#: static/js/cidle/maker.js:612
+#: static/js/cidle/maker.js:620
 msgid "games_cidle_maker_consumes"
 msgstr "Utilise"
 
-#: static/js/cidle/maker.js:625
+#: static/js/cidle/maker.js:634
 msgid "games_cidle_maker_produces"
 msgstr "Produit"
 
-#: static/js/cidle/maker.js:644 static/js/cidle/storage.js:338
+#: static/js/cidle/maker.js:654 static/js/cidle/storage.js:351
 msgid "games_cidle_machine_upgrade"
 msgstr "Amélioration"
 
-#: static/js/cidle/maker.js:693 static/js/cidle/storage.js:385
+#: static/js/cidle/maker.js:703 static/js/cidle/storage.js:398
 msgid "games_cidle_machine_upgrading"
 msgstr "Améliorer %(obj)s"
 
-#: static/js/cidle/maker.js:697 static/js/cidle/storage.js:390
+#: static/js/cidle/maker.js:707 static/js/cidle/storage.js:403
 msgid "games_cidle_machine_upgrade_costs"
 msgstr "Cout d'amélioration"
 
-#: static/js/cidle/maker.js:721 static/js/cidle/storage.js:415
+#: static/js/cidle/maker.js:732 static/js/cidle/storage.js:428
 msgid "games_cidle_machine_changes"
 msgstr "Changements"
 
-#: static/js/cidle/maker.js:1362
+#: static/js/cidle/maker.js:1375
 msgid "games_cidle_maker_tree_chopper"
 msgstr "Coupeur de Bois"
 
-#: static/js/cidle/maker.js:1381
+#: static/js/cidle/maker.js:1394
 msgid "games_cidle_maker_stone_miner"
 msgstr "Mineur de Pierre"
 
-#: static/js/cidle/maker.js:1407
+#: static/js/cidle/maker.js:1420
 msgid "games_cidle_maker_wood_burner"
 msgstr "Bruleur de Bois"
 
-#: static/js/cidle/maker.js:1424
+#: static/js/cidle/maker.js:1437
 msgid "games_cidle_maker_brick_furnace"
 msgstr "Four en Briques"
 
-#: static/js/cidle/maker.js:1438
+#: static/js/cidle/maker.js:1451
 msgid "games_cidle_maker_rock_crusher"
 msgstr "Concasseur de Pierre"
 
-#: static/js/cidle/maker.js:1452
+#: static/js/cidle/maker.js:1465
 msgid "games_cidle_maker_water_well"
 msgstr "Puis à Eau"
 
-#: static/js/cidle/maker.js:1471
+#: static/js/cidle/maker.js:1484
 msgid "games_cidle_maker_gravel_washer"
 msgstr "Laveur de Gravier"
 
-#: static/js/cidle/maker.js:1511
+#: static/js/cidle/maker.js:1524
 msgid "games_cidle_maker_gravel_crusher"
 msgstr "Concasseur de Gravier"
 
-#: static/js/cidle/maker.js:1517
+#: static/js/cidle/maker.js:1530
 msgid "games_cidle_maker_glass_blower"
 msgstr "Soufflerie"
 
-#: static/js/cidle/maker.js:1531
+#: static/js/cidle/maker.js:1544
 msgid "games_cidle_maker_sand_washer"
 msgstr "Laveur de Sable"
 
-#: static/js/cidle/maker.js:1545
+#: static/js/cidle/maker.js:1558
 msgid "games_cidle_maker_bronze_foundry"
 msgstr "Fonderie à Bronze"
 
-#: static/js/cidle/maker.js:1553
+#: static/js/cidle/maker.js:1572
+msgid "games_cidle_maker_aquaburner"
+msgstr "Bruleur d'Aigue-marine"
+
+#: static/js/cidle/maker.js:1580
 msgid "games_cidle_maker_fire_extinguisher"
 msgstr "Feu qui s'éteint"
 
-#: static/js/cidle/maker.js:1564
+#: static/js/cidle/maker.js:1591
 msgid "games_cidle_maker_sundial"
 msgstr "Cadran Solaire"
 
-#: static/js/cidle/maker.js:1569
+#: static/js/cidle/maker.js:1596
 msgid "games_cidle_maker_hourglass"
 msgstr "Sablier"
 
@@ -701,71 +777,75 @@ msgstr "Bronze"
 msgid "games_cidle_resource_aquamarine"
 msgstr "Aigue-marine"
 
-#: static/js/cidle/resource.js:167
+#: static/js/cidle/resource.js:165
+msgid "games_cidle_resource_blazing_aquamarine"
+msgstr "Aigue-infernale"
+
+#: static/js/cidle/resource.js:173
 msgid "games_cidle_resource_time"
 msgstr "Temps"
 
-#: static/js/cidle/storage.js:311
+#: static/js/cidle/storage.js:324
 msgid "cidle_storage_contents"
 msgstr "Contenu Stocké"
 
-#: static/js/cidle/storage.js:716
+#: static/js/cidle/storage.js:753
 msgid "games_cidle_storage_wood_storage"
 msgstr "Stockage de Bois"
 
-#: static/js/cidle/storage.js:730
+#: static/js/cidle/storage.js:767
 msgid "games_cidle_storage_stone_storage"
 msgstr "Stockage de Pierre"
 
-#: static/js/cidle/storage.js:744
+#: static/js/cidle/storage.js:781
 msgid "games_cidle_storage_fire_pit"
 msgstr "Foyer"
 
-#: static/js/cidle/storage.js:761
+#: static/js/cidle/storage.js:798
 msgid "games_cidle_storage_brick_pile"
 msgstr "Pile de Briques"
 
-#: static/js/cidle/storage.js:775
+#: static/js/cidle/storage.js:812
 msgid "games_cidle_storage_gravel_box"
 msgstr "Boite de Gravier"
 
-#: static/js/cidle/storage.js:782
+#: static/js/cidle/storage.js:819
 msgid "games_cidle_storage_water_bucket"
 msgstr "Seau d'Eau"
 
-#: static/js/cidle/storage.js:797
+#: static/js/cidle/storage.js:834
 msgid "games_cidle_storage_copper_crate"
 msgstr "Caisse de Cuivre"
 
-#: static/js/cidle/storage.js:804
+#: static/js/cidle/storage.js:841
 msgid "games_cidle_storage_sand_box"
 msgstr "Boite de Sable"
 
-#: static/js/cidle/storage.js:811
+#: static/js/cidle/storage.js:848
 msgid "games_cidle_storage_glass_container"
 msgstr "Conteneur de Verre"
 
-#: static/js/cidle/storage.js:818
+#: static/js/cidle/storage.js:855
 msgid "games_cidle_storage_gold_crate"
 msgstr "Caisse d'Or"
 
-#: static/js/cidle/storage.js:825
+#: static/js/cidle/storage.js:862
 msgid "games_cidle_storage_tin_crate"
 msgstr "Caisse d'Etain"
 
-#: static/js/cidle/storage.js:832
+#: static/js/cidle/storage.js:869
 msgid "games_cidle_storage_bronze_crate"
 msgstr "Caisse de Bronze"
 
-#: static/js/cidle/storage.js:841
-msgid "games_cidle_storage_jewel_box"
-msgstr "Boite de Joyaux"
+#: static/js/cidle/storage.js:878
+msgid "games_cidle_storage_ocean_box"
+msgstr "Boite de l'Océan"
 
-#: static/js/cidle/storage.js:850
+#: static/js/cidle/storage.js:890
 msgid "games_cidle_storage_giant_clock"
 msgstr "Horloge Géante"
 
-#: static/js/cidle/storage.js:868
+#: static/js/cidle/storage.js:908
 msgid "games_cidle_storage_rewinding_contraption"
 msgstr "Engin à Rembobinage"
 
@@ -1328,4 +1408,7 @@ msgstr "Jeux"
 
 #~ msgid "games_cidle_cannot_make"
 #~ msgstr "Faire %(obj)s"
+
+#~ msgid "games_cidle_storage_jewel_box"
+#~ msgstr "Boite de Joyaux"
 

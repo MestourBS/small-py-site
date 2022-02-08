@@ -10,6 +10,7 @@ import MakerMachine from './maker.js';
 import { coords_distance as distance } from './position.js';
 
 //todo resource crafting
+//todo dont move pane after crafting
 
 /**
  * Current inventory
@@ -569,6 +570,23 @@ const recipes = {
             unlocked: () => StorageMachine.any_storage_for('copper'),
             position: 14,
         },
+        'gravel_crusher': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['copper', c * 40 + 200], ['brick', 128 * 1.5 ** c + 256]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => recipes.machines['gravel_washer'].crafted?.reduce((s, n) => s + n, 0) > 0,
+            position: 15,
+        },
         'glass_container': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
@@ -586,7 +604,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => recipes.machines['gravel_washer'].crafted?.reduce((s, n) => s + n, 0) > 0,
-            position: 15,
+            position: 16,
         },
         'gold_crate': {
             resources: crafted => {
@@ -605,7 +623,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => recipes.machines['gravel_washer'].crafted?.reduce((s, n) => s + n, 0) > 0,
-            position: 16,
+            position: 17,
         },
         'tin_crate': {
             resources: crafted => {
@@ -630,7 +648,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('gold', 2),
-            position: 17,
+            position: 18,
         },
         'glass_blower': {
             resources: crafted => {
@@ -649,7 +667,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('glass'),
-            position: 18,
+            position: 19,
         },
         'sand_washer': {
             resources: crafted => {
@@ -668,9 +686,9 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('gold'),
-            position: 19,
+            position: 20,
         },
-        'jewel_box': {
+        'ocean_box': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
                 const costs = [];
@@ -687,7 +705,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('gold', 2),
-            position: 20,
+            position: 21,
         },
         'bronze_crate': {
             resources: crafted => {
@@ -704,7 +722,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => MakerMachine.maker_machines.some(m => m.id == 'gravel_washer' && m.level >= 1),
-            position: 21,
+            position: 22,
         },
         'bronze_foundry': {
             resources: crafted => {
@@ -723,7 +741,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('bronze'),
-            position: 22,
+            position: 23,
         },
         // Time machines
         'giant_clock': {

@@ -56,6 +56,12 @@ const game_tabs = {
         drag: () => {},
         contextmenu: () => {},
     },
+    help: {
+        click: () => {},
+        can_click: () => false,
+        drag: () => {},
+        contextmenu: () => {},
+    },
 };
 
 let last_action = Date.now();

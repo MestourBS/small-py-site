@@ -262,6 +262,7 @@ export class MakerMachine extends Machine {
         if (!can) this.#can_upgrade = null;
         else this.#can_upgrade = true;
     }
+    get unpausable() { return this.#unpausable; }
 
     toJSON() {
         /** @type {{hidden?: boolean, paused: boolean}} */
@@ -1368,8 +1369,8 @@ export function make_makers() {
             produces: (level) => {
                 const production = [['stone', 2.5 ** level]];
 
-                if (level > 1) production.push(['copper', 2 ** (level - 2) / 100, true]);
-                if (level > 2) production.push(['tin', 2 ** (level - 3) / 100, true]);
+                if (level > 1) production.push(['copper', 2 ** (level - 2) / 1_000, true]);
+                if (level > 2) production.push(['tin', 2 ** (level - 3) / 1_000, true]);
 
                 return production;
             },
@@ -1527,8 +1528,22 @@ export function make_makers() {
         {
             id: 'bronze_foundry',
             name: gettext('games_cidle_maker_bronze_foundry'),
-            produces: [[['bronze', 1]]],
-            consumes: [[['copper', 2/3], ['tin', 1/3], ['fire', 5]]],
+            produces: [[['bronze', 1]], [['bronze', 1.5]]],
+            consumes: [[['copper', 2/3], ['tin', 1/3], ['fire', 5]], [['copper', 1], ['tin', .5], ['fire', 5]]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('blazing_aquamarine')) return [['blazing_aquamarine', 5]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
+        },
+        {
+            id: 'aquaburner',
+            name: gettext('games_cidle_maker_aquaburner'),
+            produces: [[['blazing_aquamarine', .025]]],
+            consumes: [[['aquamarine', .025], ['fire', 5], ['water', 2.5]]],
         },
         // Unpausable makers
         {
