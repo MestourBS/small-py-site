@@ -818,21 +818,41 @@ export function make_storages() {
                 tin: {max: 100},
             },
         },
+        {
+            id: 'bronze_crate',
+            name: gettext('games_cidle_storage_bronze_crate'),
+            resources: {
+                bronze: {max: 100},
+                tin: {max: 50},
+                copper: {max: 50},
+            },
+        },
         // Time storages
         {
             id: 'giant_clock',
             name: gettext('games_cidle_storage_giant_clock'),
             resources: {
-                time: {max: 3_600},
+                time: {max: 60 * 60},
             },
             upgrade_costs: (level) => {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('gold')) return [['gold', 60]];
                     return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('bronze')) return [['bronze', 15]];
+                    return null;
                 }
                 return false;
             },
             fillmode: 'clockwise',
+        },
+        {
+            id: 'rewinding_contraption',
+            name: gettext('games_cidle_storage_rewinding_contraption'),
+            resources: {
+                time: {max: 6 * 60 * 60},
+            },
+            fillmode: 'counterclockwise',
         },
     ];
 

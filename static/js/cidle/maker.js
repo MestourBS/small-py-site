@@ -588,7 +588,7 @@ export class MakerMachine extends Machine {
         }
         const type_func = () => {
             if (this.type == 'fixed') return type_text['fixed'];
-            else return `${type_text['scaling']} (*${beautify(this.max_produce_multiplier())})`;
+            else return `${type_text['scaling']} (x${beautify(this.max_produce_multiplier())})`;
         };
         content.unshift([{content: [() => type_func()]}]);
         if (this.requires.length) {
@@ -807,8 +807,8 @@ export class MakerMachine extends Machine {
             const resources = new Set(pro_cur.map(([res]) => res));
             pro_next.forEach(([res]) => resources.add(res));
             resources.forEach(res => {
-                let [cpro=0, copt=false] = obj_cur[res];
-                let [npro=0, nopt=false] = obj_next[res];
+                let [cpro=0, copt=false] = obj_cur[res] ?? [0, false];
+                let [npro=0, nopt=false] = obj_next[res] ?? [0, false];
                 if (cpro == npro) return;
 
                 const {color, name, background_color} = Resource.resource(res);
@@ -1022,11 +1022,13 @@ export class MakerMachine extends Machine {
             let dbr = 0;
             let d = 0;
             if (resources.length <= 0) return;
-            if (resources.length > 1) {
-                dbr = this.radius * 2 / (resources.length - 1);
-                d = -this.radius * 3;
+            else if (resources.length > 1) {
+                dbr = this.radius / (resources.length - 1);
+                if (resources.length < 3) d = -this.radius * 1.5;
+                else d = -this.radius;
             }
             const parallels = parallel_perpendicular([this, machine]);
+            //if (this.id == 'bronze_foundry') debugger;
 
             // Draw lines
             resources.forEach(([color, rel]) => {
@@ -1341,10 +1343,13 @@ export function make_makers() {
                 } else if (level == 1) {
                     if (StorageMachine.any_storage_for('copper')) return [['copper', 10]];
                     return null;
+                } else if (level == 2) {
+                    if (StorageMachine.any_storage_for('bronze')) return [['bronze', 20]];
+                    return null;
                 }
                 return false;
             },
-            max_level: 2,
+            max_level: 3,
         },
         {
             id: 'stone_miner',
@@ -1357,10 +1362,13 @@ export function make_makers() {
                 } else if (level == 1) {
                     if (StorageMachine.any_storage_for('copper')) return [['copper', 25]];
                     return null;
+                } else if (level == 2) {
+                    if (StorageMachine.any_storage_for('bronze')) return [['bronze', 40]];
+                    return null;
                 }
                 return false;
             },
-            max_level: 2,
+            max_level: 3,
         },
         {
             id: 'wood_burner',
@@ -1396,8 +1404,16 @@ export function make_makers() {
         {
             id: 'rock_crusher',
             name: gettext('games_cidle_maker_rock_crusher'),
-            produces: [[['gravel', 1]]],
-            consumes: [[['stone', .1]]],
+            produces: (level) => [['gravel', level + 1]],
+            consumes: (level) => [['stone', level * .15 + .1]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('bronze')) return [['bronze', 10]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
         },
         {
             id: 'water_well',
@@ -1407,10 +1423,13 @@ export function make_makers() {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('copper')) return [['copper', 20]];
                     return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('bronze')) return [['bronze', 35]];
+                    return null;
                 }
                 return false;
             },
-            max_level: 1,
+            max_level: 2,
         },
         {
             id: 'gravel_washer',
@@ -1437,6 +1456,12 @@ export function make_makers() {
             name: gettext('games_cidle_maker_sand_washer'),
             produces: [[['gold', .1]]],
             consumes: [[['water', 1], ['sand', 1]]],
+        },
+        {
+            id: 'bronze_foundry',
+            name: gettext('games_cidle_maker_bronze_foundry'),
+            produces: [[['bronze', 1]]],
+            consumes: [[['copper', 2/3], ['tin', 1/3], ['fire', 5]]],
         },
         // Unpausable makers
         {

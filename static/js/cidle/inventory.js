@@ -6,8 +6,7 @@ import { Pane } from './pane.js';
 import globals from './globals.js';
 import Resource from './resource.js';
 import { beautify, stable_pad_number } from './primitives.js';
-
-//todo show affordable
+import MakerMachine from './maker.js';
 
 /**
  * Current inventory
@@ -45,19 +44,23 @@ const inventory = {
 
             top++;
             const padding = theme('inventory_padding');
-            const max_x = Math.floor(display_size.width / (max_diameter + padding * 2));
+            const cell_size = max_diameter + padding * 2;
+            const max_x = Math.floor(display_size.width / cell_size);
             let x = 0;
             let y = 0;
+            /** @type {boolean[]} */
 
             contents.forEach(entry => {
                 const [id, amount] = entry;
                 let [,,machine] = entry;
-                const cell_x = [x * (max_diameter + padding * 2), (x + 1) * (max_diameter + padding * 2)];
-                const cell_y = [y * (max_diameter + padding * 2) + top, (y + 1) * (max_diameter + padding * 2) + top];
+                const cell_x = [x * cell_size, (x + 1) * cell_size];
+                const cell_y = [y * cell_size + top, (y + 1) * cell_size + top];
+
+                let can_afford = recipes.machines[id].can_afford;
 
                 // Draw the box
                 context.strokeStyle = theme('inventory_color_border');
-                context.fillStyle = theme('inventory_color_fill');
+                context.fillStyle = theme(can_afford ? 'inventory_affordable_color_fill' : 'inventory_color_fill');
                 context.beginPath();
                 context.moveTo(cell_x[0], cell_y[0]);
                 context.lineTo(cell_x[1], cell_y[0]);
@@ -74,8 +77,8 @@ const inventory = {
                 }
                 const machine_draw = {
                     context,
-                    x: x * (max_diameter + padding * 2) + machine.radius + padding,
-                    y: y * (max_diameter + padding * 2) + machine.radius + padding + top,
+                    x: x * cell_size + machine.radius + padding,
+                    y: y * cell_size + machine.radius + padding + top,
                     upgrade_marker: false,
                 };
                 machine.draw(machine_draw);
@@ -261,6 +264,7 @@ const inventory = {
  *      resources: [string, number][][]|(crafted: number[]) => ([string, number][]|false)[],
  *      unlocked: boolean|() => boolean,
  *      position?: number,
+ *      can_afford: boolean,
  *  }},
  * }}
  */
@@ -276,10 +280,10 @@ const recipes = {
                     let cost = false;
                     if (c <= 1) {
                         cost = [['wood', c * 500 + 500]];
-                    } else if (c <= 3 && StorageMachine.any_storage_for('stone')) {
-                        cost = [['wood', c * 500 + 1_000], ['stone', c * 1_000 - 500]];
-                    } else if (c <= 6 && StorageMachine.any_storage_for('brick')) {
-                        cost = [['wood', c * 250 + 1_000], ['brick', (c - 1) * 300]];
+                    } else if (c <= 3) {
+                        if (StorageMachine.any_storage_for('stone')) cost = [['wood', c * 500 + 1_000], ['stone', c * 1_000 - 500]];
+                    } else if (c <= 6) {
+                        if (StorageMachine.any_storage_for('brick')) cost = [['wood', c * 250 + 1_000], ['brick', (c - 1) * 300]];
                     }
                     costs[0] = cost;
                 }
@@ -298,10 +302,10 @@ const recipes = {
                     let cost = false;
                     if (c <= 3) {
                         cost = [['wood', (c + 1) ** 2 * 500]];
-                    } else if (c <= 6 && StorageMachine.any_storage_for('stone')) {
-                        cost = [['wood', c ** 2 * 500], ['stone', c ** 1.5 * 500]];
-                    } else if (c <= 12 && StorageMachine.any_storage_for('brick')) {
-                        cost = [['wood', (c - 1) ** 2 * 500], ['brick', c ** 1.25 * 100]];
+                    } else if (c <= 6) {
+                        if (StorageMachine.any_storage_for('stone')) cost = [['wood', c ** 2 * 500], ['stone', c ** 1.5 * 500]];
+                    } else if (c <= 12) {
+                        if (StorageMachine.any_storage_for('brick')) cost = [['wood', (c - 1) ** 2 * 500], ['brick', c ** 1.25 * 100]];
                     }
                     costs[0] = cost;
                 }
@@ -322,8 +326,8 @@ const recipes = {
                         cost = [['wood', 2_000]];
                     } else if (c <= 3) {
                         cost = [['stone', c * 500], ['wood', c * 400 + 2_100]];
-                    } else if (c <= 9 && StorageMachine.any_storage_for('brick')) {
-                        cost = [['brick', (c - 3) * 250], ['wood', c * 250 + 2_750]];
+                    } else if (c <= 9) {
+                        if (StorageMachine.any_storage_for('brick')) cost = [['brick', (c - 3) * 250], ['wood', c * 250 + 2_750]];
                     }
                     costs[0] = cost;
                 }
@@ -344,8 +348,8 @@ const recipes = {
                         cost = [['wood', 2_500]];
                     } else if (c <= 3) {
                         cost = [['stone', c ** 2 * 500], ['wood', c * 500]];
-                    } else if (c <= 9 && StorageMachine.any_storage_for('brick')) {
-                        cost = [['brick', (c - 3) ** 2 * 150], ['wood', c * 500]];
+                    } else if (c <= 9) {
+                        if (StorageMachine.any_storage_for('brick')) cost = [['brick', (c - 3) ** 2 * 150], ['wood', c * 500]];
                     }
                     costs[0] = cost;
                 }
@@ -364,8 +368,8 @@ const recipes = {
                     let cost = false;
                     if (c <= 5) {
                         cost = [['stone', c * 500 + 1_000]];
-                    } else if (c <= 10 && StorageMachine.any_storage_for('brick')) {
-                        cost = [['brick', c * 100 + 200]];
+                    } else if (c <= 10) {
+                        if (StorageMachine.any_storage_for('brick')) cost = [['brick', c * 100 + 200]];
                     }
                     costs[0] = cost;
                 }
@@ -401,8 +405,8 @@ const recipes = {
                     let cost = false;
                     if (c <= 5) {
                         cost = [['wood', c * 200 + 1_000], ['stone', c ** 2 * 500 + 1_500]];
-                    } else if (c <= 10 && StorageMachine.any_storage_for('brick')) {
-                        cost = [['wood', c * 200 + 1_000], ['stone', c ** 2 * 100 + 450]];
+                    } else if (c <= 10) {
+                        if (StorageMachine.any_storage_for('brick')) cost = [['wood', c * 200 + 1_000], ['brick', c ** 2 * 100 + 450]];
                     }
                     costs[0] = cost;
                 }
@@ -420,8 +424,8 @@ const recipes = {
                     let cost = false;
                     if (c <= 1) {
                         cost = [['wood', c * 500 + 1_000], ['stone', 500 * c + 1_500]];
-                    } else if (c <= 5 && StorageMachine.any_storage_for('brick')) {
-                        cost = [['wood', c * 250 + 1_000], ['stone', 150 * c + 250]];
+                    } else if (c <= 5) {
+                        if (StorageMachine.any_storage_for('brick')) cost = [['wood', c * 250 + 1_000], ['brick', 150 * c + 250]];
                     }
                     costs[0] = cost;
                 }
@@ -436,7 +440,14 @@ const recipes = {
                 const costs = [];
                 { // 0
                     const c = crafted[0] ?? 0;
-                    costs[0] = [['wood', c * 800 + 2_000], ['stone', c ** 2 * 500 + 2_000]];
+                    /** @type {[string, number][]|false} */
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['wood', c * 800 + 2_000], ['stone', c ** 2 * 500 + 2_000]];
+                    } else if (c <= 10) {
+                        cost = [['wood', c * 400 + 1_000], ['stone', c ** 2 * 250 + 1_000], ['bronze', c ** 3 * 1.5]];
+                    }
+                    costs[0] = cost;
                 }
                 return costs;
             },
@@ -453,7 +464,7 @@ const recipes = {
                     let cost = false;
                     if (c == 0) {
                         cost = [['wood', 500], ['stone', 2_000]];
-                    } else {
+                    } else if (c <= 10) {
                         cost = [['wood', c * 500 + 500], ['brick', c ** 2 * 125 + 500]];
                     }
                     costs[0] = cost;
@@ -506,6 +517,8 @@ const recipes = {
                     let cost = false;
                     if (c <= 5) {
                         cost = [['wood', c * 500 + 2_500], ['brick', 256 * c + 256]];
+                    } else if (c <= 10) {
+                        cost = [['wood', c * 500 + 1_250], ['bronze', 128 * (c - 5) + 128]];
                     }
                     costs[0] = cost;
                 }
@@ -542,6 +555,8 @@ const recipes = {
                         cost = [['stone', c * 500 + 2_000], ['brick', 128 * 2 ** c + 256]];
                     } else if (c <= 5) {
                         cost = [['copper', 2 ** c * 100 + 100]];
+                    } else if (c <= 10) {
+                        cost = [['bronze', (5/3) ** c * 75 + 75]];
                     }
                     costs[0] = cost;
                 }
@@ -559,6 +574,8 @@ const recipes = {
                     let cost = false;
                     if (c <= 5) {
                         cost = [['copper', 5 ** c * 20 + 80]];
+                    } else if (c <= 10) {
+                        if (StorageMachine.any_storage_for('bronze')) cost = [['bronze', 4 ** (c - 5) * 16 + 60]];
                     }
                     costs[0] = cost;
                 }
@@ -576,6 +593,8 @@ const recipes = {
                     let cost = false;
                     if (c <= 5) {
                         cost = [['wood', c * 1_000 + 2_000], ['brick', 384 * c + 128]];
+                    } else if (c <= 10) {
+                        if (StorageMachine.any_storage_for('bronze')) cost = [['wood', c * 10 + 2_000], ['bronze', 192 * c + 128]];
                     }
                     costs[0] = cost;
                 }
@@ -596,6 +615,14 @@ const recipes = {
                     }
                     costs[0] = cost;
                 }
+                { // 1
+                    const c = crafted[1] ?? 0;
+                    let cost = false;
+                    if (c <= 5 && StorageMachine.any_storage_for('bronze')) {
+                        cost = [['bronze', c * 10 + 50], ['brick', 256 * c + 512]];
+                    }
+                    costs[1] = cost;
+                }
                 return costs;
             },
             unlocked: () => StorageMachine.any_storage_for('gold', 2),
@@ -610,6 +637,8 @@ const recipes = {
                     let cost = false;
                     if (c <= 5) {
                         cost = [['copper', 2 ** c * 50 + 50], ['brick', 64 * 2 ** c + 256]];
+                    } else if (c <= 10) {
+                        if (StorageMachine.any_storage_for('bronze')) cost = [['bronze', 2 ** c * 25 + 25], ['brick', 64 * 2 ** c + 256]];
                     }
                     costs[0] = cost;
                 }
@@ -627,6 +656,8 @@ const recipes = {
                     let cost = false;
                     if (c <= 5) {
                         cost = [['copper', 2 ** c * 200]];
+                    } else if (c <= 10) {
+                        if (StorageMachine.any_storage_for('bronze')) cost = [['bronze', 2 ** c * 50]];
                     }
                     costs[0] = cost;
                 }
@@ -634,6 +665,42 @@ const recipes = {
             },
             unlocked: () => StorageMachine.any_storage_for('gold'),
             position: 19,
+        },
+        'bronze_crate': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['copper', 1.25 ** c * 100], ['tin', 1.25 ** c * 50]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => MakerMachine.maker_machines.some(m => m.id == 'gravel_washer' && m.level >= 1),
+            position: 19,
+        },
+        'bronze_foundry': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['copper', 10 ** ((c / 2 + 1) / 3) * 66], ['tin', 10 ** ((c / 3 + 1) / 3) * 33]];
+                    } else if (c <= 10) {
+                        cost = [['copper', 5 ** ((c / 2 + 1) / 3) * 66], ['tin', 5 ** ((c / 3 + 1) / 3) * 33], ['bronze', 5 ** ((c / 4 + 1) / 3) * 16.5]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('bronze'),
+            position: 20,
         },
         // Time machines
         'giant_clock': {
@@ -663,6 +730,27 @@ const recipes = {
                 return costs;
             },
             unlocked: () => atob(localStorage.getItem('games_cidle')).includes('date'),
+        },
+        'rewinding_contraption': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    /** @type {[string, number][]|false} */
+                    let cost = [['bronze', 50 * (c + 1) ** 2]];
+                    if (c >= 5) {
+                        if (StorageMachine.any_storage_for('bronze')) {
+                            cost.push(['bronze', 50 * (c - 4) ** 2]);
+                        } else {
+                            cost = false;
+                        }
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => atob(localStorage.getItem('games_cidle')).includes('date') && StorageMachine.any_storage_for('bronze'),
         },
         'sundial': {
             resources: crafted => {
@@ -707,7 +795,10 @@ function init() {
     });
 
     // Tries to unlock recipes every 15 seconds
-    setInterval(() => unlock_recipes(), 15 * 1_000);
+    setInterval(() => {
+        unlock_recipes();
+        check_can_afford();
+    }, 15 * 1_000);
 }
 /**
  * Makes a thing, or returns false
@@ -770,6 +861,8 @@ function craft(id, recipe_id=0, type=subtab) {
     cell[1]++;
     recipe.crafted[recipe_id]++;
     Machine.machines.forEach(m => m.can_upgrade = false);
+    Object.values(recipes.machines).forEach(r => r.can_afford = false);
+    check_can_afford();
     return true;
 }
 /**
@@ -952,6 +1045,22 @@ function unlock_recipes() {
         return a > b;
     });
 }
+/**
+ * Checks whether any version of a recipe is affordable
+ */
+function check_can_afford() {
+    Object.values(recipes.machines).filter(r => !r.can_afford).forEach(recipe => {
+        const {crafted=[]} = recipe;
+        let {resources} = recipe;
+        if (typeof resources == 'function') resources = resources(crafted);
+        if (!Array.isArray(resources)) return;
+        recipe.can_afford = resources.some(/**@param {false|[string, number][]} list*/list => {
+            if (!list) return false;
+            return list.every(([res, cost]) => StorageMachine.stored_resource(res).amount >= cost);
+        });
+    });
+}
+//todo save/load can_afford
 /**
  * Returns an object containing the data to be saved
  *

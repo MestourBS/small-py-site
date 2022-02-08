@@ -149,7 +149,7 @@ const game_tabs = {
                 let ps = '';
 
                 if (per_second) {
-                    a = stable_pad_number(a);
+                    if (amount < max) a = stable_pad_number(a);
 
                     ps = beautify(per_second);
                     if (per_second > 0) ps = `+${ps}`;
@@ -182,7 +182,7 @@ const game_tabs = {
 
                 if (background_color) {
                     context.fillStyle = background_color;
-                    context.fillRect(0, y, canvas.width, (cut_text.length + .5) * font_size);
+                    context.fillRect(0, y, canvas.width, height);
                 }
                 Object.entries(data).forEach(([key, value]) => {
                     if (!(key in table_widths)) return;

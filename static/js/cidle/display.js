@@ -24,6 +24,7 @@ import globals from './globals.js';
  * @prop {string} machine_upgrade_higher_req_fill
  * @prop {string} machine_upgrade_higher_con_fill
  * @prop {string} machine_upgrade_higher_pro_fill
+ * @prop {string} inventory_affordable_color_fill
  * @prop {string} machine_upgrade_can_afford_fill
  * @prop {string} machine_upgrade_cant_afford_fill
  *
@@ -64,6 +65,7 @@ const styles = {
         machine_upgrade_higher_con_fill: '#b00',
         machine_upgrade_higher_pro_fill: '#070',
         machine_upgrade_can_afford_fill: '#0f0',
+        inventory_affordable_color_fill: '#bfb',
         machine_upgrade_cant_afford_fill: '#f00',
 
         tab_color_border: '#000',
