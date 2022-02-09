@@ -482,7 +482,7 @@ export function click(x, y, event) {
  * @param {CanvasRenderingContext2D} [context_options.context]
  */
 export function canvas_write(lines, left, top, {
-    min_left = 0, min_right = 0, text_align = 'left', text_baseline = 'alphabetic', base_text_color = theme('text_color_fill'),
+    min_left = -Infinity, min_right = 0, text_align = 'left', text_baseline = 'alphabetic', base_text_color = theme('text_color_fill'),
     font_size = theme('font_size'), context = canvas.getContext('2d'), font_family = theme('font_family'),
 }={}) {
     lines = cut_lines(lines, left, {font_size, font_family, context, max_width: canvas.width - min_right - Math.max(min_left, left)});

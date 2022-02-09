@@ -148,7 +148,7 @@ export class Pane {
         const max_x = x + this.table_widths().reduce((s, w) => s + w, 0);
         const max_y = y + this.table_heights().reduce((s, h) => s + h, 0);
 
-        return (x < display_size.width || max_x > 0) && (y < display_size.height || max_y > 0);
+        return x < display_size.width && max_x > 0 && y < display_size.height && max_y > 0;
     }
     get id() { return this.#id; }
     get content() { return this.#cut_content ?? this.#content; }

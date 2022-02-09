@@ -212,10 +212,10 @@ export class MakerMachine extends Machine {
         x += width / 2 - position[0];
         y += height / 2 - position[1];
 
-        let min_x = -radius;
-        let min_y = -radius;
-        let max_x = min_x + width + radius * 2;
-        let max_y = min_y + height + radius * 2;
+        const min_x = -radius;
+        const min_y = -radius;
+        const max_x = min_x + width + radius * 2;
+        const max_y = min_y + height + radius * 2;
 
         return rect_contains_point([x, y], min_x, max_x, min_y, max_y);
     }
