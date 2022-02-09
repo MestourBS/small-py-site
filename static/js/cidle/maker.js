@@ -16,6 +16,7 @@ import { array_group_by, beautify, number_between, stable_pad_number } from './p
 //todo move production to a single all consuming / producing function
 //todo draw production/consumption amounts for scaling
 //todo prevent flickering connections
+//todo add move button to pane
 //todo? multiple recipes
 //todo? switchable recipes
 //todo? luck-based recipes
@@ -900,62 +901,65 @@ export class MakerMachine extends Machine {
 
         if (transparent) context.globalAlpha = .5;
 
+        context.lineWidth = 1.5 * (this.#unpausable + 1);
+        if (this.moving && !transparent) context.setLineDash([5]);
+
+        context.save();
+        context.fillStyle = theme('maker_color_fill');
+        context.beginPath();
+        context.moveTo(x - this.radius, y);
+        context.lineTo(x, y - this.radius);
+        context.lineTo(x + this.radius, y);
+        context.lineTo(x, y + this.radius);
+        context.lineTo(x - this.radius, y);
         if (this.image) {
+            context.clip();
             context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
         } else {
-            context.lineWidth = 1.5 * (this.#unpausable + 1);
-            if (this.moving && !transparent) context.setLineDash([5]);
-
-            context.fillStyle = theme('maker_color_fill');
-            context.beginPath();
-            context.moveTo(x - this.radius, y);
-            context.lineTo(x, y - this.radius);
-            context.lineTo(x + this.radius, y);
-            context.lineTo(x, y + this.radius);
-            context.lineTo(x - this.radius, y);
             context.fill();
+        }
+        context.closePath();
+        context.restore();
+
+        const res_arr = [...this.consumes, ...this.produces, ...this.requires].map(([s]) => s).sort();
+        let i = 0;
+        const corners = [0, 1, 2].map(n => n / 2 * Math.PI);
+        new Set(res_arr).forEach(res => {
+            const count = res_arr.filter(r => r == res).length;
+            const {border_color} = Resource.resource(res);
+
+            const start_angle = 2 * i / res_arr.length * Math.PI - Math.PI / 2;
+            const end_angle = 2 * (i + count) / res_arr.length * Math.PI - Math.PI / 2;
+
+            /** @type {(angle: number) => [number, number]} */
+            const angle_to_point = angle => {
+                let [px, py] = angle_to_rhombus_point(angle);
+                px = px * this.radius + x;
+                py = py * this.radius + y;
+                return [px, py];
+            };
+
+            /** @type {[number, number][]} */
+            const points = [
+                angle_to_point(start_angle),
+                ...corners.filter(c => number_between(c, start_angle, end_angle)).map(c => angle_to_point(c)),
+                angle_to_point(end_angle),
+            ];
+
+            context.strokeStyle = border_color;
+            context.beginPath();
+            points.forEach(([x, y]) => {
+                context.lineTo(x, y);
+            });
+            context.stroke();
             context.closePath();
 
-            const res_arr = [...this.consumes, ...this.produces, ...this.requires].map(([s]) => s).sort();
-            let i = 0;
-            const corners = [0, 1, 2].map(n => n / 2 * Math.PI);
-            new Set(res_arr).forEach(res => {
-                const count = res_arr.filter(r => r == res).length;
-                const {border_color} = Resource.resource(res);
+            i += count;
+        });
 
-                const start_angle = 2 * i / res_arr.length * Math.PI - Math.PI / 2;
-                const end_angle = 2 * (i + count) / res_arr.length * Math.PI - Math.PI / 2;
-
-                /** @type {(angle: number) => [number, number]} */
-                const angle_to_point = angle => {
-                    let [px, py] = angle_to_rhombus_point(angle);
-                    px = px * this.radius + x;
-                    py = py * this.radius + y;
-                    return [px, py];
-                };
-
-                /** @type {[number, number][]} */
-                const points = [
-                    angle_to_point(start_angle),
-                    ...corners.filter(c => number_between(c, start_angle, end_angle)).map(c => angle_to_point(c)),
-                    angle_to_point(end_angle),
-                ];
-
-                context.strokeStyle = border_color;
-                context.beginPath();
-                points.forEach(([x, y]) => {
-                    context.lineTo(x, y);
-                });
-                context.stroke();
-                context.closePath();
-
-                i += count;
-            });
-
-            // Resets line to prevent problems with other lines
-            context.setLineDash([]);
-            context.lineWidth = 1;
-        }
+        // Resets line to prevent problems with other lines
+        context.setLineDash([]);
+        context.lineWidth = 1;
 
         if (this.paused) {
             context.fillStyle = theme('text_color_fill');

@@ -31,8 +31,6 @@ import globals from './globals.js';
  * @prop {string} tab_color_border
  * @prop {string} pane_color_border
  * @prop {string} grid_color_border
- * @prop {string} maker_color_border
- * @prop {string} storage_color_border
  * @prop {string} inventory_color_border
  */
 
@@ -71,8 +69,6 @@ const styles = {
         tab_color_border: '#000',
         pane_color_border: '#000',
         grid_color_border: '#eee',
-        maker_color_border: '#000',
-        storage_color_border: '#000',
         inventory_color_border: '#000',
     }
 };

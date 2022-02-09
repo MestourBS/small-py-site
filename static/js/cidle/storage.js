@@ -14,6 +14,7 @@ import { beautify, number_between, stable_pad_number } from './primitives.js';
 
 //todo level-based resources value
 //todo add fill level support for images
+//todo add move button to pane
 //todo? fillmodes for different materials (theorically possible)
 
 const filltypes = {
@@ -500,128 +501,129 @@ export class StorageMachine extends Machine {
 
         if (transparent) context.globalAlpha = .5;
 
-        if (this.image) {
-            context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
-        } else {
-            context.fillStyle = theme('storage_color_fill');
-            context.beginPath();
-            context.arc(x, y, this.radius, 0, 2 * Math.PI);
-            context.fill();
-            context.closePath();
+        context.fillStyle = theme('storage_color_fill');
+        context.beginPath();
+        context.arc(x, y, this.radius, 0, 2 * Math.PI);
+        context.fill();
+        context.closePath();
 
-            if (this.moving && !transparent) context.setLineDash([5]);
-            context.lineWidth = 1.5;
+        if (this.moving && !transparent) context.setLineDash([5]);
+        context.lineWidth = 1.5;
 
-            // Partial fill for resources
-            const keys = Object.keys(this.resources).sort();
-            const length = keys.length;
-            for (let i = 0; i < length; i++) {
-                const res_id = keys[i];
-                const {amount, max} = this.resources[res_id];
-                const resource = Resource.resource(res_id);
+        // Partial fill for resources
+        const keys = Object.keys(this.resources).sort();
+        const length = keys.length;
+        for (let i = 0; i < length; i++) {
+            const res_id = keys[i];
+            const {amount, max} = this.resources[res_id];
+            const resource = Resource.resource(res_id);
 
-                /**
-                 * Number between 0 and 1 (both inclusive) that determines
-                 * the part filled
-                 */
-                let fill = (filltypes[fillstyle] ?? filltypes.default).fill(amount, max);
-                const start_angle = 2 * i / length * Math.PI - Math.PI / 2;
-                const end_angle = 2 * (i + 1) / length * Math.PI - Math.PI / 2;
-                /** @type {[keyof context, any[]][]} */
-                const funcs = [];
-                switch (fillmode) {
-                    case 'circle':
-                    default:
-                        funcs.push(
-                            ['moveTo', [x, y]],
-                            ['arc', [x, y, this.radius * fill, start_angle, end_angle]],
-                            ['lineTo', [x, y]],
-                        );
-                        break;
-                    case 'clockwise':
-                    case 'counterclockwise':
-                        const clock_diff = 2 / length * Math.PI * fill;
-                        let clock_start = start_angle;
-                        let clock_end = clock_start + clock_diff;
-                        if (fillmode == 'counterclockwise') {
-                            clock_end = clock_start;
-                            clock_start = clock_end - clock_diff;
-                        }
-                        funcs.push(
-                            ['moveTo', [x, y]],
-                            ['arc', [x, y, this.radius, clock_start, clock_end]],
-                            ['lineTo', [x, y]],
-                        );
-                        break;
-                    case 'transparency':
-                        const transparency_alpha = context.globalAlpha * fill;
-                        funcs.push(
-                            ['globalAlpha', [transparency_alpha]],
-                            ['moveTo', [x, y]],
-                            ['arc', [x, y, this.radius, start_angle, end_angle]],
-                            ['lineTo', [x, y]],
-                        );
-                        break;
-                    case 'linear':
-                        let linear_y = this.radius * (1 - 2 * fill);
-                        const linear_angle_start = Math.asin(linear_y / this.radius);
-                        let linear_x = Math.cos(linear_angle_start) * this.radius;
-                        let linear_angle_end = Math.acos(-linear_x / this.radius) * Math.sign(linear_y);
-                        if (fill == 1) linear_angle_end = linear_angle_start + Math.PI * 2;
-                        linear_x += x;
-                        linear_y += y;
-                        funcs.push(
-                            ['moveTo', [linear_x, linear_y]],
-                            ['arc', [x, y, this.radius, linear_angle_start, linear_angle_end]],
-                            ['lineTo', [linear_x, linear_y]],
-                        );
-                        break;
-                    case 'rhombus':
-                        const rhombus_corners = [0, 1, 2].map(n => n / 2 * Math.PI);
-                        const rhombus_angle_point = angle => {
-                            let [px, py] = angle_to_rhombus_point(angle);
-                            px = px * this.radius * fill + x;
-                            py = py * this.radius * fill + y;
-                            return [px, py];
-                        };
-                        const rhombus_points = [
-                            rhombus_angle_point(start_angle),
-                            ...rhombus_corners.filter(c => number_between(c, start_angle, end_angle)).map(c => rhombus_angle_point(c)),
-                            rhombus_angle_point(end_angle),
-                        ];
-                        funcs.push(
-                            ['moveTo', [x, y]],
-                            ...rhombus_points.map(([px, py]) => ['lineTo', [px, py]]),
-                            ['lineTo', [x, y]],
-                        );
-                        break;
-                }
-
-                context.save();
-                context.fillStyle = resource.color;
-                context.beginPath();
-                funcs.forEach(([func, args]) => {
-                    if (!(func in context)) return;
-                    if (typeof context[func] == 'function') {
-                        context[func](...args);
-                    } else {
-                        context[func] = args[0];
+            /**
+             * Number between 0 and 1 (both inclusive) that determines
+             * the part filled
+             */
+            let fill = (filltypes[fillstyle] ?? filltypes.default).fill(amount, max);
+            const start_angle = 2 * i / length * Math.PI - Math.PI / 2;
+            const end_angle = 2 * (i + 1) / length * Math.PI - Math.PI / 2;
+            /** @type {[keyof context, any[]][]} */
+            const funcs = [];
+            switch (fillmode) {
+                case 'circle':
+                default:
+                    funcs.push(
+                        ['moveTo', [x, y]],
+                        ['arc', [x, y, this.radius * fill, start_angle, end_angle]],
+                        ['lineTo', [x, y]],
+                    );
+                    break;
+                case 'clockwise':
+                case 'counterclockwise':
+                    const clock_diff = 2 / length * Math.PI * fill;
+                    let clock_start = start_angle;
+                    let clock_end = clock_start + clock_diff;
+                    if (fillmode == 'counterclockwise') {
+                        clock_end = clock_start;
+                        clock_start = clock_end - clock_diff;
                     }
-                });
-                context.fill();
-                context.closePath();
-                context.restore();
-
-                context.strokeStyle = resource.border_color;
-                context.beginPath();
-                context.arc(x, y, this.radius, start_angle, end_angle);
-                context.stroke();
-                context.closePath();
+                    funcs.push(
+                        ['moveTo', [x, y]],
+                        ['arc', [x, y, this.radius, clock_start, clock_end]],
+                        ['lineTo', [x, y]],
+                    );
+                    break;
+                case 'transparency':
+                    const transparency_alpha = context.globalAlpha * fill;
+                    funcs.push(
+                        ['globalAlpha', [transparency_alpha]],
+                        ['moveTo', [x, y]],
+                        ['arc', [x, y, this.radius, start_angle, end_angle]],
+                        ['lineTo', [x, y]],
+                    );
+                    break;
+                case 'linear':
+                    let linear_y = this.radius * (1 - 2 * fill);
+                    const linear_angle_start = Math.asin(linear_y / this.radius);
+                    let linear_x = Math.cos(linear_angle_start) * this.radius;
+                    let linear_angle_end = Math.acos(-linear_x / this.radius) * Math.sign(linear_y);
+                    if (fill == 1) linear_angle_end = linear_angle_start + Math.PI * 2;
+                    linear_x += x;
+                    linear_y += y;
+                    funcs.push(
+                        ['moveTo', [linear_x, linear_y]],
+                        ['arc', [x, y, this.radius, linear_angle_start, linear_angle_end]],
+                        ['lineTo', [linear_x, linear_y]],
+                    );
+                    break;
+                case 'rhombus':
+                    const rhombus_corners = [0, 1, 2].map(n => n / 2 * Math.PI);
+                    const rhombus_angle_point = angle => {
+                        let [px, py] = angle_to_rhombus_point(angle);
+                        px = px * this.radius * fill + x;
+                        py = py * this.radius * fill + y;
+                        return [px, py];
+                    };
+                    const rhombus_points = [
+                        rhombus_angle_point(start_angle),
+                        ...rhombus_corners.filter(c => number_between(c, start_angle, end_angle)).map(c => rhombus_angle_point(c)),
+                        rhombus_angle_point(end_angle),
+                    ];
+                    funcs.push(
+                        ['moveTo', [x, y]],
+                        ...rhombus_points.map(([px, py]) => ['lineTo', [px, py]]),
+                        ['lineTo', [x, y]],
+                    );
+                    break;
             }
 
-            context.lineWidth = 1;
-            if (this.moving) context.setLineDash([]);
+            context.save();
+            context.fillStyle = resource.color;
+            context.beginPath();
+            funcs.forEach(([func, args]) => {
+                if (!(func in context)) return;
+                if (typeof context[func] == 'function') {
+                    context[func](...args);
+                } else {
+                    context[func] = args[0];
+                }
+            });
+            if (this.image) {
+                context.clip();
+                context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
+            } else {
+                context.fill();
+            }
+            context.closePath();
+            context.restore();
+
+            context.strokeStyle = resource.border_color;
+            context.beginPath();
+            context.arc(x, y, this.radius, start_angle, end_angle);
+            context.stroke();
+            context.closePath();
         }
+
+        context.lineWidth = 1;
+        if (this.moving) context.setLineDash([]);
 
         if (upgrade_marker && this.can_upgrade) {
             canvas_write('▲', x + this.radius, y, {text_align: 'right', base_text_color: theme('machine_upgrade_can_afford_fill')});

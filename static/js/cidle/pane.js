@@ -11,6 +11,8 @@ import { array_group_by } from './primitives.js';
  * @typedef {{content: string[], click?: (() => void)[], width?: number, color?: string, image?: HTMLImageElement}} CachedPaneCell
  */
 
+//todo reduce impact of functions
+
 export class Pane {
     /** @type {{[id: string]: Pane}} */
     static #panes = {};

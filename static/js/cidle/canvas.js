@@ -16,6 +16,7 @@ import StorageMachine from './storage.js';
 //todo changelog tab
 //todo prevent flickering gain
 //todo unlockable tabs
+//todo reduce impact of resources tab
 
 /**
  * Canvas of the game
@@ -175,7 +176,7 @@ const game_tabs = {
             }, {});
 
             table.forEach(data => {
-                const {res} = data;
+                const {res, per_second} = data;
                 const {color, background_color} = Resource.resource(res);
 
                 const height = (Object.values(data).map(s => cut_lines(s, {max_width}).length).reduce((h, l) => Math.max(h, l), 0) + .5) * font_size;
@@ -191,7 +192,7 @@ const game_tabs = {
                     canvas_write(value, data_x, y, {base_text_color: color});
                     data_x += table_widths[key] + grid_spacing;
                 });
-                if (speed != 1 && res != 'time') {
+                if (speed != 1 && res != 'time' && per_second) {
                     canvas_write(`x${beautify(speed)}`, data_x, y, {base_text_color: color});
                 }
 

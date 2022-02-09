@@ -7,6 +7,7 @@ import { check_can_afford } from './inventory.js';
  */
 
 //todo complete machines (storage & maker in one)
+//todo move group of machines
 
 export class Machine {
     /** @type {{[id: string]: Machine}} */
@@ -59,6 +60,14 @@ export class Machine {
 
         const machine = this.#machine_registry[id];
         return machine.clone(parts ?? machine);
+    }
+    static reset_visible_machines() {
+        if (this != Machine) {
+            Machine.reset_visible_machines();
+            return;
+        }
+
+        this.#visible_machines = false;
     }
 
     /**
@@ -306,6 +315,8 @@ export function load_data(data=[]) {
     data.forEach(({id, ...parts}) => {
         Machine.get_machine_copy(id, parts);
     });
+
+    Machine.reset_visible_machines();
 }
 
 export default Machine;

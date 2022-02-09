@@ -1,5 +1,5 @@
 /**
- * Inspired by the first alkahistorian
+ * Inspired by [the first alkahistorian](https://nagshell.github.io)
  */
 
 import './actions.js';
