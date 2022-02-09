@@ -165,7 +165,7 @@ const inventory = {
                                         x = Math.round((x - x_off) / grid_spacing) * grid_spacing + x_off;
                                         y = Math.round((y - y_off) / grid_spacing) * grid_spacing + y_off;
                                     }
-                                    machine.draw({x, y: y, transparent: true});
+                                    machine.draw({x, y, transparent: true});
                                 },
                             };
                         }],
@@ -742,6 +742,74 @@ const recipes = {
             },
             unlocked: () => StorageMachine.any_storage_for('bronze'),
             position: 23,
+        },
+        'aquaburner': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['bronze', 150 + 25 * c], ['fire', 10 * (c + 1) ** 2], ['aquamarine', 1]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => recipes.machines['bronze_foundry'].crafted?.reduce((s, n) => s + n, 0) > 0 && StorageMachine.any_storage_for('blazing_aquamarine'),
+            position: 23,
+        },
+        'magic_crystal': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 3) {
+                        cost = [['gold', 27 * c], ['blazing_aquamarine', (c + 1) ** 3]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => recipes.machines['aquaburner'].crafted?.reduce((s, n) => s + n, 0) > 0,
+            position: 25,
+        },
+        'magic_collector': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 3) {
+                        cost = [['gold', 27 * c], ['blazing_aquamarine', (c + 1) ** 3]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('magic'),
+            position: 26,
+        },
+        'transmutation_circle': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['stone', 5_000 * (c + 1)], ['magic', (c + 1)]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => recipes.machines['magic_collector'].crafted?.reduce((s, n) => s + n, 0) > 0,
+            position: 27,
         },
         // Time machines
         'giant_clock': {

@@ -30,10 +30,10 @@ export class Machine {
         // Allows children classes to access it themselves
         if (this != Machine) return Machine.visible_machines;
 
-        const pos = globals.position;
-        if (pos.some((n, i) => n != this.#vis_pos[i])) {
+        const {position} = globals;
+        if (position.some((n, i) => n != this.#vis_pos[i])) {
             this.#visible_machines = false;
-            this.#vis_pos = [...pos];
+            this.#vis_pos = [...position];
         }
         if (!this.#visible_machines) {
             this.#visible_machines = this.#machines.filter(m => m.is_visible);

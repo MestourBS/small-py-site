@@ -3,7 +3,7 @@ import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
 import Machine from './machine.js';
 import { Pane } from './pane.js';
-import { coords_distance as distance, angle_to_rhombus_point } from './position.js';
+import { coords_distance as distance, angle_to_rhombus_point, rect_contains_point } from './position.js';
 import Resource from './resource.js';
 import { beautify, number_between, stable_pad_number } from './primitives.js';
 /**
@@ -181,18 +181,22 @@ export class StorageMachine extends Machine {
         return this.#resources_leveled;
     }
     get is_visible() {
-        let {x, y} = this;
+        if (this.hidden) return false;
+
+        let {x, y, radius} = this;
         if (x == null || y == null) return false;
+        const {position} = globals;
+        const {width, height} = display_size;
 
-        x += display_size.width / 2 - globals.position[0];
-        y += display_size.height / 2 - globals.position[1];
+        x += width / 2 - position[0];
+        y += height / 2 - position[1];
 
-        const min_x = x - this.radius;
-        const max_x = x + this.radius;
-        const min_y = y - this.radius;
-        const max_y = y + this.radius;
+        let min_x = -radius;
+        let min_y = -radius;
+        let max_x = min_x + width + radius * 2;
+        let max_y = min_y + height + radius * 2;
 
-        return (min_x < display_size.width || max_x > 0) && (min_y < display_size.height || max_y > 0);
+        return rect_contains_point([x, y], min_x, max_x, min_y, max_y);
     }
     get radius() { return 25; }
     get level() { return super.level; }
@@ -828,6 +832,13 @@ export function make_storages() {
             resources: {
                 copper: {max: 100},
             },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 5]];
+                    return null;
+                }
+                return false;
+            },
         },
         {
             id: 'sand_box',
@@ -849,12 +860,26 @@ export function make_storages() {
             resources: {
                 gold: {max: 100},
             },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 15]];
+                    return null;
+                }
+                return false;
+            },
         },
         {
             id: 'tin_crate',
             name: gettext('games_cidle_storage_tin_crate'),
             resources: {
                 tin: {max: 100},
+            },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 5]];
+                    return null;
+                }
+                return false;
             },
         },
         {
@@ -864,6 +889,13 @@ export function make_storages() {
                 bronze: {max: 100},
                 tin: {max: 50},
                 copper: {max: 50},
+            },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 15]];
+                    return null;
+                }
+                return false;
             },
         },
         {
@@ -875,6 +907,21 @@ export function make_storages() {
                 blazing_aquamarine: {max: 10},
             },
             fillmode: 'rhombus',
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 81]];
+                    return null;
+                }
+                return false;
+            },
+        },
+        {
+            id: 'magic_crystal',
+            name: gettext('games_cidle_storage_magic_crystal'),
+            resources: {
+                magic: {max: 243},
+            },
+            level_formula: (level) => 3 ** (level / 2),
         },
         // Time storages
         {

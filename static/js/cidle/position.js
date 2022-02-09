@@ -122,3 +122,56 @@ export function angle_to_rhombus_point(angle) {
 
     return [cos ** 2 * Math.sign(cos), sin ** 2 * Math.sign(sin)].map(n => Math.abs(n) < 1e-6 ? 0 : n);
 }
+
+/**
+ * Checks whether 2 lines cross
+ *
+ * @see https://jeffreythompson.org/collision-detection/line-rect.php
+ *
+ * @param {[PointLike, PointLike]} linea
+ * @param {[PointLike, PointLike]} lineb
+ * @returns {boolean}
+ */
+function lines_cross(linea, lineb) {
+    /** @type {[Point, Point]} */
+    let line_a = linea.map(l => to_point(l));
+    /** @type {[Point, Point]} */
+    let line_b = lineb.map(l => to_point(l));
+
+    const [{x: x_1, y: y_1}, {x: x_2, y: y_2}] = line_a;
+    const [{x: x_3, y: y_3}, {x: x_4, y: y_4}] = line_b;
+
+    const u_a = ((x_4 - x_3) * (y_1 - y_3) - (y_4 - y_3) * (x_1 - x_3)) / ((y_4 - y_3) * (x_2 - x_1) - (x_4 - x_3) * (y_2 - y_1));
+    const u_b = ((x_2 - x_1) * (y_1 - y_3) - (y_2 - y_1) * (x_1 - x_3)) / ((y_4 - y_3) * (x_2 - x_1) - (x_4 - x_3) * (y_2 - y_1));
+
+    return number_between(u_a, 0, 1) && number_between(u_b, 0 ,1);
+}
+
+/**
+ * Checks whether a line crosses a rectangle's borders
+ *
+ * @see https://jeffreythompson.org/collision-detection/line-rect.php
+ *
+ * @param {[PointLike, PointLike]} line
+ * @param {number} rect_x Lowest X position of the rectangle
+ * @param {number} rect_y Lowest Y position of the rectangle
+ * @param {number} rect_width Rectangle width
+ * @param {number} rect_height Rectangle height
+ */
+export function line_crosses_rectangle(line, rect_x, rect_y, rect_width, rect_height) {
+    const corners = [
+        to_point([rect_x, rect_y]),
+        to_point([rect_x + rect_width, rect_y]),
+        to_point([rect_x + rect_width, rect_y + rect_height]),
+        to_point([rect_x, rect_y + rect_height]),
+    ];
+    /** @type {[Point, Point][]} */
+    const lines = [
+        [corners[0], corners[1]],
+        [corners[1], corners[2]],
+        [corners[2], corners[3]],
+        [corners[3], corners[0]],
+    ];
+
+    return lines.some(p => lines_cross(line, p));
+}

@@ -1,7 +1,7 @@
 import { context as canvas_context, display_size, canvas_write } from './canvas.js';
 import globals from './globals.js';
 import Machine from './machine.js';
-import { angle_to_rhombus_point, coords_distance as distance, parallel_perpendicular, rect_contains_point, to_point } from './position.js';
+import { angle_to_rhombus_point, coords_distance as distance, line_crosses_rectangle, parallel_perpendicular, rect_contains_point, to_point } from './position.js';
 import { StorageMachine } from './storage.js';
 import Resource from './resource.js';
 import { get_theme_value as theme } from './display.js';
@@ -15,6 +15,7 @@ import { array_group_by, beautify, number_between, stable_pad_number } from './p
 
 //todo move production to a single all consuming / producing function
 //todo draw production/consumption amounts for scaling
+//todo prevent flickering connections
 //todo? multiple recipes
 //todo? switchable recipes
 //todo? luck-based recipes
@@ -203,18 +204,20 @@ export class MakerMachine extends Machine {
     get is_visible() {
         if (this.hidden) return false;
 
-        let {x, y} = this;
+        let {x, y, radius} = this;
         if (x == null || y == null) return false;
+        const {position} = globals;
+        const {width, height} = display_size;
 
-        x += display_size.width / 2 - globals.position[0];
-        y += display_size.height / 2 - globals.position[1];
+        x += width / 2 - position[0];
+        y += height / 2 - position[1];
 
-        const min_x = x - this.radius;
-        const max_x = x + this.radius;
-        const min_y = y - this.radius;
-        const max_y = y + this.radius;
+        let min_x = -radius;
+        let min_y = -radius;
+        let max_x = min_x + width + radius * 2;
+        let max_y = min_y + height + radius * 2;
 
-        return (min_x < display_size.width || max_x > 0) && (min_y < display_size.height || max_y > 0);
+        return rect_contains_point([x, y], min_x, max_x, min_y, max_y);
     }
     get radius() { return 25; }
     get hidden() {
@@ -1001,27 +1004,14 @@ export class MakerMachine extends Machine {
         machines.forEach(machine => {
             // Check if line is visible if neither machines are visible
             if (!all_visible && !machine.is_visible) {
-                // Check if X is visible
-                let [minx, maxx] = [this.x, machine.x];
-                if (minx > maxx) [minx, maxx] = [maxx, minx];
-                if (maxx > display_size.width) maxx = display_size.width;
-                if (minx < 0) minx = 0;
-                if (minx > maxx) return;
+                const {width, height} = display_size;
 
-                // Check if Y is visible
-                let miny = this.y;
-                let maxy = machine.y;
-                const dx = machine.x - this.x;
-                if (Math.abs(dx) > 1e-7) {
-                    let a = (machine.y - this.y) / dx;
-                    let b = this.y - a * this.x;
-                    miny = a * minx + b;
-                    maxy = a * maxx + b;
-                }
-                if (miny > maxy) [miny, maxy] = [maxy, miny];
-                if (maxy > display_size.height) maxy = display_size.height;
-                if (miny < 0) miny = 0;
-                if (miny > maxy) return;
+                const r_x = -offset_x;
+                const r_y = -offset_y;
+                const r_w = width;
+                const r_h = height;
+
+                if (!line_crosses_rectangle([this, machine], r_x, r_y, r_w, r_h)) return;
             }
 
             /** @type {[string, 'from'|'to'|'with'][]} */
@@ -1358,10 +1348,13 @@ export function make_makers() {
                 } else if (level == 2) {
                     if (StorageMachine.any_storage_for('bronze')) return [['bronze', 20]];
                     return null;
+                } else if (level == 3) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 40]];
+                    return null;
                 }
                 return false;
             },
-            max_level: 3,
+            max_level: 4,
         },
         {
             id: 'stone_miner',
@@ -1384,10 +1377,13 @@ export function make_makers() {
                 } else if (level == 2) {
                     if (StorageMachine.any_storage_for('bronze')) return [['bronze', 40]];
                     return null;
+                } else if (level == 3) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 60]];
+                    return null;
                 }
                 return false;
             },
-            max_level: 3,
+            max_level: 4,
         },
         {
             id: 'wood_burner',
@@ -1429,10 +1425,13 @@ export function make_makers() {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('bronze')) return [['bronze', 10]];
                     return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 27]];
+                    return null;
                 }
                 return false;
             },
-            max_level: 1,
+            max_level: 2,
         },
         {
             id: 'water_well',
@@ -1448,10 +1447,13 @@ export function make_makers() {
                 } else if (level == 2) {
                     if (StorageMachine.any_storage_for('aquamarine')) return [['aquamarine', 5]];
                     return null;
+                } else if (level == 3) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 15]];
+                    return null;
                 }
                 return false;
             },
-            max_level: 2,
+            max_level: 4,
         },
         {
             id: 'gravel_washer',
@@ -1494,8 +1496,16 @@ export function make_makers() {
         {
             id: 'gravel_crusher',
             name: gettext('games_cidle_maker_gravel_crusher'),
-            produces: [[['sand', .5]]],
-            consumes: [[['gravel', 1]]],
+            produces: (level) => [['sand', .5 + level / 10]],
+            consumes: (level) => [['gravel', 1]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 27]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
         },
         {
             id: 'glass_blower',
@@ -1514,16 +1524,37 @@ export function make_makers() {
         {
             id: 'sand_washer',
             name: gettext('games_cidle_maker_sand_washer'),
-            produces: [[['gold', .1]], [['gold', .15], ['aquamarine', .1]]],
-            consumes: [[['water', 1], ['sand', 1]], [['water', 1], ['sand', 2]]],
+            produces: (level) => {
+                /** @type {[string, number, boolean?][]} */
+                const production = [
+                    ['gold', .1],
+                ];
+
+                if (level >= 1) {
+                    // aquamarine: .1, gold: .1 => .15
+                    production.push(['aquamarine', .1]);
+                    production.find(([r]) => r == 'gold')[1] += .05;
+                }
+                if (level >= 2) {
+                    // aquamarine: .1 => .15, gold: .15 => .25
+                    production.find(([r]) => r == 'aquamarine')[1] += .05;
+                    production.find(([r]) => r == 'gold')[1] += .1;
+                }
+
+                return production;
+            },
+            consumes: (level) => [['sand', 1], ['water', Math.log2(level+1)+1]],
             upgrade_costs: (level) => {
                 if (level == 0) {
-                    if (StorageMachine.any_storage_for('aquamrine')) return [['bronze', 50]];
+                    if (StorageMachine.any_storage_for('aquamarine')) return [['bronze', 50]];
+                    return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 27]];
                     return null;
                 }
                 return false;
             },
-            max_level: 1,
+            max_level: 2,
         },
         {
             id: 'bronze_foundry',
@@ -1545,13 +1576,54 @@ export function make_makers() {
             produces: [[['blazing_aquamarine', .025]]],
             consumes: [[['aquamarine', .025], ['fire', 5], ['water', 2.5]]],
         },
+        {
+            id: 'magic_collector',
+            name: gettext('games_cidle_maker_magic_collector'),
+            produces: (level) => [['magic', (level + 1) ** 2 / 100]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', Math.random() * 7.5 + 2.5]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
+        },
+        {
+            id: 'transmutation_circle',
+            name: gettext('games_cidle_maker_transmutation_circle'),
+            produces: (level) => {
+                /** @type {[string, number, boolean?][]} */
+                const production = [
+                    ['copper', .1 + level / 10],
+                ];
+
+                if (level >= 1) {
+                    production.push(['tin', level / 10]);
+                }
+                if (level >= 2) {
+                    production.push(['bronze', level / 20 - .05], ['gold', level / 10 - .1]);
+                }
+
+                return production;
+            },
+            consumes: (level) => [['stone', level + 1], ['magic', level / 100 + .01]],
+        },
         // Unpausable makers
         {
             id: 'fire_extinguisher',
             name: gettext('games_cidle_maker_fire_extinguisher'),
-            requires: [[['fire', 1e-1]]],
-            consumes: [[['fire', 1e-3]]],
-            type: ['scaling'],
+            requires: (level) => [['fire', 1e-1]],
+            consumes: (level) => [['fire', Math.max(0, 10 - level) / 1e4]],
+            type: (level) => 'scaling',
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('magic')) return [['magic', 81]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
             unpausable: true,
             hidden: () => !StorageMachine.any_storage_for('fire'),
         },

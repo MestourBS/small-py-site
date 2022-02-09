@@ -14,6 +14,8 @@ import StorageMachine from './storage.js';
 
 //todo show resources sources
 //todo changelog tab
+//todo prevent flickering gain
+//todo unlockable tabs
 
 /**
  * Canvas of the game
@@ -234,7 +236,7 @@ const game_tabs = {
             if (StorageMachine.any_storage_for('time')) {
                 machines_text.push(gettext('games_cidle_help_machine_time'));
             }
-            if (MakerMachine.maker_machines.some(m => m.unpausable)) {
+            if (MakerMachine.maker_machines.some(m => m.unpausable && m.is_visible)) {
                 machines_text.push(gettext('games_cidle_help_machine_unpausable'));
             }
 

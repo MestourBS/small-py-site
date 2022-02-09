@@ -5,18 +5,20 @@ import { is_valid_theme } from './display.js';
  */
 
 export const globals = {
-    /**
-     * Player focus position as [x, y]
-     *
-     * @type {[number, number]}
-     */
-    position: [0, 0],
+    // Strings
     /**
      * Current selected theme
      *
      * @type {string}
      */
     current_theme: 'light',
+    /**
+     * Currently selected tab
+     *
+     * @type {GameTab}
+     */
+    game_tab: 'world',
+    // Booleans
     /**
      * Whether the document is focused or not
      *
@@ -30,23 +32,6 @@ export const globals = {
      */
     strict_keys: true,
     /**
-     * Currently selected tab
-     *
-     * @type {GameTab}
-     */
-    game_tab: 'world',
-    /**
-     * Functions called on the next click for a tab
-     *
-     * If a draw function is specified, it will also be called on the current tab
-     *
-     * @type {{[game_tab: string]: {
-     *  click: (x: number, y: number, event: MouseEvent) => boolean,
-     *  draw?: (x: number, y: number, event: MouseEvent) => void,
-     * }}}
-     */
-    adding: {},
-    /**
      * Whether shift must be pressed to snap machines to grid
      *
      * @type {boolean}
@@ -58,6 +43,25 @@ export const globals = {
      * @type {boolean}
      */
     stable_resource_order: true,
+    // Objects
+    /**
+     * Functions called on the next click for a tab
+     *
+     * If a draw function is specified, it will also be called on the current tab
+     *
+     * @type {{[game_tab: string]: {
+     *  click: (x: number, y: number, event: MouseEvent) => boolean,
+     *  draw?: (x: number, y: number, event: MouseEvent) => void,
+     * }}}
+     */
+    adding: {},
+    // Arrays
+    /**
+     * Player focus position as [x, y]
+     *
+     * @type {[number, number]}
+     */
+    position: [0, 0],
 };
 export default globals;
 
