@@ -16,6 +16,7 @@ import { beautify, number_between, stable_pad_number } from './primitives.js';
 //todo add fill level support for images
 //todo add move button to pane
 //todo change linear fill to start at lowest point and end at highest
+//todo include global tabs heights in is_visible
 //todo? fillmodes for different materials (theorically possible)
 
 const filltypes = {

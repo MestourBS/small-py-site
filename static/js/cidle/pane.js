@@ -145,8 +145,10 @@ export class Pane {
     get is_visible() {
         let {x, y} = this;
 
-        x += display_size.width / 2 - globals.position[0];
-        y += display_size.height / 2 - globals.position[1];
+        if (!this.#pinned) {
+            x += display_size.width / 2 - globals.position[0];
+            y += display_size.height / 2 - globals.position[1];
+        }
         const max_x = x + this.table_widths().reduce((s, w) => s + w, 0);
         const max_y = y + this.table_heights().reduce((s, h) => s + h, 0);
 
