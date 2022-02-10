@@ -17,6 +17,7 @@ import { array_group_by, beautify, number_between, stable_pad_number } from './p
 //todo draw production/consumption amounts for scaling
 //todo prevent flickering connections
 //todo add move button to pane
+//todo faster arrows based on time speed
 //todo? multiple recipes
 //todo? switchable recipes
 //todo? luck-based recipes

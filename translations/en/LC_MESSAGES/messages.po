@@ -582,13 +582,13 @@ msgstr ""
 msgid "games_cidle_help_machine_time"
 msgstr ""
 "Some processing machines consume time, but boost the speed of the other "
-"machines. Time is earned by keeping the tab closed at a rate of 1 time "
+"machines. Time is earned by keeping the tab closed at a rate of 1{color:#F00} time{color:reset} "
 "per second."
 
 #: static/js/cidle/canvas.js:243
 msgid "games_cidle_help_machine_unpausable"
 msgstr ""
-"I lied. Some processing machines cannot be paused. They can be "
+"Some processing machines cannot be paused. They can be "
 "recognized with their thicker outlines."
 
 #: static/js/cidle/canvas.js:248

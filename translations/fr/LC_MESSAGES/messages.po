@@ -588,12 +588,12 @@ msgid "games_cidle_help_machine_time"
 msgstr ""
 "Certaines machines d'assemblage consomment du temps, mais accélèrent la"
 " vitesse des autres machines. Du temps peut être gagné en fermant "
-"l'onglet à la vitesse d'1 temps par seconde."
+"l'onglet à la vitesse de 1{color:#F00} temps{color:reset} par seconde."
 
 #: static/js/cidle/canvas.js:243
 msgid "games_cidle_help_machine_unpausable"
 msgstr ""
-"J'ai menti. Certaines machines d'assemblage ne peuvent pas être misent "
+"Certaines machines d'assemblage ne peuvent pas être misent "
 "sur pause. Elles peuvent être reconnues avec leur bordure étant plus "
 "épaisse."
 

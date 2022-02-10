@@ -4,6 +4,7 @@ import Machine from './machine.js';
 import { Pane } from './pane.js';
 import { click as click_inventory, is_clickable as is_clickable_inventory } from './inventory.js';
 
+//todo reverse pane order for dragging/clicking
 //todo add zooming
 
 /**

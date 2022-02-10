@@ -13,6 +13,7 @@ import { save_data as save_machines, load_data as load_machines } from './machin
 import { coords_distance as distance } from './position.js';
 
 //todo spells
+//todo? achievements
 
 /** @type {number} */
 let last_production;
