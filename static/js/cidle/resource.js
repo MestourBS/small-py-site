@@ -1,3 +1,5 @@
+//todo? resource description
+
 export class Resource {
     /** @type {{[id: string]: Resource}} */
     static #resources = {};

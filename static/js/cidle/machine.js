@@ -6,6 +6,7 @@ import { check_can_afford } from './inventory.js';
  * @typedef {import('./position.js').PointLike} PointLike
  */
 
+//todo add upgrade_costs
 //todo complete machines (storage & maker in one)
 //todo move group of machines
 

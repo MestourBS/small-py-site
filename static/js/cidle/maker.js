@@ -390,7 +390,7 @@ export class MakerMachine extends Machine {
                 StorageMachine.storages_for(res)
                     .sort((a, b) => distance(this, a) - distance(this, b))
                     .forEach(m => {
-                        if (req <= 0 || m.resources[res].amount <= 0) return;
+                        if (req <= 0 || m.resources[res].amount <= 1e-6) return;
 
                         if (group_resources && !result.machines.includes(m)) result.machines.push(m);
                         req -= m.resources[res].amount;
@@ -421,7 +421,7 @@ export class MakerMachine extends Machine {
                 StorageMachine.storages_for(res)
                     .sort((a, b) => distance(this, a) - distance(this, b))
                     .forEach(m => {
-                        if (m.resources[res].amount <= 0) return;
+                        if (m.resources[res].amount <= 1e-6) return;
                         const insert =  con > 0 || this.type == 'scaling';
                         if (con > 0) {
                             if (group_resources && !result.machines.includes(m)) result.machines.push(m);
@@ -462,7 +462,7 @@ export class MakerMachine extends Machine {
                     .sort((a, b) => distance(this, a) - distance(this, b))
                     .forEach(m => {
                         const space = m.resources[res].max - m.resources[res].amount;
-                        if (pro <= 0 || space <= 0) return;
+                        if (pro <= 0 || space <= 1e-6) return;
 
                         if (group_resources && !result.machines.includes(m)) result.machines.push(m);
                         pro -= space;
