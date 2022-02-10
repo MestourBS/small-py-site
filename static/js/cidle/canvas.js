@@ -5,7 +5,7 @@ import { check_can_afford, draw as draw_inventory } from './inventory.js';
 import Machine from './machine.js';
 import { MakerMachine, time_speed } from './maker.js';
 import { Pane } from './pane.js';
-import { beautify, stable_pad_number } from './primitives.js';
+import { beautify, stable_pad_number, number_between } from './primitives.js';
 import Resource from './resource.js';
 import StorageMachine from './storage.js';
 /**
