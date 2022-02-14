@@ -7,11 +7,12 @@ import { MakerMachine, time_speed } from './maker.js';
 import { Pane } from './pane.js';
 import { beautify, stable_pad_number, number_between } from './primitives.js';
 import Resource from './resource.js';
-import StorageMachine from './storage.js';
+import StorageMachine, { space_boost } from './storage.js';
 /**
  * @typedef {keyof game_tabs} GameTab
  */
 
+//todo change draw to draw different parts of the canvas as required
 //todo show resources sources
 //todo changelog tab
 //todo prevent flickering gain
@@ -40,6 +41,7 @@ export const display_size = {
 };
 const game_tabs = {
     world: {
+        reset: true,
         name: gettext('games_cidle_tab_world'),
         /** @type {false|string[]} @private */
         _cut_name: false,
@@ -64,6 +66,7 @@ const game_tabs = {
         },
     },
     inventory: {
+        reset: true,
         name: gettext('games_cidle_tab_inventory'),
         /** @type {false|string[]} @private */
         _cut_name: false,
@@ -84,6 +87,7 @@ const game_tabs = {
         click: event => check_can_afford(),
     },
     resources: {
+        reset: false,
         name: gettext('games_cidle_tab_resources'),
         /** @type {false|string[]} @private */
         _cut_name: false,
@@ -98,26 +102,32 @@ const game_tabs = {
             }
             return this._cut_name;
         },
-        draw: () => {
+        /**
+         * @type {{
+         *  speed?: {amount?: number, height?: number},
+         *  space?: {amount?: number, height?: number},
+         *  resources?: {[resource: string]: {amount?: string, max?: string, per_second?: string, index?: number}},
+         *  rows?: number,
+         *  y?: number,
+         * }}
+         */
+        data: {},
+        draw() {
+            const data = this.data;
+            data.resources ??= {};
+
             const x = theme('tab_padding');
             let y = theme('tab_padding') + tabs_heights();
+            const speed = time_speed();
+            const space = space_boost();
             const font_size = theme('font_size');
             const dont_width = ['res'];
-
-            // Show time speed
-            const speed = time_speed();
-            if (speed != 1) {
-                const speed_str = gettext('games_cidle_time_speed', {speed: beautify(speed)});
-                const cut_time_speed = cut_lines(speed_str);
-                canvas_write(speed_str, x, y);
-                y += (cut_time_speed.length + 1) * font_size;
-            }
-
             /**
              * @type {{
              *  res: string,
              *  name: string,
              *  amount: string,
+             *  max: string,
              *  per_second: string,
              * }[]}
              */
@@ -145,62 +155,122 @@ const game_tabs = {
                     if (a.amount != b.amount) return a.amount - b.amount;
                 }
                 return a.res > b.res;
-            }).map(data => {
-                const {res, amount, max, per_second} = data;
+            }).map(res_data => {
+                const {res, amount, max, per_second} = res_data;
                 const {name} = Resource.resource(res);
 
-                let a = `${beautify(amount)}`;
+                let a = `${stable_pad_number(beautify(amount))}`;
                 let ps = '';
 
                 if (per_second) {
-                    if (amount < max) a = stable_pad_number(a);
-
                     ps = beautify(per_second);
                     if (per_second > 0) ps = `+${ps}`;
                     ps += '/s';
                 }
-                a += `/${beautify(max)}`;
+                let m = `/${beautify(max)}`;
 
-                return {res, name, amount: a, per_second: ps};
+                return {res, name, amount: a, max: m, per_second: ps};
             });
+            const rows = Math.min(((speed != 1) + (space != 1)) * 2, 3) + table.length;
+            if (rows != data.rows || y != data.y) {
+                canvas_reset();
+                data.resources = {};
+                data.space = {};
+                data.speed = {};
+                data.rows = rows;
+                data.y = y;
+            }
 
-            const max_width = display_size.width / (Object.keys(table[0]).length + (speed != 1));
+            const max_width = display_size.width / (Object.keys(table[0]).length + (speed != 1) - dont_width.length);
 
             /** @type {{[k: string]: number}} */
-            const table_widths = table.reduce((widths, data) => {
-                Object.entries(data).forEach(([key, value]) => {
+            const table_widths = table.reduce((widths, res_data) => {
+                Object.entries(res_data).forEach(([key, value]) => {
                     if (dont_width.includes(key)) return;
                     widths[key] = Math.min(max_width, Math.max(widths[key] ?? 0, context.measureText(value).width));
                 });
                 return widths;
             }, {});
 
-            table.forEach(data => {
-                const {res, per_second} = data;
-                const {color, background_color} = Resource.resource(res);
+            // Show time speed
+            if (speed != 1) {
+                data.speed ??= {};
+                if (data.speed.amount != speed) {
+                    data.speed.amount = speed;
+                    const speed_str = gettext('games_cidle_time_speed', {speed: beautify(speed)});
+                    const cut_time_speed = cut_lines(speed_str);
+                    canvas_write(speed_str, x, y);
+                    data.speed.height = (cut_time_speed.length + .5) * font_size;
+                }
+                y += data.speed.height;
+            }
 
-                const height = (Object.values(data).map(s => cut_lines(s, {max_width}).length).reduce((h, l) => Math.max(h, l), 0) + .5) * font_size;
+            // Show space multiplier
+            if (space != 1) {
+                data.space ??= {};
+                if (data.space.amount != space) {
+                    data.space.amount = space;
+                    const space_str = gettext('games_cidle_space_boost', {space: beautify(space)});
+                    const cut_space_boost = cut_lines(space_str);
+                    canvas_write(space_str, x, y);
+                    data.space.height = (cut_space_boost.length + .5) * font_size;
+                }
+                y += data.space.height;
+            }
+
+            // Space between timespace bonuses and the rest
+            if (speed != 1 || space != 1) y += font_size;
+
+
+            table.forEach((res_data, i) => {
+                const {res, amount, max, per_second} = res_data;
+                const own_data = (data.resources[res] ??= {});
+                const redraw_all = own_data.index != i;
+
+                const {color} = Resource.resource(res);
+                const background_color = Resource.resource(res).background_color ?? 'white';
+
+                const height = (Object.values(res_data).map(s => cut_lines(s, {max_width}).length).reduce((h, l) => Math.max(h, l), 0) + .5) * font_size;
                 let data_x = x;
 
-                if (background_color) {
-                    context.fillStyle = background_color;
-                    context.fillRect(0, y, canvas.width, height);
-                }
-                Object.entries(data).forEach(([key, value]) => {
+                Object.entries(res_data).forEach(([key, value]) => {
                     if (!(key in table_widths)) return;
 
-                    canvas_write(value, data_x, y, {base_text_color: color});
-                    data_x += table_widths[key] + grid_spacing;
+                    const width = table_widths[key] + grid_spacing;
+
+                    if (redraw_all || value != own_data[key]) {
+                        if (background_color) {
+                            context.fillStyle = background_color;
+                            context.fillRect(data_x, y, width, height);
+                        }
+
+                        canvas_write(value, data_x, y, {base_text_color: color});
+                    }
+
+                    data_x += width;
                 });
                 if (speed != 1 && res != 'time' && per_second) {
                     canvas_write(`x${beautify(speed)}`, data_x, y, {base_text_color: color});
                 }
 
                 y += height;
+                own_data.amount = amount;
+                own_data.index = i;
+                own_data.max = max;
+                own_data.per_second = per_second;
             });
+        },
+        click() {
+            canvas_reset();
+            this.data.resources = {};
+            this.data.space = {};
+            this.data.speed = {};
+            this.data.rows = 0;
+            this.data.y = 0;
         },
     },
     help: {
+        reset: false,
         name: gettext('games_cidle_tab_help'),
         /** @type {false|string[]} @private */
         _cut_name: false,
@@ -215,46 +285,69 @@ const game_tabs = {
             }
             return this._cut_name;
         },
-        draw: () => {
+        /**
+         * @type {{
+         *  machines_text_lines?: string[],
+         *  inventory_text_lines?: string[],
+         *  resources_text_lines?: string[],
+         *  machines_text_checks?: Set<string>,
+         *  drawn: boolean,
+         * }}
+         */
+        data: {},
+        draw() {
+            const data = this.data;
+            if (data.drawn) return;
+            canvas_reset();
+
             const x = theme('tab_padding');
             let y = theme('tab_padding') + tabs_heights();
 
             /** @type {string[]} */
-            const machines_text = [
+            const machines_text = (data.machines_text_lines ??= [
                 '{bold}' + gettext('games_cidle_help_machine_title'),
                 gettext('games_cidle_help_machine_intro'),
                 gettext('games_cidle_help_machine_pane'),
                 gettext('games_cidle_help_machine_type'),
                 gettext('games_cidle_help_machine_pause'),
                 gettext('games_cidle_help_machine_move'),
-            ];
-            if (Machine.machines.some(m => m.level > 0 || m.can_upgrade)) {
+            ]);
+            const machines_checks = (data.machines_text_checks ??= new Set);
+            if (!machines_checks.has('upgrade') && Machine.machines.some(m => m.level > 0 || m.can_upgrade)) {
                 machines_text.push(gettext('games_cidle_help_machine_upgrade'));
+                machines_checks.add('upgrade');
             }
-            if (MakerMachine.maker_machines.some(m => m.produces.some(([,,o=false]) => o))) {
+            if (!machines_checks.has('optional') && MakerMachine.maker_machines.some(m => m.produces.some(([,,o=false]) => o))) {
                 machines_text.push(gettext('games_cidle_help_machine_optional'));
+                machines_checks.add('optional');
             }
-            if (StorageMachine.any_storage_for('time')) {
-                machines_text.push(gettext('games_cidle_help_machine_time'));
-            }
-            if (MakerMachine.maker_machines.some(m => m.unpausable && m.is_visible)) {
+            if (!machines_checks.has('unpausable') && MakerMachine.maker_machines.some(m => m.unpausable && m.is_visible)) {
                 machines_text.push(gettext('games_cidle_help_machine_unpausable'));
+                machines_checks.add('unpausable');
+            }
+            if (!machines_checks.has('time') && StorageMachine.any_storage_for('time')) {
+                machines_text.push(gettext('games_cidle_help_machine_time'));
+                machines_checks.add('time');
+            }
+            if (!machines_checks.has('space') && StorageMachine.any_storage_for('space')) {
+                machines_text.push(gettext('games_cidle_help_machine_space'));
+                machines_checks.add('space');
             }
 
             /** @type {string[]} */
-            const inventory_text = [
+            const inventory_text = (data.inventory_text_lines ??= [
                 '{bold}' + gettext('games_cidle_help_inventory_title'),
                 gettext('games_cidle_help_inventory_intro'),
                 gettext('games_cidle_help_inventory_craft'),
                 gettext('games_cidle_help_inventory_place'),
                 gettext('games_cidle_help_inventory_unlock'),
-            ];
+            ]);
 
             /** @type {string[]} */
-            const resources_text = [
+            const resources_text = (data.resources_text_lines ??= [
                 '{bold}' + gettext('games_cidle_help_resources_title'),
                 gettext('games_cidle_help_resources_intro'),
-            ];
+            ]);
 
             const text = [
                 ...machines_text,
@@ -270,6 +363,12 @@ const game_tabs = {
                     canvas_write(line, x, y);
                     y += theme('font_size') * 1.1;
                 });
+
+            data.drawn = true;
+        },
+        click() {
+            canvas_reset();
+            this.data.drawn = false;
         },
     },
 };
@@ -328,12 +427,15 @@ function canvas_reset() {
  */
 export function canvas_refresh() {
     const {game_tab} = globals;
-    canvas_reset();
 
     let top = tabs_heights({context});
 
     if (game_tab in game_tabs) {
-        game_tabs[game_tab].draw({top});
+        const tab = game_tabs[game_tab];
+
+        if (tab.reset) canvas_reset();
+
+        tab.draw({top});
     } else {
         console.error(`Unknown game tab ${game_tab}`);
     }

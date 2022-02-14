@@ -10,7 +10,6 @@ import MakerMachine from './maker.js';
 import { coords_distance as distance } from './position.js';
 
 //todo resource crafting
-//todo dont move pane after crafting
 
 /**
  * Current inventory
@@ -185,8 +184,12 @@ const inventory = {
                                     content: [gettext('games_cidle_make', {obj: name})],
                                     click: [() => {
                                         if (craft(id, cost_list.length - i - 1, 'machines')) {
+                                            const old_pane = Pane.pane(pane_id);
                                             this.click(x,arg_y,event);
                                             this.click(x,arg_y,event);
+                                            const new_pane = Pane.pane(pane_id);
+                                            new_pane.x = old_pane.x;
+                                            new_pane.y = old_pane.y;
                                         }
                                     }],
                                     width: 2,
@@ -450,7 +453,7 @@ const recipes = {
                     if (c <= 5) {
                         cost = [['wood', c * 800 + 2_000], ['stone', c ** 2 * 500 + 2_000]];
                     } else if (c <= 10) {
-                        cost = [['wood', c * 400 + 1_000], ['stone', c ** 2 * 250 + 1_000], ['bronze', c ** 3 * 1.5]];
+                        if (StorageMachine.any_storage_for('bronze')) cost = [['wood', c * 400 + 1_000], ['stone', c ** 2 * 250 + 1_000], ['bronze', c ** 3 * 1.5]];
                     }
                     costs[0] = cost;
                 }
@@ -523,7 +526,7 @@ const recipes = {
                     if (c <= 5) {
                         cost = [['wood', c * 500 + 2_500], ['brick', 256 * c + 256]];
                     } else if (c <= 10) {
-                        cost = [['wood', c * 500 + 1_250], ['bronze', 128 * (c - 5) + 128]];
+                        if (StorageMachine.any_storage_for('bronze')) cost = [['wood', c * 500 + 1_250], ['bronze', 128 * (c - 5) + 128]];
                     }
                     costs[0] = cost;
                 }
@@ -584,7 +587,7 @@ const recipes = {
                 }
                 return costs;
             },
-            unlocked: () => recipes.machines['gravel_washer'].crafted?.reduce((s, n) => s + n, 0) > 0,
+            unlocked: () => StorageMachine.any_storage_for('sand'),
             position: 15,
         },
         'glass_container': {
@@ -839,6 +842,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => atob(localStorage.getItem('games_cidle')).includes('date'),
+            position: 101,
         },
         'rewinding_contraption': {
             resources: crafted => {
@@ -860,6 +864,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => atob(localStorage.getItem('games_cidle')).includes('date') && StorageMachine.any_storage_for('bronze'),
+            position: 102,
         },
         'sundial': {
             resources: crafted => {
@@ -881,6 +886,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => ['time', 'stone'].every(res => StorageMachine.any_storage_for(res)),
+            position: 103,
         },
         'hourglass': {
             resources: crafted => {
@@ -893,6 +899,56 @@ const recipes = {
                 return costs;
             },
             unlocked: () => ['time', 'glass'].every(res => StorageMachine.any_storage_for(res)),
+            position: 104,
+        },
+        // Space machines
+        'galactic_container': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    /** @type {[string, number][]|false} */
+                    let cost = [['glass', 250 * (c + 1) ** 2]];
+
+                    if (c >= 1) {
+                        if (StorageMachine.any_storage_for('burning_aquamarine')) cost.push(['burning_aquamarine', c * 2 ** c]);
+                        else cost = false;
+                    }
+                    if (cost && c >= 3) {
+                        if (StorageMachine.any_storage_for('magic')) cost.push(['magic', 3 ** c]);
+                        else cost = false;
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => ['time', 'glass'].every(res => StorageMachine.any_storage_for(res)),
+            position: 201,
+        },
+        'spacetime_compressor': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    /** @type {[string, number][]|false} */
+                    let cost = [['brick', 1_000 * (c + 1) ** 2]];
+
+                    if (c >= 1) {
+                        if (StorageMachine.any_storage_for('burning_aquamarine')) cost.push(['burning_aquamarine', c * 3 ** c]);
+                        else cost = false;
+                    }
+                    if (cost && c >= 3) {
+                        if (StorageMachine.any_storage_for('magic')) cost.push(['magic', 5 * 2 ** c]);
+                        else cost = false;
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('space'),
+            position: 202,
         },
     },
 };
@@ -915,6 +971,7 @@ function init() {
 
     // Tries to unlock recipes every 15 seconds
     setInterval(() => {
+        if (globals.game_tab != 'inventory') return;
         unlock_recipes();
         check_can_afford();
     }, 15 * 1_000);

@@ -73,12 +73,13 @@ function display() {
 function save(event) {
     const d = new Date;
     const date = {
-        sec: d.getSeconds(),
-        min: d.getMinutes(),
-        hour: d.getHours(),
-        day: d.getDate(),
-        month: d.getMonth(),
-        year: d.getFullYear(),
+        ms: d.getUTCMilliseconds(),
+        sec: d.getUTCSeconds(),
+        min: d.getUTCMinutes(),
+        hour: d.getUTCHours(),
+        day: d.getUTCDate(),
+        month: d.getUTCMonth(),
+        year: d.getUTCFullYear(),
     };
 
     const data = {
@@ -117,6 +118,7 @@ function load() {
      *  },
      *  machines?: {id: string, ...parts}[],
      *  date?: {
+     *      ms?: number,
      *      sec?: number,
      *      min?: number,
      *      hour?: number,
@@ -146,16 +148,15 @@ function load() {
     }
     if ('date' in data) {
         const now = new Date;
-        now.setMilliseconds(0);
         const {date} = data;
         const save = new Date;
-        save.setMilliseconds(0);
-        if ('year' in date) save.setFullYear(date.year);
-        if ('month' in date) save.setMonth(date.month);
-        if ('day' in date) save.setDate(date.day);
-        if ('hour' in date) save.setHours(date.hour);
-        if ('min' in date) save.setMinutes(date.min);
-        if ('sec' in date) save.setSeconds(date.sec);
+        if ('year' in date) save.setUTCFullYear(date.year);
+        if ('month' in date) save.setUTCMonth(date.month);
+        if ('day' in date) save.setUTCDate(date.day);
+        if ('hour' in date) save.setUTCHours(date.hour);
+        if ('min' in date) save.setUTCMinutes(date.min);
+        if ('sec' in date) save.setUTCSeconds(date.sec);
+        if ('ms' in date) save.setUTCMilliseconds(date.ms);
         let seconds = (now - save) / 1e3;
 
         if (seconds > 0) {

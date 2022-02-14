@@ -4,7 +4,6 @@ import Machine from './machine.js';
 import { Pane } from './pane.js';
 import { click as click_inventory, is_clickable as is_clickable_inventory } from './inventory.js';
 
-//todo reverse pane order for dragging/clicking
 //todo add zooming
 
 /**
@@ -197,7 +196,7 @@ function click_world(x, y, event) {
 
     if (globals.adding[globals.game_tab]?.click(x, y, event)) return;
 
-    const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([x, y]));
+    const p = [...Pane.get_visible_panes(globals.game_tab)].reverse().find(p => p.contains_point([x, y]));
 
     if (p) {
         p.click(x, y, event);
@@ -245,7 +244,7 @@ function is_clickable_world(x, y, event) {
     x -= display_size.width / 2 - globals.position[0];
     y -= display_size.height / 2 - globals.position[1];
 
-    const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([x, y]));
+    const p = [...Pane.get_visible_panes(globals.game_tab)].reverse().find(p => p.contains_point([x, y]));
     if (p) return p.is_clickable([x, y]);
 
     const machine = Machine.visible_machines.find(m => m.contains_point([x, y]));
@@ -287,7 +286,7 @@ function drag_world(x, y, x_diff, y_diff, event) {
         return;
     }
 
-    const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([x, y]));
+    const p = [...Pane.get_visible_panes(globals.game_tab)].reverse().find(p => p.contains_point([x, y]));
 
     if (p) {
         currently_dragging = p;

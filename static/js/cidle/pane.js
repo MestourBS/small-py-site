@@ -11,6 +11,7 @@ import { array_group_by } from './primitives.js';
  * @typedef {{content: string[], click?: (() => void)[], width?: number, color?: string, image?: HTMLImageElement}} CachedPaneCell
  */
 
+//todo change draw to only draw different parts as required
 //todo reduce impact of functions
 
 export class Pane {

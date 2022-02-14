@@ -6,7 +6,6 @@ import { check_can_afford } from './inventory.js';
  * @typedef {import('./position.js').PointLike} PointLike
  */
 
-//todo add upgrade_costs
 //todo complete machines (storage & maker in one)
 //todo move group of machines
 
@@ -124,6 +123,9 @@ export class Machine {
     get image() { return this.#image; }
     get radius() { return 0; }
     get index() { return Machine.machines.indexOf(this); }
+    /** @type {[string, number][]|false} */
+    get upgrade_costs() { return false; }
+
     get moving() { return this.#moving; }
     set moving(moving) { this.#moving = !!moving; }
 

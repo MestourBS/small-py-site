@@ -13,15 +13,21 @@ import { array_group_by, beautify, number_between, stable_pad_number } from './p
  * @typedef {'fixed'|'scaling'} MakerType
  */
 
+//todo change draw to draw different parts of the maker as required
+//todo change draw_connections to draw different connections as required
 //todo move production to a single all consuming / producing function
 //todo draw production/consumption amounts for scaling
 //todo prevent flickering connections
 //todo add move button to pane
 //todo faster arrows based on time speed
 //todo include global tabs heights in is_visible
+//todo don't move pane on upgrade
+//todo reopen upgrade pane if further upgrading is possible
 //todo? multiple recipes
 //todo? switchable recipes
 //todo? luck-based recipes
+//todo? upgraded rock crusher gives sand (optional)
+//todo? faster/bigger arrows based on production
 
 const pause_text = {
     'true': gettext('games_cidle_maker_paused'),
@@ -256,11 +262,13 @@ export class MakerMachine extends Machine {
     }
     get can_upgrade() {
         if (this.#can_upgrade == null) {
-            if (!this.upgrade_costs) this.#can_upgrade = this.#upgrade_costs_leveled;
-            else this.#can_upgrade = this.upgrade_costs.every(([res, cost]) => {
+            let can;
+            if (!this.upgrade_costs) can = this.#upgrade_costs_leveled;
+            else can = this.upgrade_costs.every(([res, cost]) => {
                 const {amount} = StorageMachine.stored_resource(res);
                 return cost <= amount;
             }) || null;
+            this.#can_upgrade = can;
         }
         return this.#can_upgrade ?? false;
     }
@@ -994,7 +1002,7 @@ export class MakerMachine extends Machine {
      * Draws the machine's connections, if they are visible
      */
     draw_connections({context=canvas_context, multiplier=this.#last_multiplier}) {
-        if (this.hidden) return;
+        if (this.hidden || multiplier <= 1e-6) return;
         if (this.paused) {
             context.setLineDash([10]);
         }
@@ -1073,8 +1081,6 @@ export class MakerMachine extends Machine {
                 /** @type {[number, number]} */
                 const right = parallels(d - 5).reduce((a, p) => [a[0] + p.x / 2 - off_x, a[1] + p.y / 2 - off_y], [offset_x, offset_y]);
 
-                if (![tip, left, right].some(p => rect_contains_point(p, 0, display_size.width, 0, display_size.height))) return;
-
                 if (!this.paused) {
                     const d = distance(pa, pb) ** .75;
                     const r = (Date.now() % d) / d - .5;
@@ -1083,6 +1089,8 @@ export class MakerMachine extends Machine {
                         p[1] += r * dist_y;
                     });
                 }
+
+                if (![tip, left, right].some(p => rect_contains_point(p, 0, display_size.width, 0, display_size.height))) return;
 
                 context.fillStyle = color;
                 context.beginPath();
@@ -1144,7 +1152,7 @@ export class MakerMachine extends Machine {
      * @param {number} [params.multiplier] Speed multiplier
      */
     can_produce({multiplier=this.#last_multiplier}={}) {
-        if (this.x == null || this.y == null) return false;
+        if (this.x == null || this.y == null || multiplier <= 1e-6) return false;
 
         const storages = Object.entries(this.#target_storages({multiplier, group_resources: false, group_relations: false}));
         // Check if requirements are met
@@ -1168,6 +1176,7 @@ export class MakerMachine extends Machine {
      * @param {boolean} [params.overdo] Whether over producing and consuming is done
      */
     produce({multiplier=1, overdo=false}={}) {
+        if (multiplier <= 1e-6) return;
         if (this.paused) {
             this.#last_multiplier = multiplier;
             return;
@@ -1643,6 +1652,13 @@ export function make_makers() {
             id: 'hourglass',
             name: gettext('games_cidle_maker_hourglass'),
             consumes: [[['time', 1.5]]],
+        },
+        // Space machines
+        {
+            id: 'spacetime_compressor',
+            name: gettext('games_cidle_maker_spacetime_compressor'),
+            consumes: [[['time', .1]]],
+            produces: [[['space', .1]]],
         },
     ];
 

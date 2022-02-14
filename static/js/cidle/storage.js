@@ -12,11 +12,15 @@ import { beautify, number_between, stable_pad_number } from './primitives.js';
  * @typedef {'clockwise'|'counterclockwise'|'transparency'|'circle'|'rhombus'|'linear'} FillMode
  */
 
+//todo change draw to draw different parts of the storage as required
 //todo level-based resources value
 //todo add fill level support for images
 //todo add move button to pane
 //todo change linear fill to start at lowest point and end at highest
 //todo include global tabs heights in is_visible
+//todo don't move pane on upgrade
+//todo reopen upgrade pane if further upgrading is possible
+//todo? fill with image instead of color if available
 //todo? fillmodes for different materials (theorically possible)
 
 const filltypes = {
@@ -172,11 +176,19 @@ export class StorageMachine extends Machine {
     get resources() {
         if (this.#resources_leveled === false) {
             this.#resources_leveled = Object.fromEntries(Object.entries(this.#resources).map(([res, data]) => {
-                const d = {
-                    get amount() { return data.amount; },
-                    set amount(amount) { data.amount = amount; },
-                    max: data.max * this.#level_formula(this.level),
-                };
+                const d = {};
+                Object.defineProperty(d, 'amount', {
+                    get: () => data.amount,
+                    set: amount => data.amount = amount,
+                });
+                if (res != 'space') {
+                    Object.defineProperty(d, 'max', {
+                        get: () => { return data.max * space_boost() * this.#level_formula(this.level); },
+                        set(max) { data.max = max / (space_boost() * this.#level_formula(this.level)); },
+                    });
+                } else {
+                    d.max = data.max * this.#level_formula(this.level);
+                }
                 return [res, d];
             }));
         }
@@ -224,11 +236,13 @@ export class StorageMachine extends Machine {
     get fillmode() { return this.#fillmode; }
     get can_upgrade() {
         if (this.#can_upgrade == null) {
-            if (!this.upgrade_costs) this.#can_upgrade = this.#upgrade_costs_leveled;
-            else this.#can_upgrade = this.upgrade_costs.every(([res, cost]) => {
+            let can;
+            if (!this.upgrade_costs) can = this.#upgrade_costs_leveled;
+            else can = this.upgrade_costs.every(([res, cost]) => {
                 const {amount} = StorageMachine.stored_resource(res);
                 return cost <= amount;
             }) || null;
+            this.#can_upgrade = can;
         }
         return this.#can_upgrade ?? false;
     }
@@ -236,6 +250,8 @@ export class StorageMachine extends Machine {
         if (!can) this.#can_upgrade = null;
         else this.#can_upgrade = true;
     }
+    get moving() { return super.moving; }
+    set moving(moving) { super.moving = moving; }
 
     toJSON() {
         return Object.assign(super.toJSON(), {
@@ -734,6 +750,25 @@ function is_fill_mode(mode) {
     return ['circle', 'clockwise', 'counterclockwise', 'transparency', 'image', 'rhombus', 'linear'].includes(mode);
 }
 
+/**
+ * Current space boost
+ *
+ * Maximum storage is multiplied by 1 + total_fill_ratio * storages
+ *
+ * @returns {number}
+ */
+export function space_boost() {
+    const space_storages = StorageMachine.storages_for('space');
+    let multiplier = 1;
+
+    if (space_storages.length) {
+        const space = StorageMachine.stored_resource('space');
+        multiplier += space.amount / space.max * space_storages.length;
+    }
+
+    return multiplier;
+}
+
 export function make_storages() {
     /**
      * @type {{
@@ -953,6 +988,15 @@ export function make_storages() {
                 time: {max: 6 * 60 * 60},
             },
             fillmode: 'counterclockwise',
+        },
+        // Space storages
+        {
+            id: 'galactic_container',
+            name: gettext('games_cidle_storage_galactic_container'),
+            resources: {
+                space: {max: 1e3},
+            },
+            fillmode: 'transparency',
         },
     ];
 

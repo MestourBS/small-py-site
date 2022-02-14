@@ -182,6 +182,14 @@ export function make_resources() {
             color: '#F00',
             border_color: '#E60000',
         },
+        // Space resources
+        {
+            id: 'space',
+            name: gettext('games_cidle_resource_space'),
+            color: '#000',
+            border_color: '#0C0C0C',
+            image: '/static/images/games/cidle/space.png',
+        },
     ];
 
     resources.forEach(r => new Resource(r));
