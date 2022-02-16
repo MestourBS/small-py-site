@@ -298,6 +298,24 @@ export class Machine {
      * Upgrades the machine
      */
     upgrade() {}
+
+    /**
+     * Returns a path that follows the machine's border
+     *
+     * @param {number} [x] X position override of the machine
+     * @param {number} [y] Y position override of the machine
+     * @returns {[keyof CanvasRenderingContext2D, any[]][]}
+     */
+    border_path(x, y) { return []; }
+
+    /**
+     * Returns the point at which the border starts
+     *
+     * @param {number} [x] X position override of the machine
+     * @param {number} [y] Y position override of the machine
+     * @returns {PointLike}
+     */
+    border_start(x, y) { return [x, y]; }
 }
 /**
  * Returns an object containing the data to be saved

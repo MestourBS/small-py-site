@@ -11,17 +11,13 @@ import { array_group_by } from './primitives.js';
  * @typedef {{content: string[], click?: (() => void)[], width?: number, color?: string, image?: HTMLImageElement}} CachedPaneCell
  */
 
-//todo change draw to only draw different parts as required
 //todo reduce impact of functions
 
 export class Pane {
     /** @type {{[id: string]: Pane}} */
     static #panes = {};
     /**
-     * @type {{
-     *  world: false|Pane[],
-     *  inventory: false|Pane[],
-     * }}
+     * @type {{[tab: string]: false|Pane[]}}
      */
     static #visible_panes = {};
     /** @type {[number, number]} */
@@ -70,13 +66,13 @@ export class Pane {
     constructor({x, y, pinned=false, id, content=[], title=false, tab=globals.game_tab, pinnable=true}) {
         if (isNaN(x)) throw new TypeError(`Pane x must be a number (${x})`);
         if (isNaN(y)) throw new TypeError(`Pane y must be a number (${y})`);
-        let is_valid_content = Array.isArray(content);
-        is_valid_content &&= content.every(row => {
+        let has_dyn = false;
+        const is_valid_content = Array.isArray(content) && content.every(row => {
             if (!Array.isArray(row)) return false;
 
             return row.every(cell => {
                 if (!('content' in cell) || !Array.isArray(cell.content)) return false;
-                if (cell.content.some(t => typeof t == 'function')) this.#has_dynamic_cell = true;
+                if (cell.content.some(t => typeof t == 'function')) has_dyn = true;
                 if ('click' in cell && (!Array.isArray(cell.click) || cell.click.some(f => typeof f != 'function'))) return false;
                 if ('width' in cell && (isNaN(cell.width) || cell.width <= 0)) return false;
                 return true;
@@ -118,6 +114,10 @@ export class Pane {
         this.#content = content;
         this.#tab = tab;
 
+        this.#has_dynamic_cell = has_dyn;
+        this.#cache.x = x;
+        this.#cache.y = y;
+
         if (id in Pane.#panes) {
             Pane.#panes[id].remove();
         }
@@ -137,6 +137,28 @@ export class Pane {
     /** @type {false|CachedPaneCell[][]} */
     #cut_content = false;
     #tab;
+    #cache = {
+        x: 0,
+        y: 0,
+        /** @type {number} */
+        widest_row: null,
+        width: 0,
+        widths: {
+            /** @type {number[]} */
+            'static': [],
+            /** @type {number[]} */
+            'dynamic': [],
+        },
+        height: 0,
+        heights: {
+            /** @type {number[]} */
+            'static': [],
+            /** @type {number[]} */
+            'dynamic': [],
+        },
+        /** @type {{content: string[]}[][]} */
+        cells: [],
+    };
 
     get x() { return this.#x; }
     set x(x) { if (!isNaN(x)) this.#x = x; }
@@ -198,42 +220,97 @@ export class Pane {
     }
 
     /**
+     * Measures the cells' heights and widths, separated between dynamic and static
+     */
+    #measure_content({context=canvas_context}={}) {
+        const cache = this.#cache;
+        /**
+         * @type {{
+         *  heights: {static: number, dynamic: number,}[],
+         *  widths: {static: number, dynamic: number,}[],
+         *  widest_row: number,
+         *  content: {content: string[], width: number, color: string, cols: number[], image?: HTMLImageElement}[][],
+         * }}
+         */
+        const measures = {
+            heights: [],
+            widths: [],
+            content: [],
+        };
+        const widest_row = measures.widest_row = this.#content.map(row => {
+            return row.map(c => c.width ?? 1).reduce((l, w) => l + w, 0);
+        }).sort((a, b) => a - b)[0];
+        const max_cell_width = display_size.width / widest_row;
+        const default_color = theme('pane_color_fill');
+
+        this.#content.forEach((row, ri) => {
+            const row_refresh = !(ri in cache.heights.static) || (ri in cache.heights.dynamic && cache.heights.dynamic[ri] > 0);
+            const height = measures.heights[ri] ??= {static: cache.heights.static[ri] ?? 0, dynamic: 0};
+            const mapped_row = measures.content[ri] ??= [];
+
+            if (row_refresh) {
+                let column = 0;
+                row.forEach((cell, ci) => {
+                    let {content} = cell;
+                    const {width=1} = cell;
+                    const dynamic = content.some(c => typeof c == 'function');
+                    /** @type {'dynamic'|'static'} */
+                    const type = dynamic ? 'dynamic' : 'static';
+                    /** @type {number[]} */
+                    const cols = [];
+                    for (let i = 0; i < width; i++) {
+                        cols.push(column + i);
+                    }
+                    column += width;
+                    const cell_refresh = row_refresh || !(ri in cache.heights) || dynamic || cols.some(c => !(c in cache.widths[type]));
+                    /** @type {{content: string[], width: number, color: string, image?: HTMLImageElement}} */
+                    const cached_cell = {
+                        width,
+                        cols,
+                        color: cell.color ?? default_color,
+                        content: content.map(c => typeof c == 'function' ? c() : c),
+                    };
+                    if ('image' in cell) {
+                        let {image} = cell;
+                        if (image && !(image instanceof Image)) {
+                            const i = new Image;
+                            i.src = image;
+                            cell.image = image = i;
+                        }
+                        cached_cell.image = image;
+                    }
+
+                    if (cell_refresh) {
+                        const mapped = cached_cell.content;
+
+                        const saved_widths = cols.map(c => measures.widths[c] ??= {static: 0, dynamic: 0});
+                        const text_width = Math.min(max_cell_width, Math.max(...mapped.map(c => context.measureText(c.replaceAll(regex_modifier, '')).width )) / width + 10);
+                        const text_height = mapped.map(c => cut_lines(c, {context, max_width: max_cell_width}).length)
+                            .reduce((h, c) => h + c, 0);
+
+                        height[type] = Math.max(height[type], text_height);
+                        saved_widths.forEach(w => w[type] = Math.max(w[type], text_width));
+                    }
+                    mapped_row[ci] = cached_cell;
+                });
+            }
+        });
+
+        return measures;
+    }
+
+    /**
      * Calculates the widths of the content table columns
      */
     table_widths({context=canvas_context}={}) {
-        if (!this.#cut_content) this.#cut_content_lines({context});
-        if (!this.#cut_content) return;
-        // Turn rows into columns of cells
-        const columns = array_group_by(this.#cut_content.map(row => {
-            return row.map(/** @return {[CachedPaneCell, number][]} */(c, i) => {
-                let width = c.width ?? 1;
-                let cols = [];
-                for (let j = i; j < i + width; j++) cols.push([c, j]);
-                return cols;
-            });
-        }).flat(2), ([_, i]) => i);
-
-        const widths = [0];
-        for (let [i, column] of columns) {
-            widths[i] = Math.max(...column.map(([{content, width=1}]) => {
-                return Math.max(...content.map(text => (context.measureText(text.replace(regex_modifier, '')).width + 10) / width));
-            }));
-        }
-        return widths;
+        return this.#measure_content({context}).widths.map(w => Math.max(w.static, w.dynamic));
     }
 
     /**
      * Calculates the heights of the content table rows
      */
     table_heights() {
-        if (!this.#cut_content) this.#cut_content_lines({context});
-        if (!this.#cut_content) return;
-
-        const heights = [0];
-        for (let [i, row] of Object.entries(this.#cut_content)) {
-            heights[i] = Math.max(...row.map(({content}) => (content.length + .5) * theme('font_size')));
-        }
-        return heights;
+        return this.#measure_content().heights.map(h => (Math.max(h.static, h.dynamic) + .5) * theme('font_size'));
     }
 
     /**
@@ -359,13 +436,6 @@ export class Pane {
      * @param {MouseEvent} event
      */
     drag(x, y, x_diff, y_diff, event) {
-        if (this.#pinned) {
-            x += display_size.width / 2 - globals.position[0];
-            y += display_size.height / 2 - globals.position[1];
-        }
-        x -= this.x;
-        y -= this.y;
-
         this.#x += x_diff;
         this.#y += y_diff;
     }
@@ -470,5 +540,133 @@ export class Pane {
                 });
             });
         });
+    }
+
+    /**
+     * Draws the changed parts of the pane
+     *
+     * @param {Object} [params]
+     * @param {CanvasRenderingContext2D} [params.context]
+     */
+    nw_draw({context=canvas_context}={}) {
+        let {x, y} = this;
+        const cache = this.#cache;
+        const {widths, heights, widest_row, content} = this.#measure_content({context});
+        const width = widths.reduce((w, width) => w + Math.max(width.dynamic, width.static), 0);
+        const height = heights.reduce((h, height) => h + Math.max(height.dynamic, height.static), 0);
+        if (!this.#pinned) {
+            x += display_size.width / 2 - globals.position[0];
+            y += display_size.height / 2 - globals.position[1];
+        }
+        const complete_redraw = x != cache.x || y != cache.y ||
+            widest_row != cache.widest_row ||
+            width != cache.width || height != cache.height;
+        const font_size = theme('font_size');
+
+        if (complete_redraw) {
+            context.strokeStyle = theme('pane_color_border');
+            context.beginPath();
+            context.moveTo(x, y);
+            context.lineTo(x + width, y);
+            context.lineTo(x + width, y + (height + heights.length / 2) * font_size);
+            context.lineTo(x, y + (height + heights.length / 2) * font_size);
+            context.lineTo(x, y);
+            context.stroke();
+            context.closePath();
+        }
+
+        /** @type {number[]} */
+        const rows_redrawn = [];
+        const rows_checks = [
+            () => complete_redraw,
+            () => rows_redrawn.length > 0,
+            /** @param {number} i */
+            i => {
+                const {dynamic: mhd, static: mhs} = heights[i];
+                const chd = cache.heights.dynamic[i];
+                const chs = cache.heights.static[i];
+                return Math.max(mhd, mhs) != Math.max(chd, chs);
+            },
+        ];
+        for (let i = 0; i < heights.length; i++) {
+            if (rows_checks.some(c => c(i))) rows_redrawn.push(i);
+        }
+        /** @type {number[]} */
+        const cols_redrawn = [];
+        const cols_checks = [
+            () => complete_redraw,
+            () => cols_redrawn.length > 0,
+            /** @param {number} i */
+            i => {
+                const {dynamic: mwd, static: mws} = widths[i];
+                const cwd = cache.widths.dynamic[i];
+                const cws = cache.widths.static[i];
+                return Math.max(mwd, mws) != Math.max(cwd, cws);
+            },
+        ];
+        for (let i = 0; i < widths.length; i++) {
+            if (cols_checks.some(c => c(i))) cols_redrawn.push(i);
+        }
+
+        content.forEach((row, ri) => {
+            const redraw_row = rows_redrawn.includes(ri);
+            const py = y + heights.filter((_, i) => i < ri).reduce((s, h) => s + Math.max(h.dynamic, h.static) + .5, 0) * font_size;
+            const height = Math.max(heights[ri].dynamic, heights[ri].static);
+            const cache_row = (cache.cells[ri] ??= []);
+
+            row.forEach((cell, ci) => {
+                const redraw_cell = redraw_row || cols_redrawn.includes(ci) ||
+                    !(cache_row[ci] ??= {}).content ||
+                    JSON.stringify(cell.content) != JSON.stringify(cache.cells[ri][ci].content);
+
+                if (!redraw_cell) return;
+
+                const px = x + widths.filter((_, i) => i < ci).reduce((s, w) => s + Math.max(w.dynamic, w.static), 0);
+                //const width = Math.max(widths[ci].dynamic, widths[ci].static);
+                const width = cell.cols.map(c => Math.max(widths[c].dynamic, widths[c].static))
+                    .reduce((s, w) => s + w, 0);
+                const background = cell.color;
+
+                context.strokeStyle = theme('pane_color_border');
+                context.fillStyle = background;
+                context.beginPath();
+                context.moveTo(px, py);
+                context.lineTo(px + width, py);
+                context.lineTo(px + width, py + (height + .5) * font_size);
+                context.lineTo(px, py + (height + .5) * font_size);
+                context.lineTo(px, py);
+                context.fill();
+                context.stroke();
+                context.closePath();
+
+                let tx = px;
+                let ty = py;
+                if (cell.image) {
+                    context.drawImage(cell.image, tx, ty, theme('font_size') * 1.25, theme('font_size') * 1.25);
+                    tx += theme('font_size');
+                }
+                tx += 5;
+
+                cell.content.forEach(t => {
+                    canvas_write(t, tx, ty, {context});
+                    ty += theme('font_size');
+                });
+
+                (cache_row[ci] ?? {}).content = cell.content;
+            });
+        });
+    }
+
+    /** Clears the pane's cache */
+    clear_cache() {
+        const cache = this.#cache;
+        cache.x = this.x;
+        cache.y = this.y;
+        cache.cells = [];
+        cache.height = 0;
+        cache.heights = {static: [], dynamic: []};
+        cache.widest_row = 0;
+        cache.width = 0;
+        cache.widths = {static: [], dynamic: []};
     }
 }

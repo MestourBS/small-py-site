@@ -20,6 +20,7 @@ import { beautify, number_between, stable_pad_number } from './primitives.js';
 //todo include global tabs heights in is_visible
 //todo don't move pane on upgrade
 //todo reopen upgrade pane if further upgrading is possible
+//todo slightly change display based on level
 //todo? fill with image instead of color if available
 //todo? fillmodes for different materials (theorically possible)
 
@@ -341,7 +342,7 @@ export class StorageMachine extends Machine {
                 content: [gettext('cidle_storage_contents')],
             }],
             ...Object.entries(this.resources).map(([res, data]) => {
-                const {color, background_color, name, image} = Resource.resource(res);
+                const {color, background_color, name, picture: image} = Resource.resource(res);
                 const get_amount = () => {
                     let amount = beautify(data.amount);
                     if (data.amount < data.max) amount = stable_pad_number(amount);
@@ -413,7 +414,7 @@ export class StorageMachine extends Machine {
         const id = this.index == -1 ? this.id : this.index;
         const pane_id = `${globals.game_tab}_maker_${id}_upgrade_pane`;
         const title = gettext('games_cidle_machine_upgrading', {obj: this.name});
-        const next_mult = this.#level_formula(this.level + 1);
+        const mult = this.#level_formula(this.level + 1) / this.#level_formula(this.level);
         /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
         const content = [
             [{
@@ -421,7 +422,7 @@ export class StorageMachine extends Machine {
                 click: [() => this.upgrade()],
             }],
             ...costs.map(([res, cost]) => {
-                const {color, background_color, name, image} = Resource.resource(res);
+                const {color, background_color, name, picture: image} = Resource.resource(res);
                 const cost_func = () => {
                     const {amount} = StorageMachine.stored_resource(res);
                     const can_afford = amount >= cost;
@@ -444,7 +445,7 @@ export class StorageMachine extends Machine {
             }),
             [{content: [gettext('games_cidle_machine_changes')]}],
             ...Object.entries(this.#resources).map(([res, {max}]) => {
-                const {color, background_color, name, image} = Resource.resource(res);
+                const {color, background_color, name, picture: image} = Resource.resource(res);
                 const c_max = this.resources[res].max;
 
                 return [{
@@ -452,7 +453,7 @@ export class StorageMachine extends Machine {
                     color: background_color,
                     image,
                 }, {
-                    content: [`{color:${color}}${beautify(c_max)} ⇒ ${beautify(max * next_mult)}`],
+                    content: [`{color:${color}}${beautify(c_max)} ⇒ ${beautify(c_max * mult)}`],
                     color: background_color,
                 }];
             }),
@@ -516,14 +517,22 @@ export class StorageMachine extends Machine {
             if (y == null) return;
             y += display_size.height / 2 - globals.position[1];
         }
+        const {radius} = this;
 
         if (transparent) context.globalAlpha = .5;
 
+        context.save();
         context.fillStyle = theme('storage_color_fill');
         context.beginPath();
-        context.arc(x, y, this.radius, 0, 2 * Math.PI);
-        context.fill();
+        context.arc(x, y, radius, 0, 2 * Math.PI);
+        if (this.image) {
+            context.clip();
+            context.drawImage(this.image, x - radius, y - radius, radius * 2, radius * 2);
+        } else {
+            context.fill();
+        }
         context.closePath();
+        context.restore();
 
         if (this.moving && !transparent) context.setLineDash([5]);
         context.lineWidth = 1.5;
@@ -535,6 +544,8 @@ export class StorageMachine extends Machine {
             const res_id = keys[i];
             const {amount, max} = this.resources[res_id];
             const resource = Resource.resource(res_id);
+            /** @type {HTMLImageElement|false} */
+            const image = this.image ?? resource.fill_image ?? false;
 
             /**
              * Number between 0 and 1 (both inclusive) that determines
@@ -550,7 +561,7 @@ export class StorageMachine extends Machine {
                 default:
                     funcs.push(
                         ['moveTo', [x, y]],
-                        ['arc', [x, y, this.radius * fill, start_angle, end_angle]],
+                        ['arc', [x, y, radius * fill, start_angle, end_angle]],
                         ['lineTo', [x, y]],
                     );
                     break;
@@ -565,7 +576,7 @@ export class StorageMachine extends Machine {
                     }
                     funcs.push(
                         ['moveTo', [x, y]],
-                        ['arc', [x, y, this.radius, clock_start, clock_end]],
+                        ['arc', [x, y, radius, clock_start, clock_end]],
                         ['lineTo', [x, y]],
                     );
                     break;
@@ -574,21 +585,21 @@ export class StorageMachine extends Machine {
                     funcs.push(
                         ['globalAlpha', [transparency_alpha]],
                         ['moveTo', [x, y]],
-                        ['arc', [x, y, this.radius, start_angle, end_angle]],
+                        ['arc', [x, y, radius, start_angle, end_angle]],
                         ['lineTo', [x, y]],
                     );
                     break;
                 case 'linear':
-                    let linear_y = this.radius * (1 - 2 * fill);
-                    const linear_angle_start = Math.asin(linear_y / this.radius);
-                    let linear_x = Math.cos(linear_angle_start) * this.radius;
-                    let linear_angle_end = Math.acos(-linear_x / this.radius) * Math.sign(linear_y);
+                    let linear_y = radius * (1 - 2 * fill);
+                    const linear_angle_start = Math.asin(linear_y / radius);
+                    let linear_x = Math.cos(linear_angle_start) * radius;
+                    let linear_angle_end = Math.acos(-linear_x / radius) * Math.sign(linear_y);
                     if (fill == 1) linear_angle_end = linear_angle_start + Math.PI * 2;
                     linear_x += x;
                     linear_y += y;
                     funcs.push(
                         ['moveTo', [linear_x, linear_y]],
-                        ['arc', [x, y, this.radius, linear_angle_start, linear_angle_end]],
+                        ['arc', [x, y, radius, linear_angle_start, linear_angle_end]],
                         ['lineTo', [linear_x, linear_y]],
                     );
                     break;
@@ -596,8 +607,8 @@ export class StorageMachine extends Machine {
                     const rhombus_corners = [0, 1, 2].map(n => n / 2 * Math.PI);
                     const rhombus_angle_point = angle => {
                         let [px, py] = angle_to_rhombus_point(angle);
-                        px = px * this.radius * fill + x;
-                        py = py * this.radius * fill + y;
+                        px = px * radius * fill + x;
+                        py = py * radius * fill + y;
                         return [px, py];
                     };
                     const rhombus_points = [
@@ -624,9 +635,9 @@ export class StorageMachine extends Machine {
                     context[func] = args[0];
                 }
             });
-            if (this.image) {
+            if (image) {
                 context.clip();
-                context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
+                context.drawImage(image, x - radius, y - radius, radius * 2, radius * 2);
             } else {
                 context.fill();
             }
@@ -635,7 +646,7 @@ export class StorageMachine extends Machine {
 
             context.strokeStyle = resource.border_color;
             context.beginPath();
-            context.arc(x, y, this.radius, start_angle, end_angle);
+            context.arc(x, y, radius, start_angle, end_angle);
             context.stroke();
             context.closePath();
         }
@@ -644,7 +655,7 @@ export class StorageMachine extends Machine {
         if (this.moving) context.setLineDash([]);
 
         if (upgrade_marker && this.can_upgrade) {
-            canvas_write('▲', x + this.radius, y, {text_align: 'right', base_text_color: theme('machine_upgrade_can_afford_fill')});
+            canvas_write('▲', x + radius, y, {text_align: 'right', base_text_color: theme('machine_upgrade_can_afford_fill')});
         }
 
         if (transparent) context.globalAlpha = 1;
@@ -728,6 +739,25 @@ export class StorageMachine extends Machine {
             this.click({shiftKey: false});
         }
     }
+
+    /**
+     * @param {number} [x]
+     * @param {number} [y]
+     * @returns {[keyof CanvasRenderingContext2D, any[]][]}
+     */
+    border_path(x=this.x, y=this.y) {
+        const {radius} = this;
+        return [['arc', [x, y, radius+1, -Math.PI / 2, 1.5 * Math.PI]]];
+    }
+
+    /**
+     * Returns the point at which the border starts
+     *
+     * @param {number} [x] X position override of the machine
+     * @param {number} [y] Y position override of the machine
+     * @returns {PointLike}
+     */
+    border_start(x = this.x, y = this.y) { return [x, y - this.radius]; }
 }
 export default StorageMachine;
 
@@ -804,13 +834,6 @@ export function make_storages() {
             resources: {
                 stone: {},
             },
-            upgrade_costs: (level) => {
-                if (level == 0) {
-                    if (StorageMachine.any_storage_for('copper')) return [['copper', 5]];
-                    return null;
-                }
-                return false;
-            },
         },
         {
             id: 'fire_pit',
@@ -822,9 +845,6 @@ export function make_storages() {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('brick')) return [['brick', 100]];
                     return null;
-                } else if (level == 1) {
-                    if (StorageMachine.any_storage_for('glass')) return [['glass', 500]];
-                    return null;
                 }
                 return false;
             },
@@ -834,13 +854,6 @@ export function make_storages() {
             name: gettext('games_cidle_storage_brick_pile'),
             resources: {
                 brick: {max: 512},
-            },
-            upgrade_costs: (level) => {
-                if (level == 0) {
-                    if (StorageMachine.any_storage_for('copper')) return [['copper', 15]];
-                    return null;
-                }
-                return false;
             },
         },
         {
@@ -856,27 +869,13 @@ export function make_storages() {
             resources: {
                 water: {}
             },
-            upgrade_costs: (level) => {
-                if (level == 0) {
-                    if (StorageMachine.any_storage_for('copper')) return [['copper', 5]];
-                    return null;
-                }
-                return false;
-            },
             fillmode: 'transparency',
         },
         {
-            id: 'copper_crate',
-            name: gettext('games_cidle_storage_copper_crate'),
+            id: 'ore_crate',
+            name: gettext('games_cidle_storage_ore_crate'),
             resources: {
-                copper: {max: 100},
-            },
-            upgrade_costs: (level) => {
-                if (level == 0) {
-                    if (StorageMachine.any_storage_for('magic')) return [['magic', 5]];
-                    return null;
-                }
-                return false;
+                ore: {},
             },
         },
         {
@@ -886,82 +885,6 @@ export function make_storages() {
                 sand: {},
             },
         },
-        {
-            id: 'glass_container',
-            name: gettext('games_cidle_storage_glass_container'),
-            resources: {
-                glass: {},
-            },
-        },
-        {
-            id: 'gold_crate',
-            name: gettext('games_cidle_storage_gold_crate'),
-            resources: {
-                gold: {max: 100},
-            },
-            upgrade_costs: (level) => {
-                if (level == 0) {
-                    if (StorageMachine.any_storage_for('magic')) return [['magic', 15]];
-                    return null;
-                }
-                return false;
-            },
-        },
-        {
-            id: 'tin_crate',
-            name: gettext('games_cidle_storage_tin_crate'),
-            resources: {
-                tin: {max: 100},
-            },
-            upgrade_costs: (level) => {
-                if (level == 0) {
-                    if (StorageMachine.any_storage_for('magic')) return [['magic', 5]];
-                    return null;
-                }
-                return false;
-            },
-        },
-        {
-            id: 'bronze_crate',
-            name: gettext('games_cidle_storage_bronze_crate'),
-            resources: {
-                bronze: {max: 100},
-                tin: {max: 50},
-                copper: {max: 50},
-            },
-            upgrade_costs: (level) => {
-                if (level == 0) {
-                    if (StorageMachine.any_storage_for('magic')) return [['magic', 15]];
-                    return null;
-                }
-                return false;
-            },
-        },
-        {
-            id: 'ocean_box',
-            name: gettext('games_cidle_storage_ocean_box'),
-            resources: {
-                water: {max: 500},
-                aquamarine: {max: 10},
-                blazing_aquamarine: {max: 10},
-            },
-            fillmode: 'rhombus',
-            upgrade_costs: (level) => {
-                if (level == 0) {
-                    if (StorageMachine.any_storage_for('magic')) return [['magic', 81]];
-                    return null;
-                }
-                return false;
-            },
-        },
-        {
-            id: 'magic_crystal',
-            name: gettext('games_cidle_storage_magic_crystal'),
-            resources: {
-                magic: {max: 243},
-            },
-            level_formula: (level) => 3 ** (level / 2),
-        },
         // Time storages
         {
             id: 'giant_clock',
@@ -969,25 +892,7 @@ export function make_storages() {
             resources: {
                 time: {max: 60 * 60},
             },
-            upgrade_costs: (level) => {
-                if (level == 0) {
-                    if (StorageMachine.any_storage_for('gold')) return [['gold', 60]];
-                    return null;
-                } else if (level == 1) {
-                    if (StorageMachine.any_storage_for('bronze')) return [['bronze', 15]];
-                    return null;
-                }
-                return false;
-            },
             fillmode: 'clockwise',
-        },
-        {
-            id: 'rewinding_contraption',
-            name: gettext('games_cidle_storage_rewinding_contraption'),
-            resources: {
-                time: {max: 6 * 60 * 60},
-            },
-            fillmode: 'counterclockwise',
         },
         // Space storages
         {

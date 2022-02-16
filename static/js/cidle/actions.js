@@ -318,7 +318,7 @@ function drag_inventory(x, y, x_diff, y_diff, event) {
         return;
     }
 
-    const p = Pane.get_visible_panes(globals.game_tab).find(p => p.contains_point([x, y]));
+    const p = [...Pane.get_visible_panes(globals.game_tab)].reverse().find(p => p.contains_point([x, y]));
 
     if (p) {
         currently_dragging = p;

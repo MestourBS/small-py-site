@@ -12,7 +12,7 @@ import { save_data as save_globals, load_data as load_globals } from './globals.
 import { save_data as save_machines, load_data as load_machines } from './machine.js';
 import { coords_distance as distance } from './position.js';
 
-//todo spells
+//todo spells & curses
 //todo? achievements
 
 /** @type {number} */

@@ -1,7 +1,7 @@
 import { mouse_position } from './actions.js';
 import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
-import { check_can_afford, draw as draw_inventory } from './inventory.js';
+import { check_can_afford, clear_caches, draw as draw_inventory, unlock_recipes } from './inventory.js';
 import Machine from './machine.js';
 import { MakerMachine, time_speed } from './maker.js';
 import { Pane } from './pane.js';
@@ -17,7 +17,7 @@ import StorageMachine, { space_boost } from './storage.js';
 //todo changelog tab
 //todo prevent flickering gain
 //todo unlockable tabs
-//todo reduce impact of resources tab
+//todo draw grid center
 
 /**
  * Canvas of the game
@@ -66,7 +66,7 @@ const game_tabs = {
         },
     },
     inventory: {
-        reset: true,
+        reset: false,
         name: gettext('games_cidle_tab_inventory'),
         /** @type {false|string[]} @private */
         _cut_name: false,
@@ -80,11 +80,13 @@ const game_tabs = {
             }
             return this._cut_name;
         },
-        draw: ({top=0}={}) => {
-            draw_inventory({context, top});
-            Pane.get_visible_panes('inventory').forEach(p => p.draw({context}));
+        draw: ({top=0}={}) => draw_inventory({context, top}),
+        click: event => {
+            clear_caches();
+            canvas_reset();
+            unlock_recipes();
+            check_can_afford();
         },
-        click: event => check_can_afford(),
     },
     resources: {
         reset: false,
@@ -105,9 +107,10 @@ const game_tabs = {
         /**
          * @type {{
          *  speed?: {amount?: number, height?: number},
-         *  space?: {amount?: number, height?: number},
+         *  space?: {text?: string, height?: number},
          *  resources?: {[resource: string]: {amount?: string, max?: string, per_second?: string, index?: number}},
          *  rows?: number,
+         *  widths?: {[k: string]: number},
          *  y?: number,
          * }}
          */
@@ -121,7 +124,8 @@ const game_tabs = {
             const speed = time_speed();
             const space = space_boost();
             const font_size = theme('font_size');
-            const dont_width = ['res'];
+            const dont_width = ['res', 'time'];
+            let draw_speed = false;
             /**
              * @type {{
              *  res: string,
@@ -172,14 +176,6 @@ const game_tabs = {
                 return {res, name, amount: a, max: m, per_second: ps};
             });
             const rows = Math.min(((speed != 1) + (space != 1)) * 2, 3) + table.length;
-            if (rows != data.rows || y != data.y) {
-                canvas_reset();
-                data.resources = {};
-                data.space = {};
-                data.speed = {};
-                data.rows = rows;
-                data.y = y;
-            }
 
             const max_width = display_size.width / (Object.keys(table[0]).length + (speed != 1) - dont_width.length);
 
@@ -191,11 +187,24 @@ const game_tabs = {
                 });
                 return widths;
             }, {});
+            const diff_widths = Object.entries(table_widths).some(([k, v]) => data.widths?.[k] != v);
+
+            // If something is different, reset it all
+            if (rows != data.rows || y != data.y || diff_widths) {
+                canvas_reset();
+                data.resources = {};
+                data.space = {};
+                data.speed = {};
+                data.rows = rows;
+                data.y = y;
+                data.widths = table_widths;
+            }
 
             // Show time speed
             if (speed != 1) {
                 data.speed ??= {};
                 if (data.speed.amount != speed) {
+                    draw_speed = true;
                     data.speed.amount = speed;
                     const speed_str = gettext('games_cidle_time_speed', {speed: beautify(speed)});
                     const cut_time_speed = cut_lines(speed_str);
@@ -207,10 +216,10 @@ const game_tabs = {
 
             // Show space multiplier
             if (space != 1) {
+                const space_str = gettext('games_cidle_space_boost', {space: beautify(space)});
                 data.space ??= {};
-                if (data.space.amount != space) {
-                    data.space.amount = space;
-                    const space_str = gettext('games_cidle_space_boost', {space: beautify(space)});
+                if (data.space.text != space_str) {
+                    data.space.text = space_str;
                     const cut_space_boost = cut_lines(space_str);
                     canvas_write(space_str, x, y);
                     data.space.height = (cut_space_boost.length + .5) * font_size;
@@ -221,7 +230,7 @@ const game_tabs = {
             // Space between timespace bonuses and the rest
             if (speed != 1 || space != 1) y += font_size;
 
-
+            // Draw resources
             table.forEach((res_data, i) => {
                 const {res, amount, max, per_second} = res_data;
                 const own_data = (data.resources[res] ??= {});
@@ -249,8 +258,17 @@ const game_tabs = {
 
                     data_x += width;
                 });
-                if (speed != 1 && res != 'time' && per_second) {
-                    canvas_write(`x${beautify(speed)}`, data_x, y, {base_text_color: color});
+                if (draw_speed && speed != 1 && res != 'time' && per_second) {
+                    const speed_text = `x${beautify(speed)}`;
+
+                    const width = context.measureText(speed_text).width + grid_spacing;
+
+                    if (background_color) {
+                        context.fillStyle = background_color;
+                        context.fillRect(data_x, y, width, height);
+                    }
+
+                    canvas_write(speed_text, data_x, y, {base_text_color: color});
                 }
 
                 y += height;
@@ -262,11 +280,13 @@ const game_tabs = {
         },
         click() {
             canvas_reset();
-            this.data.resources = {};
-            this.data.space = {};
-            this.data.speed = {};
-            this.data.rows = 0;
-            this.data.y = 0;
+            const data = this.data;
+            data.resources = {};
+            data.space = {};
+            data.speed = {};
+            data.rows = 0;
+            data.widths = {};
+            data.y = 0;
         },
     },
     help: {
@@ -406,7 +426,7 @@ export const grid_spacing = 50;
 /**
  * Empties the canvas display
  */
-function canvas_reset() {
+export function canvas_reset() {
     const width = canvas.parentElement.offsetWidth;
     const height = canvas.parentElement.offsetHeight - 25;
 

@@ -31,15 +31,24 @@ export class Resource {
      * @param {string} [params.color]
      * @param {string} [params.border_color]
      * @param {string?} [params.background_color]
-     * @param {string?} [params.image]
+     * @param {string?} [params.fill_image] Image serving as a fill override
+     * @param {string?} [params.picture] Image shown before the resource name
      */
-    constructor({id, name=null, color='#000', border_color='#000', background_color=null, image=null}) {
+    constructor({
+        id, name=null, color='#000', border_color='#000',
+        background_color=null, fill_image=null, picture=null,
+    }) {
         id += '';
         name = name?.toString() ?? '';
-        if (image != null) {
+        if (fill_image != null) {
             const i = new Image;
-            i.src = image;
-            image = i;
+            i.src = fill_image;
+            fill_image = i;
+        }
+        if (picture != null) {
+            const i = new Image;
+            i.src = picture;
+            picture = i;
         }
 
         this.#id = id + '';
@@ -47,7 +56,8 @@ export class Resource {
         this.#color = color;
         this.#background_color = background_color;
         this.#border_color = border_color;
-        this.#image = image;
+        this.#fill_image = fill_image;
+        this.#picture = picture;
 
         if (!(id in Resource.#resources)) {
             Resource.#resources[id] = this;
@@ -60,14 +70,17 @@ export class Resource {
     #border_color;
     #background_color;
     /** @type {null|HTMLImageElement} */
-    #image;
+    #fill_image;
+    /** @type {null|HTMLImageElement} */
+    #picture;
 
     get id() { return this.#id; }
     get name() { return this.#name; }
     get color() { return this.#color; }
     get border_color() { return this.#border_color; }
     get background_color() { return this.#background_color; }
-    get image() { return this.#image; }
+    get fill_image() { return this.#fill_image; }
+    get picture() { return this.#picture; }
 }
 export default Resource;
 
@@ -79,7 +92,7 @@ export function make_resources() {
      *  color?: string,
      *  border_color?: string,
      *  background_color?: string,
-     *  image?: string|null,
+     *  fill_image?: string|null,
      * }[]}
      */
     const resources = [
@@ -120,60 +133,17 @@ export function make_resources() {
             border_color: '#0000E6',
         },
         {
-            id: 'copper',
-            name: gettext('games_cidle_resource_copper'),
-            color: '#B87333',
-            border_color: '#A4672D',
+            id: 'ore',
+            name: gettext('games_cidle_resource_ore'),
+            color: '#9ABCDE',
+            border_color: '#87AFD8',
+            fill_image: '/static/images/games/cidle/ore.png',
         },
         {
             id: 'sand',
             name: gettext('games_cidle_resource_sand'),
             color: '#EDC9AF',
             border_color: '#E8BB9A',
-        },
-        {
-            id: 'glass',
-            name: gettext('games_cidle_resource_glass'),
-            color: '#FFF',
-            border_color: '#F2F2F2',
-            background_color: '#CCC',
-        },
-        {
-            id: 'gold',
-            name: gettext('games_cidle_resource_gold'),
-            color: '#FFD700',
-            border_color: '#E6C200',
-        },
-        {
-            id: 'tin',
-            name: gettext('games_cidle_resource_tin'),
-            color: '#99D',
-            border_color: '#8686D7',
-        },
-        {
-            id: 'bronze',
-            name: gettext('games_cidle_resource_bronze'),
-            color: '#CD7F32',
-            border_color: '#B9722D',
-        },
-        {
-            id: 'aquamarine',
-            name: gettext('games_cidle_resource_aquamarine'),
-            color: '#7FFFD4',
-            border_color: '#66FFCB',
-            background_color: '#44CCA9',
-        },
-        {
-            id: 'blazing_aquamarine',
-            name: gettext('games_cidle_resource_blazing_aquamarine'),
-            color: '#BEBB6A',
-            border_color: '#B6B358',
-        },
-        {
-            id: 'magic',
-            name: gettext('games_cidle_resource_magic'),
-            color: '#70F',
-            border_color: '#6B00E6',
         },
         // Time resources
         {
@@ -188,7 +158,7 @@ export function make_resources() {
             name: gettext('games_cidle_resource_space'),
             color: '#000',
             border_color: '#0C0C0C',
-            image: '/static/images/games/cidle/space.png',
+            fill_image: '/static/images/games/cidle/space.png',
         },
     ];
 
