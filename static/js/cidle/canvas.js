@@ -12,6 +12,7 @@ import StorageMachine, { space_boost } from './storage.js';
  * @typedef {keyof game_tabs} GameTab
  */
 
+//todo sort resources by name, not by id
 //todo change draw to draw different parts of the canvas as required
 //todo show resources sources
 //todo changelog tab
@@ -661,7 +662,7 @@ export function canvas_write(lines, left, top, {
                                 let lightness = arg(2);
                                 if (isNaN(lightness)) lightness = '50'
                                 color = `hsl(${Date.now() / 10 % 360}, ${saturation}%, ${lightness}%)`;
-                            }
+                            } else if (color.toLowerCase() == 'random') color = '#' + Math.random().toString(16).slice(-6);
                             context.fillStyle = color;
                             break;
                         case 'italic':
