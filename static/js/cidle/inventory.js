@@ -8,7 +8,7 @@ import Resource from './resource.js';
 import { beautify, stable_pad_number } from './primitives.js';
 import { coords_distance as distance } from './position.js';
 
-//todo further improve performances by drawing only over panes places
+//todo further improve performances by drawing only after panes movements (use context.clip)
 //todo find out why there is an added space at the top when reloading in
 //todo move panes when unlocked
 //todo resource crafting
@@ -395,6 +395,8 @@ const recipes = {
                         cost = [['stone', c ** 2 * 500], ['wood', c * 500]];
                     } else if (c <= 9) {
                         if (StorageMachine.any_storage_for('brick')) cost = [['brick', (c - 3) ** 2 * 150], ['wood', c * 500]];
+                    } else if (c <= 15) {
+                        if (StorageMachine.any_storage_for('brick')) cost = [['brick', (c - 3) ** 2 * 150], ['copper', (c - 9) * 50]];
                     }
                     costs[0] = cost;
                 }
@@ -423,6 +425,28 @@ const recipes = {
             unlocked: () => recipes.machines['stone_miner'].crafted?.reduce((s, n) => s + n, 0) > 0,
             position: 4,
         },
+        'wood_burner': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    /** @type {[string, number][]|false} */
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['wood', c * 200 + 1_000], ['stone', c ** 2 * 500 + 1_500]];
+                    } else if (c <= 10) {
+                        if (StorageMachine.any_storage_for('brick')) cost = [['wood', c * 200 + 1_000], ['brick', c ** 2 * 100 + 450]];
+                    } else if (c <= 13) {
+                        if (StorageMachine.any_storage_for('copper')) cost = [['copper', c * 20 + 100], ['brick', c ** 2 * 100 + 450]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('fire'),
+            position: 5,
+        },
         'water_bucket': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
@@ -438,27 +462,7 @@ const recipes = {
                 return costs;
             },
             unlocked: () => recipes.machines['stone_miner'].crafted?.reduce((s, n) => s + n, 0) > 0,
-            position: 5,
-        },
-        'wood_burner': {
-            resources: crafted => {
-                /** @type {([string, number][]|false)[]} */
-                const costs = [];
-                { // 0
-                    const c = crafted[0] ?? 0;
-                    /** @type {[string, number][]|false} */
-                    let cost = false;
-                    if (c <= 5) {
-                        cost = [['wood', c * 200 + 1_000], ['stone', c ** 2 * 500 + 1_500]];
-                    } else if (c <= 10) {
-                        if (StorageMachine.any_storage_for('brick')) cost = [['wood', c * 200 + 1_000], ['brick', c ** 2 * 100 + 450]];
-                    }
-                    costs[0] = cost;
-                }
-                return costs;
-            },
-            unlocked: () => StorageMachine.any_storage_for('fire'),
-            position: 5,
+            position: 6,
         },
         'water_well': {
             resources: crafted => {
@@ -471,6 +475,8 @@ const recipes = {
                         cost = [['wood', c * 500 + 1_000], ['stone', 500 * c + 1_500]];
                     } else if (c <= 7) {
                         if (StorageMachine.any_storage_for('brick')) cost = [['wood', c * 250 + 1_000], ['brick', 150 * c + 250]];
+                    } else if (c <= 10) {
+                        if (StorageMachine.any_storage_for('copper')) cost = [['copper', (c - 5) * 75 + 75], ['brick', 150 * c + 250]];
                     }
                     costs[0] = cost;
                 }
@@ -543,6 +549,8 @@ const recipes = {
                     let cost = false;
                     if (c <= 5) {
                         cost = [['stone', c * 400 + 2_000], ['brick', 128 * 2 ** c + 256]];
+                    } else if (c <= 10) {
+                        if (StorageMachine.any_storage_for('copper')) cost = [['copper', (c - 5) * 25 + 75], ['brick', 128 * 2 ** c + 256]];
                     }
                     costs[0] = cost;
                 }
@@ -568,6 +576,25 @@ const recipes = {
             unlocked: () => recipes.machines['rock_crusher'].crafted?.reduce((s, n) => s + n, 0) > 0,
             position: 12,
         },
+        'gravel_washer': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 0) {
+                        cost = [['stone', c * 500 + 2_000], ['brick', 128 * 2 ** c + 256]];
+                    } else if (c <= 5) {
+                        if (StorageMachine.any_storage_for('copper')) cost = [['copper', c * 100 + 100], ['brick', 128 * 2 ** c + 256]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('ore'),
+            position: 13,
+        },
         'sand_box': {
             resources: crafted => {
                 /** @type {([string, number][]|false)[]} */
@@ -583,23 +610,6 @@ const recipes = {
                 return costs;
             },
             unlocked: () => recipes.machines['rock_crusher'].crafted?.reduce((s, n) => s + n, 0) > 0,
-            position: 13,
-        },
-        'gravel_washer': {
-            resources: crafted => {
-                /** @type {([string, number][]|false)[]} */
-                const costs = [];
-                { // 0
-                    const c = crafted[0] ?? 0;
-                    let cost = false;
-                    if (c <= 0) {
-                        cost = [['stone', c * 500 + 2_000], ['brick', 128 * 2 ** c + 256]];
-                    }
-                    costs[0] = cost;
-                }
-                return costs;
-            },
-            unlocked: () => StorageMachine.any_storage_for('ore'),
             position: 14,
         },
         'gravel_crusher': {
@@ -611,6 +621,8 @@ const recipes = {
                     let cost = false;
                     if (c <= 5) {
                         cost = [['brick', 128 * 1.5 ** c + 256]];
+                    } else if (c <= 10) {
+                        if (StorageMachine.any_storage_for('copper')) cost = [['copper', 75 * 2 ** ((c - 4) / 2) + 75], ['brick', 256 * c + 512]];
                     }
                     costs[0] = cost;
                 }
@@ -618,6 +630,40 @@ const recipes = {
             },
             unlocked: () => StorageMachine.any_storage_for('sand'),
             position: 15,
+        },
+        'copper_crate': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['brick', 64 * 2 ** c + 256]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('ore'),
+            position: 16,
+        },
+        'copper_melter': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['brick', 64 * c + 256], ['fire', 2 ** (c + 1)]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('copper'),
+            position: 17,
         },
         // Time machines
         'giant_clock': {
@@ -710,7 +756,7 @@ function init() {
             canvas_reset();
         } catch {}
         clear_caches();
-    }, 0);
+    }, 10);
 }
 /**
  * Makes a thing, or returns false
@@ -843,7 +889,7 @@ export function is_clickable(x, y, event) {
  * @param {number} [params.top]
  */
 export function draw({context=canvas_context, top=0}={}) {
-    const panes = Pane.get_visible_panes('inventory');
+    const panes = [...Pane.get_visible_panes('inventory')].reverse();
     const redraw_panes = panes.length != Object.keys(cache.panes ??= {}).length || panes.some((pane, i) => {
         const {id, x, y} = pane;
         if (!(id in cache.panes)) return true;
@@ -868,15 +914,21 @@ export function draw({context=canvas_context, top=0}={}) {
     inventory[subtab].draw({context, top});
 
     cache.panes = {};
-    panes.forEach((p, i) => {
-        if (redraw_panes) p.clear_cache();
-        p.nw_draw({context});
-        cache.panes[p.id] = {
-            x: p.x,
-            y: p.y,
-            index: i,
-            width: p.table_widths().reduce((s, w) => s + w, 0),
-            height: p.table_heights().reduce((s, h) => s + h, 0),
+    panes.forEach((pane, index) => {
+        const width = pane.table_widths().reduce((s, w) => s + w, 0);
+        const height = pane.table_heights().reduce((s, h) => s + h, 0);
+        const {x, y, id} = pane;
+
+        if (redraw_panes) pane.clear_cache();
+
+        pane.nw_draw({context});
+
+        cache.panes[id] = {
+            x,
+            y,
+            index,
+            width,
+            height,
         };
     });
 }

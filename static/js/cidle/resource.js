@@ -145,6 +145,12 @@ export function make_resources() {
             color: '#EDC9AF',
             border_color: '#E8BB9A',
         },
+        {
+            id: 'copper',
+            name: gettext('games_cidle_resource_copper'),
+            color: '#B87333',
+            border_color: '#A4672D',
+        },
         // Time resources
         {
             id: 'time',

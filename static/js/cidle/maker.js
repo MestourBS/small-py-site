@@ -13,11 +13,13 @@ import { array_group_by, beautify, number_between, stable_pad_number } from './p
  * @typedef {'fixed'|'scaling'} MakerType
  */
 
+//todo! fix scaling consumption again
 //todo change draw to draw different parts of the maker as required
 //todo change draw_connections to draw different connections as required
-//todo maker arrows start at edge
+//todo don't redraw same line multiple times
+//todo make arrows start at edge
 //todo move production to a single all consuming / producing function
-//todo draw production/consumption amounts for scaling
+//todo write production/consumption amounts for scaling
 //todo add move button to pane
 //todo faster arrows based on time speed
 //todo include global tabs heights in is_visible
@@ -1383,10 +1385,13 @@ export function make_makers() {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('stone')) return [['stone', 100]];
                     return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 50]];
+                    return null;
                 }
                 return false;
             },
-            max_level: 1,
+            max_level: 2,
         },
         {
             id: 'stone_miner',
@@ -1394,16 +1399,21 @@ export function make_makers() {
             produces: (level) => {
                 const production = [['stone', 2.5 ** level]];
 
+                if (level >= 2) production.push(['ore', 2 ** (level - 2) / 100, true]);
+
                 return production;
             },
             upgrade_costs: (level) => {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('brick')) return [['brick', 100]];
                     return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 100]];
+                    return null;
                 }
                 return false;
             },
-            max_level: 1,
+            max_level: 2,
         },
         {
             id: 'wood_burner',
@@ -1422,19 +1432,43 @@ export function make_makers() {
         {
             id: 'brick_furnace',
             name: gettext('games_cidle_maker_brick_furnace'),
-            produces: [[['brick', 1]], [['brick', 2]]],
-            consumes: [[['stone', 5], ['fire', 1]], [['stone', 5], ['fire', 1.5]]],
+            produces: (level) => [['brick', level + 1]],
+            consumes: (level) => [['stone', 5 + level * 2], ['fire', 1 + level / 2]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 100]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
         },
         {
             id: 'rock_crusher',
             name: gettext('games_cidle_maker_rock_crusher'),
             produces: (level) => [['gravel', level + 1]],
             consumes: (level) => [['stone', level * .15 + .1]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 15]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
         },
         {
             id: 'water_well',
             name: gettext('games_cidle_maker_water_well'),
-            produces: (level) => [['water', level / 4 + .5]],
+            produces: (level) => [['water', level / 2 + .5]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 5]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
         },
         {
             id: 'gravel_washer',
@@ -1454,7 +1488,21 @@ export function make_makers() {
             id: 'gravel_crusher',
             name: gettext('games_cidle_maker_gravel_crusher'),
             produces: (level) => [['sand', .5 + level / 10]],
-            consumes: (level) => [['gravel', 1]],
+            consumes: (level) => [['gravel', 1 + level / 10]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 25]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
+        },
+        {
+            id: 'copper_melter',
+            name: gettext('games_cidle_maker_copper_melter'),
+            produces: [[['copper', .1]]],
+            consumes: [[['ore', .1], ['fire', .5]]],
         },
         // Unpausable makers
         {

@@ -1,7 +1,8 @@
 import { number_between } from './primitives.js';
 /**
  * @typedef {{x: number, y: number}|{0: number, 1: number}|[number, number]} PointLike
- * @typedef {{x: number, y: number}} Point
+ * @typedef {{x: number, y: number, [Symbol.iterator]: () => Generator<number>}} Point
+ * @typedef {[Point, Point]} Line
  */
 
 /**
@@ -19,7 +20,13 @@ export function to_point(coords) {
         y = coords[1];
     }
 
-    return {x, y};
+    return {
+        x, y,
+        *[Symbol.iterator]() {
+            yield this.x;
+            yield this.y;
+        },
+    };
 }
 
 /**
@@ -40,7 +47,7 @@ export function coords_distance(pointa, pointb) {
  * Calculates a function that gives a parallel to a line
  *
  * @param {[PointLike, PointLike]} line
- * @returns {(vector: [number, number]) => [Point, Point]}
+ * @returns {(vector: [number, number]) => Line}
  */
 function parallel(line) {
     const [pointa, pointb] = line.map(to_point);
@@ -62,7 +69,7 @@ function parallel(line) {
  * Calculates a function that gives a parallel to a line on a perpendicular
  *
  * @param {[PointLike, PointLike]} line
- * @returns {(dist: number) => [Point, Point]}
+ * @returns {(dist: number) => Line}
  */
 export function parallel_perpendicular(line) {
     const [pointa, pointb] = line.map(to_point);
@@ -133,16 +140,18 @@ export function angle_to_rhombus_point(angle) {
  * @returns {boolean}
  */
 function lines_cross(linea, lineb) {
-    /** @type {[Point, Point]} */
+    if (linea == lineb) return true;
+
+    /** @type {Line} */
     let line_a = linea.map(l => to_point(l));
-    /** @type {[Point, Point]} */
+    /** @type {Line} */
     let line_b = lineb.map(l => to_point(l));
 
-    const [{x: x_1, y: y_1}, {x: x_2, y: y_2}] = line_a;
-    const [{x: x_3, y: y_3}, {x: x_4, y: y_4}] = line_b;
+    const [p1, p2] = line_a;
+    const [p3, p4] = line_b;
 
-    const u_a = ((x_4 - x_3) * (y_1 - y_3) - (y_4 - y_3) * (x_1 - x_3)) / ((y_4 - y_3) * (x_2 - x_1) - (x_4 - x_3) * (y_2 - y_1));
-    const u_b = ((x_2 - x_1) * (y_1 - y_3) - (y_2 - y_1) * (x_1 - x_3)) / ((y_4 - y_3) * (x_2 - x_1) - (x_4 - x_3) * (y_2 - y_1));
+    const u_a = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
+    const u_b = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / ((p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y));
 
     return number_between(u_a, 0, 1) && number_between(u_b, 0 ,1);
 }
@@ -165,7 +174,7 @@ export function line_crosses_rectangle(line, rect_x, rect_y, rect_width, rect_he
         to_point([rect_x + rect_width, rect_y + rect_height]),
         to_point([rect_x, rect_y + rect_height]),
     ];
-    /** @type {[Point, Point][]} */
+    /** @type {Line[]} */
     const lines = [
         [corners[0], corners[1]],
         [corners[1], corners[2]],

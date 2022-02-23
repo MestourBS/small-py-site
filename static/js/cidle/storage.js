@@ -329,7 +329,7 @@ export class StorageMachine extends Machine {
      */
     panecontents({event=null, upgrade_marker=true}={}) {
         const id = this.index == -1 ? this.id : this.index;
-        const pane_id = `${globals.game_tab}_maker_${id}_pane`;
+        const pane_id = `${globals.game_tab}_storage_${id}_pane`;
         /**
          * @type {{
          *  content: (string|() => string)[],
@@ -834,6 +834,13 @@ export function make_storages() {
             resources: {
                 stone: {},
             },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 10]];
+                    return null;
+                }
+                return false;
+            },
         },
         {
             id: 'fire_pit',
@@ -855,6 +862,13 @@ export function make_storages() {
             resources: {
                 brick: {max: 512},
             },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 30]];
+                    return null;
+                }
+                return false;
+            },
         },
         {
             id: 'gravel_box',
@@ -869,13 +883,27 @@ export function make_storages() {
             resources: {
                 water: {}
             },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 15]];
+                    return null;
+                }
+                return false;
+            },
             fillmode: 'transparency',
         },
         {
             id: 'ore_crate',
             name: gettext('games_cidle_storage_ore_crate'),
             resources: {
-                ore: {},
+                ore: {max: 100},
+            },
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('copper')) return [['copper', 75]];
+                    return null;
+                }
+                return false;
             },
         },
         {
@@ -883,6 +911,13 @@ export function make_storages() {
             name: gettext('games_cidle_storage_sand_box'),
             resources: {
                 sand: {},
+            },
+        },
+        {
+            id: 'copper_crate',
+            name: gettext('games_cidle_storage_copper_crate'),
+            resources: {
+                copper: {max: 100},
             },
         },
         // Time storages

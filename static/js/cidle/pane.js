@@ -2,7 +2,7 @@ import { display_size, context as canvas_context, cut_lines, canvas_write, regex
 import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
 import { rect_contains_point, to_point } from './position.js';
-import { array_group_by } from './primitives.js';
+import { number_between } from './primitives.js';
 /**
  * @typedef {import('./canvas.js').GameTab} GameTab
  * @typedef {import('./position.js').PointLike} PointLike
@@ -11,7 +11,7 @@ import { array_group_by } from './primitives.js';
  * @typedef {{content: string[], click?: (() => void)[], width?: number, color?: string, image?: HTMLImageElement}} CachedPaneCell
  */
 
-//todo reduce impact of functions
+//todo merge rectangles with 2 shared corners
 
 export class Pane {
     /** @type {{[id: string]: Pane}} */
@@ -158,6 +158,18 @@ export class Pane {
         },
         /** @type {{content: string[]}[][]} */
         cells: [],
+        /** @type {[number, number][][]} */
+        rectangles: [],
+        /**
+         * @type {{
+         *  id: string,
+         *  x: number,
+         *  y: number,
+         *  width: number,
+         *  height: number,
+         * }[]}
+         */
+        above_panes: [],
     };
 
     get x() { return this.#x; }
@@ -264,7 +276,7 @@ export class Pane {
                     column += width;
                     const cell_refresh = row_refresh || !(ri in cache.heights) || dynamic || cols.some(c => !(c in cache.widths[type]));
                     /** @type {{content: string[], width: number, color: string, image?: HTMLImageElement}} */
-                    const cached_cell = {
+                    const caching_cell = {
                         width,
                         cols,
                         color: cell.color ?? default_color,
@@ -277,11 +289,11 @@ export class Pane {
                             i.src = image;
                             cell.image = image = i;
                         }
-                        cached_cell.image = image;
+                        caching_cell.image = image;
                     }
 
                     if (cell_refresh) {
-                        const mapped = cached_cell.content;
+                        const mapped = caching_cell.content;
 
                         const saved_widths = cols.map(c => measures.widths[c] ??= {static: 0, dynamic: 0});
                         const text_width = Math.min(max_cell_width, Math.max(...mapped.map(c => context.measureText(c.replaceAll(regex_modifier, '')).width )) / width + 10);
@@ -291,9 +303,22 @@ export class Pane {
                         height[type] = Math.max(height[type], text_height);
                         saved_widths.forEach(w => w[type] = Math.max(w[type], text_width));
                     }
-                    mapped_row[ci] = cached_cell;
+                    mapped_row[ci] = caching_cell;
                 });
             }
+        });
+
+        measures.widths = measures.widths.map(({static: s, dynamic: d}, i) => {
+            const sta = Math.max(s, cache.widths.static[i] ?? 0);
+            const dynamic = Math.max(d, cache.widths.dynamic[i] ?? 0);
+
+            return {static: sta, dynamic};
+        });
+        measures.heights = measures.heights.map(({static: s, dynamic: d}, i) => {
+            const sta = Math.max(s, cache.heights.static[i] ?? 0);
+            const dynamic = Math.max(d, cache.heights.dynamic[i] ?? 0);
+
+            return {static: sta, dynamic};
         });
 
         return measures;
@@ -553,7 +578,7 @@ export class Pane {
         const cache = this.#cache;
         const {widths, heights, widest_row, content} = this.#measure_content({context});
         const width = widths.reduce((w, width) => w + Math.max(width.dynamic, width.static), 0);
-        const height = heights.reduce((h, height) => h + Math.max(height.dynamic, height.static), 0);
+        const height = heights.reduce((h, height) => h + Math.max(height.dynamic, height.static) + .5, 0) * theme('font_size');
         if (!this.#pinned) {
             x += display_size.width / 2 - globals.position[0];
             y += display_size.height / 2 - globals.position[1];
@@ -561,19 +586,31 @@ export class Pane {
         const complete_redraw = x != cache.x || y != cache.y ||
             widest_row != cache.widest_row ||
             width != cache.width || height != cache.height;
+        cache.x = x;
+        cache.y = y;
+        cache.widest_row = widest_row;
+        cache.width = width;
+        cache.height = height;
         const font_size = theme('font_size');
 
-        if (complete_redraw) {
-            context.strokeStyle = theme('pane_color_border');
-            context.beginPath();
-            context.moveTo(x, y);
-            context.lineTo(x + width, y);
-            context.lineTo(x + width, y + (height + heights.length / 2) * font_size);
-            context.lineTo(x, y + (height + heights.length / 2) * font_size);
-            context.lineTo(x, y);
-            context.stroke();
-            context.closePath();
-        }
+        const tab_panes = Pane.get_visible_panes(this.#tab);
+        const index = tab_panes.indexOf(this);
+        const above = tab_panes.filter((_, i) => i > index);
+        const above_changed = complete_redraw ||
+            !cache.rectangles.length ||
+            above.length != cache.above_panes.length ||
+            above.some(p => {
+                const ap = cache.above_panes.find(({id}) => id == p.id);
+                if (!ap || ap.x != p.x || ap.y != p.y) return true;
+
+                const width = p.table_widths({context}).reduce((s, w) => s + w, 0);
+                if (width != ap.width) return true;
+
+                const height = p.table_heights().reduce((s, h) => s + h, 0);
+                if (height != ap.height) return true;
+
+                return false;
+            });
 
         /** @type {number[]} */
         const rows_redrawn = [];
@@ -582,10 +619,13 @@ export class Pane {
             () => rows_redrawn.length > 0,
             /** @param {number} i */
             i => {
-                const {dynamic: mhd, static: mhs} = heights[i];
-                const chd = cache.heights.dynamic[i];
-                const chs = cache.heights.static[i];
-                return Math.max(mhd, mhs) != Math.max(chd, chs);
+                const {dynamic: measured_height_dyn, static: measured_height_sta} = heights[i];
+                const cached_height_dyn = cache.heights.dynamic[i];
+                const cached_height_sta = cache.heights.static[i];
+                const redraw = Math.max(measured_height_dyn, measured_height_sta) != Math.max(cached_height_dyn, cached_height_sta);
+                cache.heights.dynamic[i] = measured_height_dyn;
+                cache.heights.static[i] = measured_height_sta;
+                return redraw;
             },
         ];
         for (let i = 0; i < heights.length; i++) {
@@ -598,14 +638,173 @@ export class Pane {
             () => cols_redrawn.length > 0,
             /** @param {number} i */
             i => {
-                const {dynamic: mwd, static: mws} = widths[i];
-                const cwd = cache.widths.dynamic[i];
-                const cws = cache.widths.static[i];
-                return Math.max(mwd, mws) != Math.max(cwd, cws);
+                const {dynamic: measured_width_dyn, static: measured_width_sta} = widths[i];
+                const cached_width_dyn = cache.widths.dynamic[i];
+                const cached_width_sta = cache.widths.static[i];
+                const redraw = Math.max(measured_width_dyn, measured_width_sta) != Math.max(cached_width_dyn, cached_width_sta);
+                cache.widths.dynamic[i] = measured_width_dyn;
+                cache.widths.static[i] = measured_width_sta;
+                return redraw;
             },
         ];
         for (let i = 0; i < widths.length; i++) {
             if (cols_checks.some(c => c(i))) cols_redrawn.push(i);
+        }
+
+        /** @type {[number, number][][]} */
+        const rectangles = [];
+        if (above_changed) {
+            // It's rectangles all the way down!
+            /**
+             * @typedef Rectangle
+             * @prop {[number, number][]} corners
+             * @prop {number} min_x
+             * @prop {number} max_x
+             * @prop {number} min_y
+             * @prop {number} max_y
+             * @prop {boolean} hidden
+             */
+            /**
+             * @type {Rectangle[]}
+             */
+            const current_rects = [{
+                corners: [
+                    [x, y],
+                    [x + width, y],
+                    [x + width, y + height],
+                    [x, y + height],
+                ],
+                min_x: x,
+                max_x: x + width,
+                min_y: y,
+                max_y: y + height,
+                hidden: false,
+            }];
+            cache.above_panes = above.map(p => {
+                const {id, x, y} = p;
+                const width = p.table_widths({context}).reduce((s, w) => s + w, 0);
+                const height = p.table_heights().reduce((s, h) => s + h, 0);
+
+                return {id, x, y, width, height};
+            });
+
+            cache.above_panes.forEach(above => {
+                if (!current_rects.length) return;
+
+                const {x: ax, y: ay, width: aw, height: ah} = above;
+
+                current_rects.forEach(rect => {
+                    const {corners, hidden, min_x, max_x, min_y, max_y} = rect;
+                    if (hidden) return;
+
+                    // Overlaps a corner on this's <direction(s)>
+                    const corner_right = number_between(ax, min_x, max_x);
+                    const corner_left = number_between(ax + aw, min_x, max_x);
+                    const corner_down = number_between(ay, min_y, max_y);
+                    const corner_up = number_between(ay + ah, min_y, max_y);
+
+                    // Includes checks for non-corner overlaps
+                    const overlap_x = number_between(min_x, ax, ax + aw) ||
+                        number_between(max_x, ax, ax + aw) ||
+                        corner_right || corner_left;
+                    const overlap_y = number_between(min_y, ay, ay + ah) ||
+                        number_between(max_y, ay, ay + ah) ||
+                        corner_down || corner_up;
+
+                    if (!overlap_x || !overlap_y) return;
+
+                    // Cut the rectangle into smaller rectangles
+                    rect.hidden = true;
+
+                    const val_left = ax + aw;
+                    const val_right = ax;
+
+                    if (corner_left) {
+                        /** @type {Rectangle} */
+                        const rect_left = {
+                            corners: corners.map(([x, y]) => [Math.max(x, val_left), y]),
+                            max_x: Math.max(max_x, val_left),
+                            min_x, min_y, max_y,
+                        };
+                        current_rects.push(rect_left);
+                    }
+                    if (corner_right) {
+                        /** @type {Rectangle} */
+                        const rect_right = {
+                            corners: corners.map(([x, y]) => [Math.min(x, val_right), y]),
+                            min_x: Math.min(min_x, val_right),
+                            max_x, min_y, max_y,
+                        };
+                        current_rects.push(rect_right);
+                    }
+                    if (corner_down) {
+                        const val_down = ay;
+                        const c = corners.map(([x, y]) => [Math.max(val_right, Math.min(val_left, x)), Math.min(y, val_down)]);
+                        /** @type {Rectangle} */
+                        const rect_down = {
+                            corners: c,
+                            min_x: Math.min(...c.map(([x]) => x)),
+                            max_x: Math.max(...c.map(([x]) => x)),
+                            max_y: Math.max(...c.map(([,y]) => y)),
+                            min_y: Math.min(...c.map(([,y]) => y)),
+                        };
+                        current_rects.push(rect_down);
+                    }
+                    if (corner_up) {
+                        const val_up = ay + ah;
+                        const c = corners.map(([x, y]) => [Math.max(val_right, Math.min(val_left, x)), Math.max(y, val_up)]);
+                        /** @type {Rectangle} */
+                        const rect_up = {
+                            corners: c,
+                            min_x: Math.min(...c.map(([x]) => x)),
+                            max_x: Math.max(...c.map(([x]) => x)),
+                            max_y: Math.max(...c.map(([,y]) => y)),
+                            min_y: Math.min(...c.map(([,y]) => y)),
+                        };
+                        current_rects.push(rect_up);
+                    }
+                });
+
+                // Remove hidden rectangles
+                current_rects.filter(s => s.hidden).forEach(s => current_rects.splice(current_rects.indexOf(s), 1));
+            });
+
+            if (current_rects.length) {
+                current_rects.forEach(({corners: points}) => {
+                    points.push(points[0]);
+                    rectangles.push(points);
+                });
+            } else {
+                rectangles.push([[x, y]]);
+            }
+
+            cache.rectangles = rectangles;
+        } else {
+            rectangles.push(...cache.rectangles);
+        }
+
+        context.save();
+        context.beginPath();
+        rectangles.forEach(corners => {
+            context.moveTo(...corners[corners.length - 1]);
+            corners.forEach(c => {
+                if (!c) return;
+                context.lineTo(...c);
+            });
+        });
+        context.clip();
+        context.closePath();
+
+        if (complete_redraw) {
+            context.strokeStyle = theme('pane_color_border');
+            context.beginPath();
+            context.moveTo(x, y);
+            context.lineTo(x + width, y);
+            context.lineTo(x + width, y + height);
+            context.lineTo(x, y + height);
+            context.lineTo(x, y);
+            context.stroke();
+            context.closePath();
         }
 
         content.forEach((row, ri) => {
@@ -615,14 +814,15 @@ export class Pane {
             const cache_row = (cache.cells[ri] ??= []);
 
             row.forEach((cell, ci) => {
+                const cache_cell = (cache_row[ci] ??= {content: null});
                 const redraw_cell = redraw_row || cols_redrawn.includes(ci) ||
-                    !(cache_row[ci] ??= {}).content ||
-                    JSON.stringify(cell.content) != JSON.stringify(cache.cells[ri][ci].content);
+                    !cache_cell.content ||
+                    JSON.stringify(cell.content) != JSON.stringify(cache_cell.content);
+                cache_cell.content = cell.content;
 
                 if (!redraw_cell) return;
 
                 const px = x + widths.filter((_, i) => i < ci).reduce((s, w) => s + Math.max(w.dynamic, w.static), 0);
-                //const width = Math.max(widths[ci].dynamic, widths[ci].static);
                 const width = cell.cols.map(c => Math.max(widths[c].dynamic, widths[c].static))
                     .reduce((s, w) => s + w, 0);
                 const background = cell.color;
@@ -655,6 +855,8 @@ export class Pane {
                 (cache_row[ci] ?? {}).content = cell.content;
             });
         });
+
+        context.restore();
     }
 
     /** Clears the pane's cache */

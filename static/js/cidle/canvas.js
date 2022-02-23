@@ -109,7 +109,7 @@ const game_tabs = {
          * @type {{
          *  speed?: {amount?: number, height?: number},
          *  space?: {text?: string, height?: number},
-         *  resources?: {[resource: string]: {amount?: string, max?: string, per_second?: string, index?: number}},
+         *  resources?: {[resource: string]: {amount?: string, max?: string, per_second?: string, index?: number, name?: string}},
          *  rows?: number,
          *  widths?: {[k: string]: number},
          *  y?: number,
@@ -233,7 +233,7 @@ const game_tabs = {
 
             // Draw resources
             table.forEach((res_data, i) => {
-                const {res, amount, max, per_second} = res_data;
+                const {res, amount, max, per_second, name} = res_data;
                 const own_data = (data.resources[res] ??= {});
                 const redraw_all = own_data.index != i;
 
@@ -277,6 +277,7 @@ const game_tabs = {
                 own_data.index = i;
                 own_data.max = max;
                 own_data.per_second = per_second;
+                own_data.name = name;
             });
         },
         click() {
