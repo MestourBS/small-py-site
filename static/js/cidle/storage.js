@@ -1,11 +1,11 @@
-import { canvas_write, context as canvas_context, display_size } from './canvas.js';
+import { canvas_write, context as canvas_context, display_size, tabs_heights } from './canvas.js';
 import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
 import Machine from './machine.js';
 import { Pane } from './pane.js';
 import { coords_distance as distance, angle_to_rhombus_point, rect_contains_point } from './position.js';
 import Resource from './resource.js';
-import { beautify, number_between, stable_pad_number } from './primitives.js';
+import { beautify, number_between } from './primitives.js';
 /**
  * @typedef {import('./position.js').PointLike} PointLike
  * @typedef {keyof filltypes} FillType
@@ -15,25 +15,30 @@ import { beautify, number_between, stable_pad_number } from './primitives.js';
 //todo change draw to draw different parts of the storage as required
 //todo level-based resources value
 //todo add fill level support for images
-//todo add move button to pane
 //todo change linear fill to start at lowest point and end at highest
-//todo include global tabs heights in is_visible
-//todo don't move pane on upgrade
-//todo reopen upgrade pane if further upgrading is possible
-//todo slightly change display based on level
-//todo? fill with image instead of color if available
-//todo? fillmodes for different materials (theorically possible)
 
 const filltypes = {
     'fraction': {
         /** @param {number} amount @param {number} max */
         fill(amount, max) {
+            if (!isFinite(amount)) {
+                return 1;
+            }
+            if (!isFinite(max)) {
+                return 10 ** (Math.log10(amount) % 1 - 1);
+            }
             return amount / max;
         },
     },
     'logarithm': {
         /** @param {number} amount @param {number} max */
         fill(amount, max) {
+            if (!isFinite(amount)) {
+                return 1;
+            }
+            if (!isFinite(max)) {
+                return Math.log(amount) / Math.log(Number.MAX_VALUE);
+            }
             return Math.log(amount) / Math.log(max);
         },
     },
@@ -88,13 +93,11 @@ export class StorageMachine extends Machine {
     static stored_resource(resource) {
         if (this != StorageMachine) return StorageMachine.stored_resource(resource);
 
-        const data = {amount: 0, max: 0};
-        if (resource in this.#filtered_storages) {
-            this.#filtered_storages[resource].forEach(m => {
-                data.amount += m.resources[resource].amount;
-                data.max += m.resources[resource].max;
-            });
-        }
+        const storages = this.#filtered_storages[resource] ?? [];
+        const data = Object.defineProperties({}, {
+            amount: { get: () => storages.reduce((total, {resources}) => total + resources[resource].amount, 0), },
+            max: { get: () => storages.reduce((total, {resources}) => total + resources[resource].max, 0), },
+        });
         return data;
     }
 
@@ -142,6 +145,7 @@ export class StorageMachine extends Machine {
         this.#upgrade_costs = upgrade_costs;
         this.#filltype = filltype;
         this.#fillmode = fillmode;
+        this.#level_text = this.level_to_stars();
 
         if (x != null && y != null && insert) {
             StorageMachine.#storages.push(this);
@@ -172,6 +176,7 @@ export class StorageMachine extends Machine {
     #fillmode;
     /** @type {boolean|null} */
     #can_upgrade = null;
+    #level_text;
 
     /** @type {{[id: string]: {amount: number, max: number}}} */
     get resources() {
@@ -207,10 +212,10 @@ export class StorageMachine extends Machine {
         x += width / 2 - position[0];
         y += height / 2 - position[1];
 
-        let min_x = -radius;
-        let min_y = -radius;
-        let max_x = min_x + width + radius * 2;
-        let max_y = min_y + height + radius * 2;
+        const min_x = -radius;
+        const min_y = -radius + tabs_heights();
+        const max_x = min_x + width + radius * 2;
+        const max_y = min_y + height + radius * 2;
 
         return rect_contains_point([x, y], min_x, max_x, min_y, max_y);
     }
@@ -221,6 +226,7 @@ export class StorageMachine extends Machine {
             super.level = level;
             this.#resources_leveled = false;
             this.#upgrade_costs_leveled = null;
+            this.#level_text = this.level_to_stars();
         }
     }
     /** @type {[string, number][]|false} */
@@ -312,7 +318,7 @@ export class StorageMachine extends Machine {
     /**
      * @param {Object} [params]
      * @param {MouseEvent} [params.event]
-     * @param {boolean} [params.upgrade_marker]
+     * @param {boolean} [params.markers]
      * @returns {{
      *  x: number,
      *  y: number,
@@ -327,9 +333,10 @@ export class StorageMachine extends Machine {
      *  tab?: GameTab
      * }?}
      */
-    panecontents({event=null, upgrade_marker=true}={}) {
+    panecontents({event=null, markers=true}={}) {
         const id = this.index == -1 ? this.id : this.index;
         const pane_id = `${globals.game_tab}_storage_${id}_pane`;
+
         /**
          * @type {{
          *  content: (string|() => string)[],
@@ -337,17 +344,31 @@ export class StorageMachine extends Machine {
          *  width?: number,
          * }[][]}
          */
-        const content = [
+        const content = [];
+
+        if (markers) {
+            content.push(
+                [{
+                    content: [gettext('games_cidle_machine_move')],
+                    click: [() => {
+                        this.move();
+                        const p = Pane.pane(pane_id);
+                        if (p) p.remove();
+                    }],
+                }],
+            );
+        }
+
+        content.push(
             [{
                 content: [gettext('cidle_storage_contents')],
             }],
             ...Object.entries(this.resources).map(([res, data]) => {
                 const {color, background_color, name, picture: image} = Resource.resource(res);
                 const get_amount = () => {
-                    let amount = beautify(data.amount);
-                    if (data.amount < data.max) amount = stable_pad_number(amount);
+                    let amount = beautify(data.amount).padEnd(8);
                     if (isFinite(data.max)) {
-                        amount += `/${beautify(data.max)}`;
+                        amount += ` /${beautify(data.max)}`;
                     }
                     return `{color:${color}}${amount}`;
                 };
@@ -361,10 +382,11 @@ export class StorageMachine extends Machine {
                     color: background_color,
                 }];
             }),
-        ];
+        );
+
         const x = this.x + this.radius;
         const y = this.y - this.radius;
-        if (upgrade_marker && this.upgrade_costs !== false) {
+        if (markers && this.upgrade_costs !== false) {
             const up_text = () => {
                 let text = gettext('games_cidle_machine_upgrade');
                 if (this.can_upgrade) text += `{color:rainbow} ▲`;
@@ -430,7 +452,7 @@ export class StorageMachine extends Machine {
                     if (can_afford) cost_color = theme('machine_upgrade_can_afford_fill');
                     else cost_color = theme('machine_upgrade_cant_afford_fill');
 
-                    const amount_str = (stable_pad_number(beautify(amount))+'/').repeat(!can_afford);
+                    const amount_str = can_afford ? '' : (beautify(amount).padEnd(8)+' /');
 
                     return `{color:${cost_color}}${amount_str}${beautify(cost)}`;
                 };
@@ -496,7 +518,7 @@ export class StorageMachine extends Machine {
      * @param {CanvasRenderingContext2D} [params.context]
      * @param {number?} [params.x] Override for the x position
      * @param {number?} [params.y] Override for the y position
-     * @param {boolean} [params.upgrade_marker]
+     * @param {boolean} [params.markers]
      * @param {boolean} [params.transparent]
      * @param {FillType} [params.fillstyle]
      * - Fraction fills at percentile of storage (`amount/max`)
@@ -506,7 +528,7 @@ export class StorageMachine extends Machine {
      * - Transparency fills the whole part in a more and more visible way
      * - Clockwise and counterclockwise fill a circle from 0 or to 0
      */
-    draw({context=canvas_context, x=null, y=null, transparent=false, upgrade_marker=true, fillstyle=this.filltype, fillmode=this.fillmode}={}) {
+    draw({context=canvas_context, x=null, y=null, transparent=false, markers=true, fillstyle=this.filltype, fillmode=this.fillmode}={}) {
         if (x == null) {
             ({x} = this);
             if (x == null) return;
@@ -546,6 +568,7 @@ export class StorageMachine extends Machine {
             const resource = Resource.resource(res_id);
             /** @type {HTMLImageElement|false} */
             const image = this.image ?? resource.fill_image ?? false;
+            const mode = resource.fillmode ?? fillmode;
 
             /**
              * Number between 0 and 1 (both inclusive) that determines
@@ -556,7 +579,7 @@ export class StorageMachine extends Machine {
             const end_angle = 2 * (i + 1) / length * Math.PI - Math.PI / 2;
             /** @type {[keyof context, any[]][]} */
             const funcs = [];
-            switch (fillmode) {
+            switch (mode) {
                 case 'circle':
                 default:
                     funcs.push(
@@ -570,7 +593,7 @@ export class StorageMachine extends Machine {
                     const clock_diff = 2 / length * Math.PI * fill;
                     let clock_start = start_angle;
                     let clock_end = clock_start + clock_diff;
-                    if (fillmode == 'counterclockwise') {
+                    if (mode == 'counterclockwise') {
                         clock_end = clock_start;
                         clock_start = clock_end - clock_diff;
                     }
@@ -654,8 +677,15 @@ export class StorageMachine extends Machine {
         context.lineWidth = 1;
         if (this.moving) context.setLineDash([]);
 
-        if (upgrade_marker && this.can_upgrade) {
-            canvas_write('▲', x + radius, y, {text_align: 'right', base_text_color: theme('machine_upgrade_can_afford_fill')});
+        if (markers) {
+            if (this.can_upgrade) {
+                const color = theme('machine_upgrade_can_afford_fill');
+                canvas_write(`▲`, x + radius, y - radius, {text_align: 'right', base_text_color: color});
+            }
+            if (this.level > 0) {
+                const color = theme('machine_level_star_fill');
+                canvas_write(`{color:${color}}` + this.#level_text, x - radius, y, {base_text_color: color, font_size: theme('font_size') / 1.25});
+            }
         }
 
         if (transparent) context.globalAlpha = 1;
@@ -730,13 +760,25 @@ export class StorageMachine extends Machine {
                 });
         });
         const up_pane = this.#upgrade_pane_contents();
-        Pane.pane(up_pane.id)?.remove?.();
+        let up_p = Pane.pane(up_pane.id);
+        if (up_p) up_p.remove();
         this.level++;
+        if (this.upgrade_costs) {
+            const {x, y} = up_p;
+            const up_pane = this.#upgrade_pane_contents();
+            up_p = new Pane(up_pane);
+            up_p.x = x;
+            up_p.y = y;
+        }
         const pane = this.panecontents();
         let p = Pane.pane(pane.id);
         if (p) {
+            const {x, y} = p;
             this.click({shiftKey: false});
             this.click({shiftKey: false});
+            p = Pane.pane(pane.id);
+            p.x = x;
+            p.y = y;
         }
     }
 
@@ -749,15 +791,6 @@ export class StorageMachine extends Machine {
         const {radius} = this;
         return [['arc', [x, y, radius+1, -Math.PI / 2, 1.5 * Math.PI]]];
     }
-
-    /**
-     * Returns the point at which the border starts
-     *
-     * @param {number} [x] X position override of the machine
-     * @param {number} [y] Y position override of the machine
-     * @returns {PointLike}
-     */
-    border_start(x = this.x, y = this.y) { return [x, y - this.radius]; }
 }
 export default StorageMachine;
 
@@ -776,7 +809,7 @@ function is_fill_type(type) {
  * @param {string} mode
  * @returns {mode is FillMode}
  */
-function is_fill_mode(mode) {
+export function is_fill_mode(mode) {
     return ['circle', 'clockwise', 'counterclockwise', 'transparency', 'image', 'rhombus', 'linear'].includes(mode);
 }
 
@@ -852,6 +885,9 @@ export function make_storages() {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('brick')) return [['brick', 100]];
                     return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('glass')) return [['glass', 100]];
+                    return null;
                 }
                 return false;
             },
@@ -890,7 +926,7 @@ export function make_storages() {
                 }
                 return false;
             },
-            fillmode: 'transparency',
+            fillmode: 'linear',
         },
         {
             id: 'ore_crate',
@@ -918,6 +954,20 @@ export function make_storages() {
             name: gettext('games_cidle_storage_copper_crate'),
             resources: {
                 copper: {max: 100},
+            },
+        },
+        {
+            id: 'tin_crate',
+            name: gettext('games_cidle_storage_tin_crate'),
+            resources: {
+                tin: {max: 50},
+            },
+        },
+        {
+            id: 'glass_container',
+            name: gettext('games_cidle_storage_glass_container'),
+            resources: {
+                glass: {},
             },
         },
         // Time storages

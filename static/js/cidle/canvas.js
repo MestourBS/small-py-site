@@ -5,20 +5,18 @@ import { check_can_afford, clear_caches, draw as draw_inventory, unlock_recipes 
 import Machine from './machine.js';
 import { MakerMachine, time_speed } from './maker.js';
 import { Pane } from './pane.js';
-import { beautify, stable_pad_number, number_between } from './primitives.js';
+import { beautify, number_between } from './primitives.js';
 import Resource from './resource.js';
 import StorageMachine, { space_boost } from './storage.js';
 /**
  * @typedef {keyof game_tabs} GameTab
  */
 
-//todo sort resources by name, not by id
-//todo change draw to draw different parts of the canvas as required
+//todo change draw to draw different parts of the world as required
 //todo show resources sources
 //todo changelog tab
 //todo prevent flickering gain
 //todo unlockable tabs
-//todo draw grid center
 
 /**
  * Canvas of the game
@@ -138,6 +136,7 @@ const game_tabs = {
              */
             const table = Resource.all_resources().map(res => {
                 const {amount, max} = StorageMachine.stored_resource(res);
+                const {name} = Resource.resource(res);
                 if (!max) return;
 
                 let per_second = MakerMachine.maker_machines.filter(m => {
@@ -152,24 +151,24 @@ const game_tabs = {
                 }, 0);
                 if (Math.abs(per_second) < 1e-3) per_second = 0;
 
-                return {res, amount, max, per_second};
+                return {res, amount, max, per_second, name};
             }).filter(d => d != null).sort((a, b) => {
                 if (!globals.stable_resource_order) {
                     if (a.max != b.max) return a.max - b.max;
                     if (a.per_second != b.per_second) return a.per_second - b.per_second;
                     if (a.amount != b.amount) return a.amount - b.amount;
                 }
-                return a.res > b.res;
+                return a.name > b.name;
             }).map(res_data => {
-                const {res, amount, max, per_second} = res_data;
-                const {name} = Resource.resource(res);
+                const {res, amount, max, per_second, name} = res_data;
 
-                let a = `${stable_pad_number(beautify(amount))}`;
+                let a = `${beautify(amount).padEnd(8)}`;
                 let ps = '';
 
                 if (per_second) {
                     ps = beautify(per_second);
                     if (per_second > 0) ps = `+${ps}`;
+                    ps = ps.padEnd(8);
                     ps += '/s';
                 }
                 let m = `/${beautify(max)}`;
@@ -207,7 +206,7 @@ const game_tabs = {
                 if (data.speed.amount != speed) {
                     draw_speed = true;
                     data.speed.amount = speed;
-                    const speed_str = gettext('games_cidle_time_speed', {speed: beautify(speed)});
+                    const speed_str = gettext('games_cidle_time_speed', {speed: beautify(speed).padEnd(8)});
                     const cut_time_speed = cut_lines(speed_str);
                     canvas_write(speed_str, x, y);
                     data.speed.height = (cut_time_speed.length + .5) * font_size;
@@ -217,7 +216,7 @@ const game_tabs = {
 
             // Show space multiplier
             if (space != 1) {
-                const space_str = gettext('games_cidle_space_boost', {space: beautify(space)});
+                const space_str = gettext('games_cidle_space_boost', {space: beautify(space).padEnd(8)});
                 data.space ??= {};
                 if (data.space.text != space_str) {
                     data.space.text = space_str;
@@ -259,17 +258,19 @@ const game_tabs = {
 
                     data_x += width;
                 });
-                if (draw_speed && speed != 1 && res != 'time' && per_second) {
-                    const speed_text = `x${beautify(speed)}`;
-
-                    const width = context.measureText(speed_text).width + grid_spacing;
+                if (draw_speed && speed != 1 && res != 'time') {
+                    const speed_text = `x${beautify(speed).padEnd(8)}`;
 
                     if (background_color) {
+                        const width = context.measureText(speed_text).width + grid_spacing;
+
                         context.fillStyle = background_color;
                         context.fillRect(data_x, y, width, height);
                     }
 
-                    canvas_write(speed_text, data_x, y, {base_text_color: color});
+                    if (per_second) {
+                        canvas_write(speed_text, data_x, y, {base_text_color: color});
+                    }
                 }
 
                 y += height;
@@ -520,17 +521,31 @@ function draw_tabs({context=canvas.getContext('2d')}={}) {
 function draw_grid() {
     context.strokeStyle = theme('grid_color_border');
     context.beginPath();
-    let x = -grid_spacing - globals.position[0] % grid_spacing + canvas.width / 2 % grid_spacing;
-    let y = -grid_spacing - globals.position[1] % grid_spacing + canvas.height / 2 % grid_spacing;
-    for (;x < canvas.width; x += grid_spacing) {
-        if (x <= 0) continue;
-        context.moveTo(x, 0);
-        context.lineTo(x, canvas.height);
+    const x_offset = -grid_spacing - globals.position[0] % grid_spacing + canvas.width / 2 % grid_spacing;
+    const y_offset = -grid_spacing - globals.position[1] % grid_spacing + canvas.height / 2 % grid_spacing;
+    const max_x = canvas.width / grid_spacing + 1;
+    const max_y = canvas.height / grid_spacing + 1;
+    for (let x = 0; x < max_x; x++) {
+        const px = x * grid_spacing + x_offset;
+        if (px <= 0) continue;
+
+        context.moveTo(px, 0);
+        context.lineTo(px, canvas.height);
+        if (!(x % 5)) {
+            context.moveTo(px+1, 0);
+            context.lineTo(px+1, canvas.height);
+        }
     }
-    for (;y < canvas.height; y += grid_spacing) {
-        if (y <= 0) continue;
-        context.moveTo(0, y);
-        context.lineTo(canvas.width, y);
+    for (let y = 0; y < max_y; y++) {
+        const py = y * grid_spacing + y_offset;
+        if (py <= 0) continue;
+
+        context.moveTo(0, py);
+        context.lineTo(canvas.width, py);
+        if (!(y % 5)) {
+            context.moveTo(0, py+1);
+            context.lineTo(canvas.width, py+1);
+        }
     }
     context.stroke();
     context.closePath();
@@ -616,6 +631,7 @@ export function canvas_write(lines, left, top, {
     context.textAlign = text_align;
     context.textBaseline = text_baseline;
     context.fillStyle = base_text_color;
+    context.font = `${font_size}px ${font_family}`;
 
     const base_x = Math.max(left, min_left);
     /** @type {((type: string) => (modifier: string) => boolean)[]} */

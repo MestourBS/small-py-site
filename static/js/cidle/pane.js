@@ -234,7 +234,7 @@ export class Pane {
     /**
      * Measures the cells' heights and widths, separated between dynamic and static
      */
-    #measure_content({context=canvas_context}={}) {
+    #measure_content({context=canvas_context, cache_data=false}={}) {
         const cache = this.#cache;
         /**
          * @type {{
@@ -312,11 +312,21 @@ export class Pane {
             const sta = Math.max(s, cache.widths.static[i] ?? 0);
             const dynamic = Math.max(d, cache.widths.dynamic[i] ?? 0);
 
+            if (cache_data) {
+                cache.widths.static[i] = sta
+                cache.widths.dynamic[i] = dynamic;
+            }
+
             return {static: sta, dynamic};
         });
         measures.heights = measures.heights.map(({static: s, dynamic: d}, i) => {
             const sta = Math.max(s, cache.heights.static[i] ?? 0);
             const dynamic = Math.max(d, cache.heights.dynamic[i] ?? 0);
+
+            if (cache_data) {
+                cache.heights.static[i] = sta
+                cache.heights.dynamic[i] = dynamic;
+            }
 
             return {static: sta, dynamic};
         });
@@ -327,15 +337,15 @@ export class Pane {
     /**
      * Calculates the widths of the content table columns
      */
-    table_widths({context=canvas_context}={}) {
-        return this.#measure_content({context}).widths.map(w => Math.max(w.static, w.dynamic));
+    table_widths({context=canvas_context, cache_data=false}={}) {
+        return this.#measure_content({context, cache_data}).widths.map(w => Math.max(w.static, w.dynamic));
     }
 
     /**
      * Calculates the heights of the content table rows
      */
-    table_heights() {
-        return this.#measure_content().heights.map(h => (Math.max(h.static, h.dynamic) + .5) * theme('font_size'));
+    table_heights({cache_data=false}={}) {
+        return this.#measure_content({cache_data}).heights.map(h => (Math.max(h.static, h.dynamic) + .5) * theme('font_size'));
     }
 
     /**
@@ -510,8 +520,8 @@ export class Pane {
             x += display_size.width / 2 - globals.position[0];
             y += display_size.height / 2 - globals.position[1];
         }
-        const widths = this.table_widths({context});
-        const heights = this.table_heights();
+        const widths = this.table_widths({context, cache_data: true});
+        const heights = this.table_heights({cache_data: true});
         const width = widths.reduce((s, w) => s + w, 0);
         const height = heights.reduce((s, h) => s + h, 0);
 

@@ -1,3 +1,8 @@
+import { is_fill_mode } from './storage.js';
+/**
+ * @typedef {import('./storage.js').FillMode} FillMode
+ */
+
 //todo? resource description
 
 export class Resource {
@@ -33,11 +38,15 @@ export class Resource {
      * @param {string?} [params.background_color]
      * @param {string?} [params.fill_image] Image serving as a fill override
      * @param {string?} [params.picture] Image shown before the resource name
+     * @param {FillMode?} [params.fillmode]
      */
     constructor({
         id, name=null, color='#000', border_color='#000',
         background_color=null, fill_image=null, picture=null,
+        fillmode=null,
     }) {
+        if (fillmode != null && !is_fill_mode(fillmode)) throw new RangeError(`Resource fill mode is not a valid fill mode (${fillmode})`);
+
         id += '';
         name = name?.toString() ?? '';
         if (fill_image != null) {
@@ -58,6 +67,7 @@ export class Resource {
         this.#border_color = border_color;
         this.#fill_image = fill_image;
         this.#picture = picture;
+        this.#fillmode = fillmode;
 
         if (!(id in Resource.#resources)) {
             Resource.#resources[id] = this;
@@ -73,6 +83,7 @@ export class Resource {
     #fill_image;
     /** @type {null|HTMLImageElement} */
     #picture;
+    #fillmode;
 
     get id() { return this.#id; }
     get name() { return this.#name; }
@@ -81,6 +92,7 @@ export class Resource {
     get background_color() { return this.#background_color; }
     get fill_image() { return this.#fill_image; }
     get picture() { return this.#picture; }
+    get fillmode() { return this.#fillmode; }
 }
 export default Resource;
 
@@ -93,6 +105,7 @@ export function make_resources() {
      *  border_color?: string,
      *  background_color?: string,
      *  fill_image?: string|null,
+     *  fillmode?: FillMode,
      * }[]}
      */
     const resources = [
@@ -150,6 +163,19 @@ export function make_resources() {
             name: gettext('games_cidle_resource_copper'),
             color: '#B87333',
             border_color: '#A4672D',
+        },
+        {
+            id: 'tin',
+            name: gettext('games_cidle_resource_tin'),
+            color: '#99D',
+            border_color: '#8686D7',
+        },
+        {
+            id: 'glass',
+            name: gettext('games_cidle_resource_glass'),
+            color: '#FFF',
+            border_color: '#F2F2F2',
+            background_color: '#CCC',
         },
         // Time resources
         {

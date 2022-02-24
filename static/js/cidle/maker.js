@@ -1,4 +1,4 @@
-import { context as canvas_context, display_size, canvas_write } from './canvas.js';
+import { context as canvas_context, display_size, canvas_write, tabs_heights } from './canvas.js';
 import globals from './globals.js';
 import Machine from './machine.js';
 import { angle_to_rhombus_point, coords_distance as distance, line_crosses_rectangle, parallel_perpendicular, rect_contains_point, to_point } from './position.js';
@@ -6,26 +6,19 @@ import { StorageMachine } from './storage.js';
 import Resource from './resource.js';
 import { get_theme_value as theme } from './display.js';
 import { Pane } from './pane.js';
-import { array_group_by, beautify, number_between, stable_pad_number } from './primitives.js';
+import { array_group_by, beautify, number_between } from './primitives.js';
 /**
  * @typedef {import('./position.js').PointLike} PointLike
  *
  * @typedef {'fixed'|'scaling'} MakerType
  */
 
-//todo! fix scaling consumption again
 //todo change draw to draw different parts of the maker as required
 //todo change draw_connections to draw different connections as required
 //todo don't redraw same line multiple times
-//todo make arrows start at edge
+//todo make arrows start/end at edges
 //todo move production to a single all consuming / producing function
-//todo write production/consumption amounts for scaling
-//todo add move button to pane
 //todo faster arrows based on time speed
-//todo include global tabs heights in is_visible
-//todo don't move pane on upgrade
-//todo reopen upgrade pane if further upgrading is possible
-//todo slightly change display based on level
 //todo? multiple recipes
 //todo? switchable recipes
 //todo? luck-based recipes
@@ -144,6 +137,7 @@ export class MakerMachine extends Machine {
         this.#paused = !!paused;
         this.#unpausable = !!unpausable;
         this.#max_level = max_level;
+        this.#level_text = this.level_to_stars();
 
         if (x != null && y != null && insert) {
             MakerMachine.#maker_machines.push(this);
@@ -175,6 +169,7 @@ export class MakerMachine extends Machine {
     #max_level = 0;
     /** @type {null|boolean} */
     #can_upgrade = null;
+    #level_text;
 
     /** @type {[string, number][]} */
     get consumes() {
@@ -224,7 +219,7 @@ export class MakerMachine extends Machine {
         y += height / 2 - position[1];
 
         const min_x = -radius;
-        const min_y = -radius;
+        const min_y = -radius + tabs_heights();
         const max_x = min_x + width + radius * 2;
         const max_y = min_y + height + radius * 2;
 
@@ -260,6 +255,7 @@ export class MakerMachine extends Machine {
             this.#produces_leveled = null;
             this.#requires_leveled = null;
             this.#type_leveled = null;
+            this.#level_text = this.level_to_stars();
         }
     }
     get can_upgrade() {
@@ -500,55 +496,27 @@ export class MakerMachine extends Machine {
         const {consumes, produces, requires} = this;
 
         if (consumes.length) {
-            multipliers.push(...consumes.map(([res, con]) => {
-                let total = 0;
-                StorageMachine.storages_for(res)
-                    .forEach(m => {
-                        total += m.resources[res].amount;
-                    });
-                return total / con;
-            }));
+            multipliers.push(...consumes.map(([res, con]) => StorageMachine.stored_resource(res).amount / con));
         }
         if (requires.length) {
-            multipliers.push(...requires.map(([res, req]) => {
-                let total = 0;
-                StorageMachine.storages_for(res)
-                    .forEach(m => {
-                        total += m.resources[res].amount;
-                    });
-                return total / req;
-            }));
+            multipliers.push(...requires.map(([res, req]) => StorageMachine.stored_resource(res).amount / req));
         }
         if (produces.length) {
             const split = array_group_by(produces, ([,,optional=false]) => optional);
             const required = split['false'];
             const optional = split['true'];
             multipliers.push(
-                required.map(([res, pro]) => {
-                    let total = 0;
-                    StorageMachine.storages_for(res)
-                        .forEach(m => {
-                            const data = m.resources[res];
-                            const space = data.max - data.amount;
-
-                            total += space;
-                        });
-                    return total / pro;
+                ...required.map(([res, pro]) => {
+                    const data = StorageMachine.stored_resource(res);
+                    return (data.max - data.amount) / pro;
                 })
             );
 
             if (!multipliers.length) {
                 multipliers.push(
-                    optional.map(([res, pro]) => {
-                        let total = 0;
-                        StorageMachine.storages_for(res)
-                            .forEach(m => {
-                                const data = m.resources[res];
-                                const space = data.max - data.amount;
-
-                                total += space;
-                            });
-                        return total / pro;
+                    ...optional.map(([res, pro]) => {
+                        const data = StorageMachine.stored_resource(res);
+                        return (data.max - data.amount) / pro;
                     })
                 );
             }
@@ -579,7 +547,7 @@ export class MakerMachine extends Machine {
     /**
      * @param {Object} [params]
      * @param {MouseEvent} [params.event]
-     * @param {boolean} [params.upgrade_marker]
+     * @param {boolean} [params.markers]
      * @returns {{
      *  x: number,
      *  y: number,
@@ -594,35 +562,57 @@ export class MakerMachine extends Machine {
      *  tab?: GameTab
      * }?}
      */
-    panecontents({event=null, upgrade_marker=true}={}) {
+    panecontents({event=null, markers=true}={}) {
+        /** @type {() => number} */
+        const prod_mult = this.max_produce_multiplier.bind(this);
         const id = this.index == -1 ? this.id : this.index;
         const pane_id = `${globals.game_tab}_maker_${id}_pane`;
+
         /** @type {{content: string[], click?: (() => void)[], width?: number}[][]} */
         const content = [];
-        if (this.#unpausable) {
-            content.push([{content: [gettext('games_cidle_maker_unpausable')], width: 2}]);
-        } else {
-            content.push([{
-                content: [() => pause_text[this.paused]],
-                width: 2,
-                click: [() => this.pause_toggle()],
-            }])
-        }
+
         /** @type {string|() => string} */
         let type_content;
         if (this.type == 'fixed') type_content = type_text['fixed'];
-        else type_content = (() => `${type_text['scaling']} (x${beautify(this.max_produce_multiplier())})`);
-        content.unshift([{content: [type_content]}]);
+        else type_content = () => {
+            let text = `${type_text['scaling']}`;
+            if (Math.abs(prod_mult() - 1) >= 1e-3) text += ` (x${beautify(prod_mult()).padEnd(8)})`;
+            return text;
+        };
+        content.push([{content: [type_content]}]);
+
+        if (markers) {
+            const move_cell = {
+                content: [gettext('games_cidle_machine_move')],
+                click: [() => {
+                    this.move();
+                    const p = Pane.pane(pane_id);
+                    if (p) p.remove();
+                }],
+            };
+            if (this.#unpausable) {
+                content.push([{content: [gettext('games_cidle_maker_unpausable')]}, move_cell]);
+            } else {
+                content.push([{
+                    content: [() => pause_text[this.paused]],
+                    click: [() => this.pause_toggle()],
+                }, move_cell])
+            }
+        }
+
         if (this.requires.length) {
             content.push([{content: [gettext('games_cidle_maker_requires')], width: 2}]);
             content.push(...this.requires.map(([res, req]) => {
                 const {color, name, background_color, picture: image} = Resource.resource(res);
+                let content;
+                if (this.type == 'fixed') content = `{color:${color}}${beautify(req)}`;
+                else content = () => `{color:${color}}${beautify(req * prod_mult()).padEnd(8)}`;
                 return [{
                     content: [`{color:${color}}${name}`],
                     color: background_color,
                     image,
                 }, {
-                    content: [`{color:${color}}${beautify(req)}`],
+                    content: [content],
                     color: background_color,
                 }];
             }));
@@ -631,12 +621,15 @@ export class MakerMachine extends Machine {
             content.push([{content: [gettext('games_cidle_maker_consumes')], width: 2}]);
             content.push(...this.consumes.map(([res, con]) => {
                 const {color, name, background_color, picture: image} = Resource.resource(res);
+                let content;
+                if (this.type == 'fixed') content = `{color:${color}}${beautify(-con)}/s`;
+                else content = () => `{color:${color}}${beautify(-con * prod_mult()).padEnd(8)}/s`;
                 return [{
                     content: [`{color:${color}}${name}`],
                     color: background_color,
                     image,
                 }, {
-                    content: [`{color:${color}}${beautify(-con)}/s`],
+                    content: [content],
                     color: background_color,
                 }];
             }));
@@ -645,11 +638,9 @@ export class MakerMachine extends Machine {
             content.push([{content: [gettext('games_cidle_maker_produces')], width: 2}]);
             content.push(...this.produces.map(([res, pro, optional=false]) => {
                 const {color, name, background_color, picture: image} = Resource.resource(res);
-                let production = `{color:${color}}`;
-                if (optional) {
-                    production += '0-';
-                }
-                production += `${beautify(pro)}/s`;
+                let production;
+                if (this.type == 'fixed') production = `{color:${color}}${'0-'.repeat(optional)}${beautify(pro)}/s`;
+                else production = () => `{color:${color}}${'0-'.repeat(optional)}${beautify(pro * prod_mult()).padEnd(8)}/s`;
                 return [{
                     content: [`{color:${color}}${name}`],
                     color: background_color,
@@ -660,7 +651,7 @@ export class MakerMachine extends Machine {
                 }];
             }));
         }
-        if (upgrade_marker && this.upgrade_costs !== false) {
+        if (markers && this.upgrade_costs !== false) {
             const up_text = () => {
                 let text = gettext('games_cidle_machine_upgrade');
                 if (this.can_upgrade) text += `{color:rainbow} ▲`;
@@ -727,7 +718,7 @@ export class MakerMachine extends Machine {
                     if (can_afford) cost_color = theme('machine_upgrade_can_afford_fill');
                     else cost_color = theme('machine_upgrade_cant_afford_fill');
 
-                    const amount_str = (stable_pad_number(beautify(amount))+'/').repeat(!can_afford);
+                    const amount_str = can_afford ? '' : (beautify(amount).padEnd(8)+' /');
 
                     return `{color:${cost_color}}${amount_str}${beautify(cost)}`;
                 };
@@ -842,8 +833,8 @@ export class MakerMachine extends Machine {
                 const {color, name, background_color, picture: image} = Resource.resource(res);
                 const change_color = theme(cpro > npro ? 'machine_upgrade_lower_pro_fill' : 'machine_upgrade_higher_pro_fill');
 
-                cpro = '0-'.repeat(copt) + beautify(cpro);
-                npro = '0-'.repeat(nopt) + beautify(npro);
+                cpro = (copt ? '0-' : '') + beautify(cpro);
+                npro = (nopt ? '0-' : '') + beautify(npro);
 
                 const text = `{color:${color}}${cpro}/s ⇒ {color:${change_color}}${npro}/s`;
 
@@ -896,9 +887,9 @@ export class MakerMachine extends Machine {
      * @param {number?} [params.x] Override for the x position
      * @param {number?} [params.y] Override for the y position
      * @param {boolean} [params.transparent]
-     * @param {boolean} [params.upgrade_marker]
+     * @param {boolean} [params.markers]
      */
-    draw({context=canvas_context, x=null, y=null, transparent=false, upgrade_marker=true}={}) {
+    draw({context=canvas_context, x=null, y=null, transparent=false, markers=true}={}) {
         if (this.hidden) return;
 
         if (x == null) {
@@ -912,6 +903,8 @@ export class MakerMachine extends Machine {
             y += display_size.height / 2 - globals.position[1];
         }
 
+        const {radius} = this;
+
         if (transparent) context.globalAlpha = .5;
 
         context.lineWidth = 1.5 * (this.#unpausable + 1);
@@ -920,14 +913,14 @@ export class MakerMachine extends Machine {
         context.save();
         context.fillStyle = theme('maker_color_fill');
         context.beginPath();
-        context.moveTo(x - this.radius, y);
-        context.lineTo(x, y - this.radius);
-        context.lineTo(x + this.radius, y);
-        context.lineTo(x, y + this.radius);
-        context.lineTo(x - this.radius, y);
+        context.moveTo(x - radius, y);
+        context.lineTo(x, y - radius);
+        context.lineTo(x + radius, y);
+        context.lineTo(x, y + radius);
+        context.lineTo(x - radius, y);
         if (this.image) {
             context.clip();
-            context.drawImage(this.image, x - this.radius, y - this.radius, this.radius * 2, this.radius * 2);
+            context.drawImage(this.image, x - radius, y - radius, radius * 2, radius * 2);
         } else {
             context.fill();
         }
@@ -947,8 +940,8 @@ export class MakerMachine extends Machine {
             /** @type {(angle: number) => [number, number]} */
             const angle_to_point = angle => {
                 let [px, py] = angle_to_rhombus_point(angle);
-                px = px * this.radius + x;
-                py = py * this.radius + y;
+                px = px * radius + x;
+                py = py * radius + y;
                 return [px, py];
             };
 
@@ -977,25 +970,32 @@ export class MakerMachine extends Machine {
         if (this.paused) {
             context.fillStyle = theme('text_color_fill');
             context.beginPath();
-            context.moveTo(x - this.radius / 10, y - this.radius * 2 / 5);
-            context.lineTo(x - this.radius / 10, y + this.radius * 2 / 5);
-            context.lineTo(x - this.radius * 3 / 10, y + this.radius * 2 / 5);
-            context.lineTo(x - this.radius * 3 / 10, y - this.radius * 2 / 5);
-            context.lineTo(x - this.radius / 10, y - this.radius * 2 / 5);
+            context.moveTo(x - radius / 10, y - radius * 2 / 5);
+            context.lineTo(x - radius / 10, y + radius * 2 / 5);
+            context.lineTo(x - radius * 3 / 10, y + radius * 2 / 5);
+            context.lineTo(x - radius * 3 / 10, y - radius * 2 / 5);
+            context.lineTo(x - radius / 10, y - radius * 2 / 5);
             context.fill();
             context.closePath();
             context.beginPath();
-            context.moveTo(x + this.radius / 10, y - this.radius * 2 / 5);
-            context.lineTo(x + this.radius / 10, y + this.radius * 2 / 5);
-            context.lineTo(x + this.radius * 3 / 10, y + this.radius * 2 / 5);
-            context.lineTo(x + this.radius * 3 / 10, y - this.radius * 2 / 5);
-            context.lineTo(x + this.radius / 10, y - this.radius * 2 / 5);
+            context.moveTo(x + radius / 10, y - radius * 2 / 5);
+            context.lineTo(x + radius / 10, y + radius * 2 / 5);
+            context.lineTo(x + radius * 3 / 10, y + radius * 2 / 5);
+            context.lineTo(x + radius * 3 / 10, y - radius * 2 / 5);
+            context.lineTo(x + radius / 10, y - radius * 2 / 5);
             context.fill();
             context.closePath();
         }
 
-        if (upgrade_marker && this.can_upgrade) {
-            canvas_write('▲', x + this.radius, y, {text_align: 'right', base_text_color: theme('machine_upgrade_can_afford_fill')});
+        if (markers) {
+            if (this.can_upgrade) {
+                const color = theme('machine_upgrade_can_afford_fill');
+                canvas_write(`▲`, x + radius, y - radius, {text_align: 'right', base_text_color: color});
+            }
+            if (this.level > 0) {
+                const color = theme('machine_level_star_fill');
+                canvas_write(`{color:${color}}` + this.#level_text, x - radius, y, {base_text_color: color, font_size: theme('font_size') / 1.25});
+            }
         }
 
         if (transparent) context.globalAlpha = 1;
@@ -1085,6 +1085,7 @@ export class MakerMachine extends Machine {
                 const right = parallels(d - 5).reduce((a, p) => [a[0] + p.x / 2 - off_x, a[1] + p.y / 2 - off_y], [offset_x, offset_y]);
 
                 if (!this.paused) {
+                    // Move the arrow on the line
                     const d = distance(pa, pb) ** .75;
                     const r = (Date.now() % d) / d - .5;
                     [tip, left, right].forEach(p => {
@@ -1296,13 +1297,25 @@ export class MakerMachine extends Machine {
                 });
         });
         const up_pane = this.#upgrade_pane_contents();
-        Pane.pane(up_pane.id)?.remove?.();
+        let up_p = Pane.pane(up_pane.id);
+        if (up_p) up_p.remove();
         this.level++;
+        if (this.upgrade_costs) {
+            const {x, y} = up_p;
+            const up_pane = this.#upgrade_pane_contents();
+            up_p = new Pane(up_pane);
+            up_p.x = x;
+            up_p.y = y;
+        }
         const pane = this.panecontents();
         let p = Pane.pane(pane.id);
         if (p) {
+            const {x, y} = p;
             this.click({shiftKey: false});
             this.click({shiftKey: false});
+            p = Pane.pane(pane.id);
+            p.x = x;
+            p.y = y;
         }
     }
 
@@ -1321,15 +1334,6 @@ export class MakerMachine extends Machine {
             ['lineTo', [x, y - radius]],
         ];
     }
-
-    /**
-     * Returns the point at which the border starts
-     *
-     * @param {number} [x] X position override of the machine
-     * @param {number} [y] Y position override of the machine
-     * @returns {PointLike}
-     */
-    border_start(x = this.x, y = this.y) { return [x, y - this.radius]; }
 }
 export default MakerMachine;
 
@@ -1424,6 +1428,9 @@ export function make_makers() {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('brick')) return [['brick', 200]];
                     return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('glass')) return [['glass', 200]];
+                    return null;
                 }
                 return false;
             },
@@ -1438,10 +1445,13 @@ export function make_makers() {
                 if (level == 0) {
                     if (StorageMachine.any_storage_for('copper')) return [['copper', 100]];
                     return null;
+                } else if (level == 1) {
+                    if (StorageMachine.any_storage_for('glass')) return [['glass', 500]];
+                    return null;
                 }
                 return false;
             },
-            max_level: 1,
+            max_level: 2,
         },
         {
             id: 'rock_crusher',
@@ -1501,8 +1511,35 @@ export function make_makers() {
         {
             id: 'copper_melter',
             name: gettext('games_cidle_maker_copper_melter'),
-            produces: [[['copper', .1]]],
+            produces: (level) => {
+                /** @type {[string, number, boolean?][]} */
+                const production = [['copper', .1 * 2 ** level]];
+
+                if (level >= 1) production.push(['tin', .01, true]);
+
+                return production;
+            },
+            consumes: (level) => [['ore', .1 + level / 10 / 4 * 3], ['fire', .5 + level / 2]],
+            upgrade_costs: (level) => {
+                if (level == 0) {
+                    if (StorageMachine.any_storage_for('glass')) return [['glass', 250]];
+                    return null;
+                }
+                return false;
+            },
+            max_level: 1,
+        },
+        {
+            id: 'tin_melter',
+            name: gettext('games_cidle_maker_tin_melter'),
+            produces: [[['tin', .1]]],
             consumes: [[['ore', .1], ['fire', .5]]],
+        },
+        {
+            id: 'glass_blower',
+            name: gettext('games_cidle_maker_glass_blower'),
+            produces: [[['glass', 1]]],
+            consumes: [[['sand', 1], ['fire', 3]]],
         },
         // Unpausable makers
         {
@@ -1519,6 +1556,11 @@ export function make_makers() {
             id: 'sundial',
             name: gettext('games_cidle_maker_sundial'),
             consumes: [[['time', 1]]],
+        },
+        {
+            id: 'hourglass',
+            name: gettext('games_cidle_maker_hourglass'),
+            consumes: [[['time', 2]]],
         },
         // Space machines
         {

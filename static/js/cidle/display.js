@@ -17,6 +17,7 @@ import globals from './globals.js';
  * @prop {string} tab_text_color_fill
  * @prop {string} inventory_color_fill
  * @prop {string} tab_selected_color_fill
+ * @prop {string} machine_level_star_fill
  * @prop {string} tab_selected_text_color_fill
  * @prop {string} machine_upgrade_lower_req_fill
  * @prop {string} machine_upgrade_lower_con_fill
@@ -55,6 +56,7 @@ const styles = {
         tab_text_color_fill: '#000',
         inventory_color_fill: '#fff',
         tab_selected_color_fill: '#00f',
+        machine_level_star_fill: 'gold',
         tab_selected_text_color_fill: '#fff',
         machine_upgrade_lower_req_fill: '#070',
         machine_upgrade_lower_con_fill: '#070',

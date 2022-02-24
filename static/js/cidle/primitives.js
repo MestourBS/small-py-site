@@ -69,27 +69,22 @@ export function number_between(number, min, max) {
  * @param {number[]} [params.cutoffs] Powers of 10 which change the `Intl.NumberFormat` options
  * @param {Intl.NumberFormatOptions[]} [params.options] Options for each cutoff point
  */
-export function beautify(number, {cutoffs=[6], options=[{notation: 'standard'}, {notation: 'engineering'}]}={}) {
+export function beautify(
+    number, {
+        cutoffs=[3, 6],
+        options=[
+            {notation: 'standard', maximumFractionDigits: 3,},
+            {notation: 'standard', maximumFractionDigits: 0,},
+            {notation: 'engineering', maximumSignificantDigits: 4,},
+        ],
+    }={}
+) {
     if (!options.length) options = [{notation: 'standard'}];
-    const pow = Math.log10(number);
+    const pow = Math.log10(Math.abs(number));
     const options_index = cutoffs.filter(n => n <= pow).length % options.length;
     const option = options[options_index];
 
-    return new Intl.NumberFormat({}, option).format(number);
-}
-
-/**
- * Pads a number to prevent constantly changing length
- *
- * @param {string} number
- * @param {number} [trailing_numbers]
- * @returns {string}
- */
-export function stable_pad_number(number, trailing_numbers=3) {
-    number += '';
-    let padlength = number.length + trailing_numbers + 1;
-    if (number.includes('.')) padlength -= number.split('.')[1].length + 1;
-    return number.padEnd(padlength);
+    return new Intl.NumberFormat({}, option).format(number).toLowerCase();
 }
 
 /**

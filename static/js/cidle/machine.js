@@ -9,6 +9,10 @@ import { check_can_afford } from './inventory.js';
 //todo complete machines (storage & maker in one)
 //todo move group of machines
 
+export const stars = [
+    '✦', '★', '✶', '✷', '✹', '⭐', '🌟',
+];
+
 export class Machine {
     /** @type {{[id: string]: Machine}} */
     static #machine_registry = {};
@@ -143,6 +147,16 @@ export class Machine {
     get can_upgrade() { return false; }
     set can_upgrade(can) {}
 
+    /**
+     * Converts a level to an amount of stars
+     *
+     * @param {number} [level]
+     * @returns {string}
+     */
+    level_to_stars(level = this.level) {
+        return level.toString(5).split('').map((s, i) => stars[i].repeat(+s)).join('');
+    }
+
     toJSON() {
         return {
             x: this.#x,
@@ -205,9 +219,9 @@ export class Machine {
      * @param {number?} [params.x] Override for the x position
      * @param {number?} [params.y] Override for the y position
      * @param {boolean} [params.transparent]
-     * @param {boolean} [params.upgrade_marker]
+     * @param {boolean} [params.markers]
      */
-    draw({context=canvas_context, x=null, y=null, transparent=false, upgrade_marker=true}={}) {
+    draw({context=canvas_context, x=null, y=null, transparent=false, markers=true}={}) {
         if (this.constructor != Machine) throw new Error(`${this.constructor.name} has no draw function!`);
     }
 
@@ -236,7 +250,7 @@ export class Machine {
      *
      * @param {Object} [params]
      * @param {MouseEvent} [params.event]
-     * @param {boolean} [params.upgrade_marker]
+     * @param {boolean} [params.markers]
      * @returns {{
      *  x: number,
      *  y: number,
@@ -251,7 +265,7 @@ export class Machine {
      *  tab?: GameTab
      * }?}
      */
-    panecontents({event=null, upgrade_marker=true}={}) { return null; }
+    panecontents({event=null, markers=true}={}) { return null; }
 
     /**
      * Action to perform on click
@@ -260,30 +274,7 @@ export class Machine {
      */
     click(event) {
         if (event.shiftKey) {
-            this.#moving = true;
-            globals.adding['world'] = {
-                click: (x, y, event) => {
-                    if (event.shiftKey == globals.press_to_snap) {
-                        x = Math.round(x / grid_spacing) * grid_spacing;
-                        y = Math.round(y / grid_spacing) * grid_spacing;
-                    }
-                    this.#x = x;
-                    this.#y = y;
-                    this.#moving = false;
-                    delete globals.adding['world'];
-                    event.preventDefault();
-                    return true;
-                },
-                draw: (x, y, event) => {
-                    if (event?.shiftKey == globals.press_to_snap) {
-                        let x_off = (display_size.width / 2) % grid_spacing - globals.position[0] % grid_spacing;
-                        let y_off = (display_size.height / 2) % grid_spacing - globals.position[1] % grid_spacing;
-                        x = Math.round((x - x_off) / grid_spacing) * grid_spacing + x_off;
-                        y = Math.round((y - y_off) / grid_spacing) * grid_spacing + y_off;
-                    }
-                    this.draw({x, y: y, transparent: true});
-                },
-            };
+            this.move();
         }
     }
 
@@ -309,13 +300,34 @@ export class Machine {
     border_path(x, y) { return []; }
 
     /**
-     * Returns the point at which the border starts
-     *
-     * @param {number} [x] X position override of the machine
-     * @param {number} [y] Y position override of the machine
-     * @returns {PointLike}
+     * Starts moving the machine
      */
-    border_start(x, y) { return [x, y]; }
+    move() {
+        this.#moving = true;
+        globals.adding['world'] = {
+            click: (x, y, event) => {
+                if (event.shiftKey == globals.press_to_snap) {
+                    x = Math.round(x / grid_spacing) * grid_spacing;
+                    y = Math.round(y / grid_spacing) * grid_spacing;
+                }
+                this.#x = x;
+                this.#y = y;
+                this.#moving = false;
+                delete globals.adding['world'];
+                event.preventDefault();
+                return true;
+            },
+            draw: (x, y, event) => {
+                if (event?.shiftKey == globals.press_to_snap) {
+                    let x_off = (display_size.width / 2) % grid_spacing - globals.position[0] % grid_spacing;
+                    let y_off = (display_size.height / 2) % grid_spacing - globals.position[1] % grid_spacing;
+                    x = Math.round((x - x_off) / grid_spacing) * grid_spacing + x_off;
+                    y = Math.round((y - y_off) / grid_spacing) * grid_spacing + y_off;
+                }
+                this.draw({x, y: y, transparent: true});
+            },
+        };
+    }
 }
 /**
  * Returns an object containing the data to be saved

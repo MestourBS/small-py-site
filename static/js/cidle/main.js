@@ -12,17 +12,19 @@ import { save_data as save_globals, load_data as load_globals } from './globals.
 import { save_data as save_machines, load_data as load_machines } from './machine.js';
 import { coords_distance as distance } from './position.js';
 
-//todo spells & curses
+//todo spells & curses / singularities
 //todo? achievements
 
 /** @type {number} */
 let last_production;
+let save_game = true;
+let save_interval = 0;
 
 function init() {
     try {
         localStorage;
         window.addEventListener('beforeunload', save);
-        setInterval(() => {save();}, 1e3 * 60);
+        save_interval = setInterval(() => {save();}, 1e3 * 60);
     } catch { }
 
     const footer = document.getElementById('footer');
@@ -48,19 +50,34 @@ function init() {
         /** @type {MakerMachine[]} */
         const present_machines = [];
         MakerMachine.maker_machines.forEach(m => {
-            const target = m.consumes.some(p => p[0] == 'time') ? time_machines : present_machines;
+            const time_machine = m.requires.some(([r]) => r == 'time') ||
+                m.consumes.some(([r]) => r == 'time') || m.produces.some(([r]) => r == 'time');
+            const target = time_machine ? time_machines : present_machines;
             target.push(m);
         });
-        time_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
 
-        multiplier *= time_speed();
+        try {
+            time_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
 
-        present_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
+            multiplier *= time_speed();
+
+            present_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
+        } catch (e) {
+            save_game = false;
+            clearInterval(save_interval);
+            throw e;
+        }
     }, 1e3 / 30);
 }
 
 function display() {
-    canvas_refresh();
+    try {
+        canvas_refresh();
+    } catch (e) {
+        save_game = false;
+        clearInterval(save_interval);
+        throw e;
+    }
 
     requestAnimationFrame(() => display());
 }
@@ -71,6 +88,8 @@ function display() {
  * @param {BeforeUnloadEvent} event
  */
 function save(event) {
+    if (!save_game) return;
+
     const d = new Date;
     const date = {
         ms: d.getUTCMilliseconds(),

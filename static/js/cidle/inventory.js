@@ -5,9 +5,10 @@ import Machine from './machine.js';
 import { Pane } from './pane.js';
 import globals from './globals.js';
 import Resource from './resource.js';
-import { beautify, stable_pad_number } from './primitives.js';
+import { beautify } from './primitives.js';
 import { coords_distance as distance } from './position.js';
 
+//todo dont draw behind panes
 //todo further improve performances by drawing only after panes movements (use context.clip)
 //todo find out why there is an added space at the top when reloading in
 //todo move panes when unlocked
@@ -86,7 +87,7 @@ const inventory = {
                         context,
                         x: x * cell_size + machine.radius + padding,
                         y: y * cell_size + machine.radius + padding + top,
-                        upgrade_marker: false,
+                        markers: false,
                     };
                     machine.draw(machine_draw);
                 }
@@ -163,7 +164,7 @@ const inventory = {
                 const entry_cache = (cache.contents[id] ??= {amount: 0, can_craft: false, index: cell_index});
                 const machine = (entry_cache.machine ??= copy_machine(id));
 
-                const pane = machine.panecontents({event, upgrade_marker: false});
+                const pane = machine.panecontents({event, markers: false});
                 const pane_id = pane.id;
                 let p = Pane.pane(pane_id);
 
@@ -244,7 +245,7 @@ const inventory = {
                                         if (can_afford) cost_color = theme('machine_upgrade_can_afford_fill');
                                         else cost_color = theme('machine_upgrade_cant_afford_fill');
 
-                                        const amount_str = (stable_pad_number(beautify(amount))+'/').repeat(!can_afford);
+                                        const amount_str = can_afford ? '' : (beautify(amount).padEnd(8)+' /');
 
                                         return `{color:${cost_color}}${amount_str}${beautify(cost)}`;
                                     };
@@ -665,6 +666,74 @@ const recipes = {
             unlocked: () => StorageMachine.any_storage_for('copper'),
             position: 17,
         },
+        'tin_crate': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['brick', 64 * 1.9 ** c + 256]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => StorageMachine.any_storage_for('ore'),
+            position: 18,
+        },
+        'glass_container': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['copper', 25 * 2 ** c], ['wood', 1_000 + 500 * c]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => ['copper', 'sand'].every(res => StorageMachine.any_storage_for(res)),
+            position: 19,
+        },
+        'tin_melter': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['brick', 64 * c + 256], ['copper', 10 * 2.5 ** c]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => ['copper', 'tin'].every(res => StorageMachine.any_storage_for(res)),
+            position: 20,
+        },
+        'glass_blower': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    let cost = false;
+                    if (c <= 5) {
+                        cost = [['brick', 64 * c + 256], ['tin', 10 * 2.5 ** c]];
+                    }
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => ['glass', 'tin'].every(res => StorageMachine.any_storage_for(res)),
+            position: 20,
+        },
         // Time machines
         'giant_clock': {
             resources: crafted => {
@@ -711,6 +780,24 @@ const recipes = {
                 return costs;
             },
             unlocked: () => ['time', 'stone'].every(res => StorageMachine.any_storage_for(res)),
+            position: 102,
+        },
+        'hourglass': {
+            resources: crafted => {
+                /** @type {([string, number][]|false)[]} */
+                const costs = [];
+                { // 0
+                    const c = crafted[0] ?? 0;
+                    /** @type {[string, number][]|false} */
+                    let cost = [['glass', 1_000 * 9 ** c], ['time', 9 * 2 ** c]];
+
+                    if (c >= 5) cost = false;
+
+                    costs[0] = cost;
+                }
+                return costs;
+            },
+            unlocked: () => ['time', 'glass'].every(res => StorageMachine.any_storage_for(res)),
             position: 103,
         },
         // Space machines
