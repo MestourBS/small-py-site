@@ -13,6 +13,7 @@ import globals from './globals.js';
  * @prop {string} text_color_fill
  * @prop {string} pane_color_fill
  * @prop {string} maker_color_fill
+ * @prop {string} machine_color_fill
  * @prop {string} storage_color_fill
  * @prop {string} tab_text_color_fill
  * @prop {string} inventory_color_fill
@@ -32,7 +33,10 @@ import globals from './globals.js';
  * @prop {string} tab_color_border
  * @prop {string} pane_color_border
  * @prop {string} grid_color_border
+ * @prop {string} machine_color_border
  * @prop {string} inventory_color_border
+ * @prop {string} machine_can_upgrade_color_border
+ * @prop {string} machine_full_upgrades_color_border
  */
 
 /**
@@ -52,6 +56,7 @@ const styles = {
         text_color_fill: '#000',
         pane_color_fill: '#fff',
         maker_color_fill: '#ccc',
+        machine_color_fill: '#ccc',
         storage_color_fill: '#ccc',
         tab_text_color_fill: '#000',
         inventory_color_fill: '#fff',
@@ -71,7 +76,10 @@ const styles = {
         tab_color_border: '#000',
         pane_color_border: '#000',
         grid_color_border: '#eee',
+        machine_color_border: '#000',
         inventory_color_border: '#000',
+        machine_can_upgrade_color_border: 'orchid',
+        machine_full_upgrades_color_border: 'gold',
     }
 };
 

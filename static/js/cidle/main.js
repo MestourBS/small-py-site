@@ -4,13 +4,9 @@
 
 import './actions.js';
 import { canvas_refresh } from './canvas.js';
-import { save_data as save_inventory, load_data as load_inventory } from './inventory.js';
-import MakerMachine, { insert_makers, make_makers, time_speed } from './maker.js';
 import { make_resources } from './resource.js';
-import StorageMachine, { insert_storages, make_storages } from './storage.js';
 import { save_data as save_globals, load_data as load_globals } from './globals.js';
-import { save_data as save_machines, load_data as load_machines } from './machine.js';
-import { coords_distance as distance } from './position.js';
+import { save_data as save_machines, load_data as load_machines, Machine } from './machine.js';
 
 //todo spells & curses / singularities
 //todo? achievements
@@ -31,11 +27,7 @@ function init() {
     document.body.removeChild(footer);
     document.body.style.height = '99%';
     make_resources();
-    make_storages();
-    make_makers();
     load();
-    insert_storages();
-    insert_makers();
     last_production = Date.now();
 
     requestAnimationFrame(() => display());
@@ -45,11 +37,12 @@ function init() {
         last_production = now;
         let multiplier = diff;
 
-        /** @type {MakerMachine[]} */
+        /** @type {Machine[]} */
         const time_machines = [];
-        /** @type {MakerMachine[]} */
+        /** @type {Machine[]} */
         const present_machines = [];
-        MakerMachine.maker_machines.forEach(m => {
+        /*
+        Maker_Machine.maker_machines.forEach(m => {
             const time_machine = m.requires.some(([r]) => r == 'time') ||
                 m.consumes.some(([r]) => r == 'time') || m.produces.some(([r]) => r == 'time');
             const target = time_machine ? time_machines : present_machines;
@@ -59,7 +52,7 @@ function init() {
         try {
             time_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
 
-            multiplier *= time_speed();
+            multiplier *= _time_speed();
 
             present_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
         } catch (e) {
@@ -67,6 +60,7 @@ function init() {
             clearInterval(save_interval);
             throw e;
         }
+        */
     }, 1e3 / 30);
 }
 
@@ -103,7 +97,6 @@ function save(event) {
 
     const data = {
         globals: save_globals(),
-        inventory: save_inventory(),
         machines: save_machines(),
         date,
     };
@@ -127,15 +120,15 @@ function load() {
      *      strict?: boolean,
      *      tab?: string,
      *  },
-     *  inventory?: {
-     *      inv: {
-     *          machines: {[id: string]: number},
-     *      },
-     *      rec: {
-     *          machines: {[id: string]: {crafted: number, unlocked?: boolean}}
-     *      },
-     *  },
-     *  machines?: {id: string, ...parts}[],
+     *  machines?: {
+     *      id: string,
+     *      x?: number,
+     *      y?: number,
+     *      paused?: boolean,
+     *      recipes?: {level?: number, paused?: boolean}[],
+     *      resources?: {[res: string]: {amount?: number, best?: number}},
+     *      hidden?: boolean,
+     *  }[],
      *  date?: {
      *      ms?: number,
      *      sec?: number,
@@ -159,9 +152,6 @@ function load() {
     if ('globals' in data) {
         load_globals(data.globals);
     }
-    if ('inventory' in data) {
-        load_inventory(data.inventory);
-    }
     if ('machines' in data) {
         load_machines(data.machines);
     }
@@ -179,16 +169,9 @@ function load() {
         let seconds = (now - save) / 1e3;
 
         if (seconds > 0) {
-            const storages = StorageMachine.storages_for('time').sort((a, b) => distance([0, 0], a) - distance([0, 0], b));
-            storages.forEach(m => {
-                if (seconds <= 0) return;
+            const machine = Machine.storage_for('time');
 
-                const time = m.resources.time;
-                const space = time.max - time.amount;
-                const move = Math.min(space, seconds);
-                time.amount += move;
-                seconds -= move;
-            });
+            if (machine) machine.resources.time.amount += seconds;
         }
     }
 }

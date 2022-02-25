@@ -7,10 +7,27 @@ import { number_between } from './primitives.js';
  * @typedef {import('./canvas.js').GameTab} GameTab
  * @typedef {import('./position.js').PointLike} PointLike
  *
- * @typedef {{content: (string|() => string)[], click?: (() => void)[], width?: number, color?: string, image?: string|HTMLImageElement}} PaneCell
- * @typedef {{content: string[], click?: (() => void)[], width?: number, color?: string, image?: HTMLImageElement}} CachedPaneCell
+ * @typedef {{
+ *  content: (string|() => string)[],
+ *  click?: (() => void)[],
+ *  width?: number,
+ *  image?: string|HTMLImageElement,
+ *  background_color?: string,
+ *  border_color?: string,
+ *  text_color?: string,
+ * }} PaneCell
+ * @typedef {{
+ *  content: string[],
+ *  click?: (() => void)[],
+ *  width?: number,
+ *  image?: HTMLImageElement,
+ *  background_color: string,
+ *  border_color: string,
+ *  text_color: string,
+ * }} CachedPaneCell
  */
 
+//todo make border colors independant from cells
 //todo merge rectangles with 2 shared corners
 
 export class Pane {
@@ -62,8 +79,9 @@ export class Pane {
      * @param {string|false} [params.title]
      * @param {GameTab} [params.tab]
      * @param {boolean} [params.pinnable] Whether the tab can be (un)pinned afterwards
+     * @param {string} [params.border_color]
      */
-    constructor({x, y, pinned=false, id, content=[], title=false, tab=globals.game_tab, pinnable=true}) {
+    constructor({x, y, pinned=false, id, content=[], title=false, tab=globals.game_tab, pinnable=true, border_color=theme('pane_color_border')}) {
         if (isNaN(x)) throw new TypeError(`Pane x must be a number (${x})`);
         if (isNaN(y)) throw new TypeError(`Pane y must be a number (${y})`);
         let has_dyn = false;
@@ -81,6 +99,8 @@ export class Pane {
         if (!is_valid_content) throw new TypeError(`Pane content must be a valid content table (${content})`);
         id += '';
 
+        const longest_row = Math.max(1 + +pinnable + +(title !== false), ...content.map(row => row.reduce((w, cell) => w + (cell.width ?? 1), 0)));
+        /** @type {PaneCell[]} */
         const title_bar = [
             {
                 content: ['X'],
@@ -94,13 +114,16 @@ export class Pane {
             });
         }
         if (title !== false) {
-            title_bar.unshift({content: [`{bold}${title}`]});
+            title_bar.unshift({
+                content: [`{bold}${title}`],
+                width: longest_row - 2,
+            });
         }
         content.forEach(row => {
             let len = row.map(cell => cell.width ?? 1).reduce((s, l) => s + l, 0);
             const last = row.length - 1;
 
-            while (len < title_bar.length) {
+            while (len < longest_row) {
                 len++;
                 row[last].width = (row[last].width ?? 1) + 1;
             }
@@ -113,6 +136,7 @@ export class Pane {
         this.#id = id;
         this.#content = content;
         this.#tab = tab;
+        this.#border_color = border_color;
 
         this.#has_dynamic_cell = has_dyn;
         this.#cache.x = x;
@@ -137,6 +161,7 @@ export class Pane {
     /** @type {false|CachedPaneCell[][]} */
     #cut_content = false;
     #tab;
+    #border_color;
     #cache = {
         x: 0,
         y: 0,
@@ -201,16 +226,23 @@ export class Pane {
             return row.map(c => c.width ?? 1).reduce((l, w) => l + w, 0);
         }).sort((a, b) => a - b)[0];
         const max_cell_width = display_size.width / longest_row;
+        const default_background_color = theme('pane_color_fill');
+        const default_border_color = this.#border_color;
+        const default_text_color = theme('text_color_fill');
 
         this.#cut_content = this.#content.map(row => {
             return row.map(cell => {
-                let {content, click=false, width=false, color=null, image=null} = cell;
+                let {
+                    content, click=false, width=false,
+                    background_color=default_background_color, border_color=default_border_color, text_color=default_text_color,
+                    image=null,
+                } = cell;
 
                 content = content.map(c => typeof c == 'function' ? c() : c);
                 let max_width = max_cell_width;
 
                 /** @type {PaneCell} */
-                let copy = {content, color};
+                let copy = {content, border_color, background_color, text_color};
                 if (click !== false) copy.click = click;
                 if (width !== false) copy.width = width;
                 if (typeof image == 'string') {
@@ -241,19 +273,21 @@ export class Pane {
          *  heights: {static: number, dynamic: number,}[],
          *  widths: {static: number, dynamic: number,}[],
          *  widest_row: number,
-         *  content: {content: string[], width: number, color: string, cols: number[], image?: HTMLImageElement}[][],
+         *  content: CachedPaneCell[][],
          * }}
          */
         const measures = {
-            heights: [],
-            widths: [],
+            heights: cache.heights.static.map((sta, i) => {return {static: sta, dynamic: cache.heights.dynamic[i]}}),
+            widths: cache.widths.static.map((sta, i) => {return {static: sta, dynamic: cache.widths.dynamic[i]}}),
             content: [],
         };
         const widest_row = measures.widest_row = this.#content.map(row => {
             return row.map(c => c.width ?? 1).reduce((l, w) => l + w, 0);
         }).sort((a, b) => a - b)[0];
         const max_cell_width = display_size.width / widest_row;
-        const default_color = theme('pane_color_fill');
+        const default_background_color = theme('pane_color_fill');
+        const default_border_color = this.#border_color;
+        const default_text_color = theme('text_color_fill');
 
         this.#content.forEach((row, ri) => {
             const row_refresh = !(ri in cache.heights.static) || (ri in cache.heights.dynamic && cache.heights.dynamic[ri] > 0);
@@ -275,12 +309,14 @@ export class Pane {
                     }
                     column += width;
                     const cell_refresh = row_refresh || !(ri in cache.heights) || dynamic || cols.some(c => !(c in cache.widths[type]));
-                    /** @type {{content: string[], width: number, color: string, image?: HTMLImageElement}} */
+                    /** @type {CachedPaneCell} */
                     const caching_cell = {
                         width,
                         cols,
-                        color: cell.color ?? default_color,
                         content: content.map(c => typeof c == 'function' ? c() : c),
+                        border_color: cell.border_color ?? default_border_color,
+                        background_color: cell.background_color ?? default_background_color,
+                        text_color: cell.text_color ?? default_text_color,
                     };
                     if ('image' in cell) {
                         let {image} = cell;
@@ -526,7 +562,7 @@ export class Pane {
         const height = heights.reduce((s, h) => s + h, 0);
 
         context.fillStyle = theme('pane_color_fill');
-        context.strokeStyle = theme('pane_color_border');
+        context.strokeStyle = this.#border_color;
         context.beginPath();
         context.moveTo(x, y);
         context.lineTo(x + width, y);
@@ -543,21 +579,23 @@ export class Pane {
         this.#cut_content.forEach((row, ry) => {
             const py = heights.filter((_, i) => i < ry).reduce((s, h) => s + h, 0) + y;
             const height = heights[ry];
-            row.forEach((cell, cx) => {
-                const px = widths.filter((_, i) => i < cx).reduce((s, w) => s + w, 0) + x;
-                const width = widths.filter((_, i) => i >= cx && i < cx + (cell.width ?? 1)).reduce((s, w) => s + w, 0);
-                const background = cell.color;
+            let col = 0;
+            row.forEach(cell => {
+                const px = widths.filter((_, i) => i < col).reduce((s, w) => s + w, 0) + x;
+                const width = widths.filter((_, i) => i >= col && i < col + (cell.width ?? 1)).reduce((s, w) => s + w, 0);
+                const {background_color, border_color, text_color} = cell;
+                col += cell.width ?? 1;
 
                 // Draw cell borders
-                context.strokeStyle = theme('pane_color_border');
-                if (background) context.fillStyle = background;
+                context.strokeStyle = border_color ?? theme('pane_color_border');
+                context.fillStyle = background_color;
                 context.beginPath();
                 context.moveTo(px, py);
                 context.lineTo(px + width, py);
                 context.lineTo(px + width, py + height);
                 context.lineTo(px, py + height);
                 context.lineTo(px, py);
-                if (background) context.fill();
+                if (background_color) context.fill();
                 context.stroke();
                 context.closePath();
 
@@ -570,7 +608,7 @@ export class Pane {
                 tx += 5;
 
                 cell.content.forEach(t => {
-                    canvas_write(t, tx, ty, {context});
+                    canvas_write(t, tx, ty, {context, base_text_color: text_color});
                     ty += theme('font_size');
                 });
             });
@@ -806,7 +844,7 @@ export class Pane {
         context.closePath();
 
         if (complete_redraw) {
-            context.strokeStyle = theme('pane_color_border');
+            context.strokeStyle = this.#border_color;
             context.beginPath();
             context.moveTo(x, y);
             context.lineTo(x + width, y);
@@ -835,10 +873,10 @@ export class Pane {
                 const px = x + widths.filter((_, i) => i < ci).reduce((s, w) => s + Math.max(w.dynamic, w.static), 0);
                 const width = cell.cols.map(c => Math.max(widths[c].dynamic, widths[c].static))
                     .reduce((s, w) => s + w, 0);
-                const background = cell.color;
+                const {background_color, border_color, text_color} = cell;
 
-                context.strokeStyle = theme('pane_color_border');
-                context.fillStyle = background;
+                context.strokeStyle = border_color;
+                context.fillStyle = background_color;
                 context.beginPath();
                 context.moveTo(px, py);
                 context.lineTo(px + width, py);
@@ -858,7 +896,7 @@ export class Pane {
                 tx += 5;
 
                 cell.content.forEach(t => {
-                    canvas_write(t, tx, ty, {context});
+                    canvas_write(t, tx, ty, {context, base_text_color: text_color});
                     ty += theme('font_size');
                 });
 

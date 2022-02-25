@@ -30,7 +30,7 @@ export function to_point(coords) {
 }
 
 /**
- * Calculates the distance between 2 points, squared
+ * Calculates the distance between 2 points, **squared**
  *
  * @param {PointLike} pointa
  * @param {PointLike} pointb

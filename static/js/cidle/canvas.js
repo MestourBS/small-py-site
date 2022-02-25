@@ -1,13 +1,9 @@
 import { mouse_position } from './actions.js';
 import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
-import { check_can_afford, clear_caches, draw as draw_inventory, unlock_recipes } from './inventory.js';
 import Machine from './machine.js';
-import { MakerMachine, time_speed } from './maker.js';
 import { Pane } from './pane.js';
-import { beautify, number_between } from './primitives.js';
-import Resource from './resource.js';
-import StorageMachine, { space_boost } from './storage.js';
+import { number_between } from './primitives.js';
 /**
  * @typedef {keyof game_tabs} GameTab
  */
@@ -17,6 +13,7 @@ import StorageMachine, { space_boost } from './storage.js';
 //todo changelog tab
 //todo prevent flickering gain
 //todo unlockable tabs
+//todo supergrid (5x5)
 
 /**
  * Canvas of the game
@@ -46,6 +43,7 @@ const game_tabs = {
         _cut_name: false,
         /** @type {false|string} @private */
         _cut_params: false,
+        /** @returns {string[]} */
         cut_name(params) {
             const p = JSON.stringify(params);
             if (this._cut_params != p) {
@@ -56,240 +54,12 @@ const game_tabs = {
         },
         draw: () => {
             draw_grid();
-            MakerMachine.maker_machines.filter(m => m.can_produce()).forEach(m => m.draw_connections({context}));
+            //Maker_Machine.maker_machines.filter(m => m.can_produce()).forEach(m => m.draw_connections({context}));
             Machine.visible_machines.forEach(m => m.draw({context}));
             Pane.get_visible_panes('world').forEach(p => p.draw({context}));
 
             let {x, y, event} = mouse_position;
             globals.adding[globals.game_tab]?.draw?.(x, y, event);
-        },
-    },
-    inventory: {
-        reset: false,
-        name: gettext('games_cidle_tab_inventory'),
-        /** @type {false|string[]} @private */
-        _cut_name: false,
-        /** @type {false|string} @private */
-        _cut_params: false,
-        cut_name(params) {
-            const p = JSON.stringify(params);
-            if (this._cut_params != p) {
-                this._cut_name = cut_lines(this.name, params);
-                this._cut_params = p;
-            }
-            return this._cut_name;
-        },
-        draw: ({top=0}={}) => draw_inventory({context, top}),
-        click: event => {
-            clear_caches();
-            canvas_reset();
-            unlock_recipes();
-            check_can_afford();
-        },
-    },
-    resources: {
-        reset: false,
-        name: gettext('games_cidle_tab_resources'),
-        /** @type {false|string[]} @private */
-        _cut_name: false,
-        /** @type {false|string} @private */
-        _cut_params: false,
-        /** @returns {string} */
-        cut_name(params) {
-            const p = JSON.stringify(params);
-            if (this._cut_params != p) {
-                this._cut_name = cut_lines(this.name, params);
-                this._cut_params = p;
-            }
-            return this._cut_name;
-        },
-        /**
-         * @type {{
-         *  speed?: {amount?: number, height?: number},
-         *  space?: {text?: string, height?: number},
-         *  resources?: {[resource: string]: {amount?: string, max?: string, per_second?: string, index?: number, name?: string}},
-         *  rows?: number,
-         *  widths?: {[k: string]: number},
-         *  y?: number,
-         * }}
-         */
-        data: {},
-        draw() {
-            const data = this.data;
-            data.resources ??= {};
-
-            const x = theme('tab_padding');
-            let y = theme('tab_padding') + tabs_heights();
-            const speed = time_speed();
-            const space = space_boost();
-            const font_size = theme('font_size');
-            const dont_width = ['res', 'time'];
-            let draw_speed = false;
-            /**
-             * @type {{
-             *  res: string,
-             *  name: string,
-             *  amount: string,
-             *  max: string,
-             *  per_second: string,
-             * }[]}
-             */
-            const table = Resource.all_resources().map(res => {
-                const {amount, max} = StorageMachine.stored_resource(res);
-                const {name} = Resource.resource(res);
-                if (!max) return;
-
-                let per_second = MakerMachine.maker_machines.filter(m => {
-                    if (m.paused || !m.can_produce()) return false;
-
-                    return m.consumes.some(([r]) => r == res) || m.produces.some(([r]) => r == res);
-                }).reduce((ps, m) => {
-                    const pro = m.produces.find(([r]) => r == res);
-                    const mult = m.max_produce_multiplier();
-                    const con = m.consumes.find(([r]) => r == res);
-                    return ps + ((pro?.[1] ?? 0) - (con?.[1] ?? 0)) * mult;
-                }, 0);
-                if (Math.abs(per_second) < 1e-3) per_second = 0;
-
-                return {res, amount, max, per_second, name};
-            }).filter(d => d != null).sort((a, b) => {
-                if (!globals.stable_resource_order) {
-                    if (a.max != b.max) return a.max - b.max;
-                    if (a.per_second != b.per_second) return a.per_second - b.per_second;
-                    if (a.amount != b.amount) return a.amount - b.amount;
-                }
-                return a.name > b.name;
-            }).map(res_data => {
-                const {res, amount, max, per_second, name} = res_data;
-
-                let a = `${beautify(amount).padEnd(8)}`;
-                let ps = '';
-
-                if (per_second) {
-                    ps = beautify(per_second);
-                    if (per_second > 0) ps = `+${ps}`;
-                    ps = ps.padEnd(8);
-                    ps += '/s';
-                }
-                let m = `/${beautify(max)}`;
-
-                return {res, name, amount: a, max: m, per_second: ps};
-            });
-            const rows = Math.min(((speed != 1) + (space != 1)) * 2, 3) + table.length;
-
-            const max_width = display_size.width / (Object.keys(table[0]).length + (speed != 1) - dont_width.length);
-
-            /** @type {{[k: string]: number}} */
-            const table_widths = table.reduce((widths, res_data) => {
-                Object.entries(res_data).forEach(([key, value]) => {
-                    if (dont_width.includes(key)) return;
-                    widths[key] = Math.min(max_width, Math.max(widths[key] ?? 0, context.measureText(value).width));
-                });
-                return widths;
-            }, {});
-            const diff_widths = Object.entries(table_widths).some(([k, v]) => data.widths?.[k] != v);
-
-            // If something is different, reset it all
-            if (rows != data.rows || y != data.y || diff_widths) {
-                canvas_reset();
-                data.resources = {};
-                data.space = {};
-                data.speed = {};
-                data.rows = rows;
-                data.y = y;
-                data.widths = table_widths;
-            }
-
-            // Show time speed
-            if (speed != 1) {
-                data.speed ??= {};
-                if (data.speed.amount != speed) {
-                    draw_speed = true;
-                    data.speed.amount = speed;
-                    const speed_str = gettext('games_cidle_time_speed', {speed: beautify(speed).padEnd(8)});
-                    const cut_time_speed = cut_lines(speed_str);
-                    canvas_write(speed_str, x, y);
-                    data.speed.height = (cut_time_speed.length + .5) * font_size;
-                }
-                y += data.speed.height;
-            }
-
-            // Show space multiplier
-            if (space != 1) {
-                const space_str = gettext('games_cidle_space_boost', {space: beautify(space).padEnd(8)});
-                data.space ??= {};
-                if (data.space.text != space_str) {
-                    data.space.text = space_str;
-                    const cut_space_boost = cut_lines(space_str);
-                    canvas_write(space_str, x, y);
-                    data.space.height = (cut_space_boost.length + .5) * font_size;
-                }
-                y += data.space.height;
-            }
-
-            // Space between timespace bonuses and the rest
-            if (speed != 1 || space != 1) y += font_size;
-
-            // Draw resources
-            table.forEach((res_data, i) => {
-                const {res, amount, max, per_second, name} = res_data;
-                const own_data = (data.resources[res] ??= {});
-                const redraw_all = own_data.index != i;
-
-                const {color} = Resource.resource(res);
-                const background_color = Resource.resource(res).background_color ?? 'white';
-
-                const height = (Object.values(res_data).map(s => cut_lines(s, {max_width}).length).reduce((h, l) => Math.max(h, l), 0) + .5) * font_size;
-                let data_x = x;
-
-                Object.entries(res_data).forEach(([key, value]) => {
-                    if (!(key in table_widths)) return;
-
-                    const width = table_widths[key] + grid_spacing;
-
-                    if (redraw_all || value != own_data[key]) {
-                        if (background_color) {
-                            context.fillStyle = background_color;
-                            context.fillRect(data_x, y, width, height);
-                        }
-
-                        canvas_write(value, data_x, y, {base_text_color: color});
-                    }
-
-                    data_x += width;
-                });
-                if (draw_speed && speed != 1 && res != 'time') {
-                    const speed_text = `x${beautify(speed).padEnd(8)}`;
-
-                    if (background_color) {
-                        const width = context.measureText(speed_text).width + grid_spacing;
-
-                        context.fillStyle = background_color;
-                        context.fillRect(data_x, y, width, height);
-                    }
-
-                    if (per_second) {
-                        canvas_write(speed_text, data_x, y, {base_text_color: color});
-                    }
-                }
-
-                y += height;
-                own_data.amount = amount;
-                own_data.index = i;
-                own_data.max = max;
-                own_data.per_second = per_second;
-                own_data.name = name;
-            });
-        },
-        click() {
-            canvas_reset();
-            const data = this.data;
-            data.resources = {};
-            data.space = {};
-            data.speed = {};
-            data.rows = 0;
-            data.widths = {};
-            data.y = 0;
         },
     },
     help: {
@@ -299,7 +69,7 @@ const game_tabs = {
         _cut_name: false,
         /** @type {false|string} @private */
         _cut_params: false,
-        /** @returns {string} */
+        /** @returns {string[]} */
         cut_name(params) {
             const p = JSON.stringify(params);
             if (this._cut_params != p || !this._cut_name) {
@@ -336,26 +106,28 @@ const game_tabs = {
                 gettext('games_cidle_help_machine_move'),
             ]);
             const machines_checks = (data.machines_text_checks ??= new Set);
-            if (!machines_checks.has('upgrade') && Machine.machines.some(m => m.level > 0 || m.can_upgrade)) {
+            /*
+            if (!machines_checks.has('upgrade') && _Machine.machines.some(m => m.level > 0 || m.can_upgrade)) {
                 machines_text.push(gettext('games_cidle_help_machine_upgrade'));
                 machines_checks.add('upgrade');
             }
-            if (!machines_checks.has('optional') && MakerMachine.maker_machines.some(m => m.produces.some(([,,o=false]) => o))) {
+            if (!machines_checks.has('optional') && Maker_Machine.maker_machines.some(m => m.produces.some(([,,o=false]) => o))) {
                 machines_text.push(gettext('games_cidle_help_machine_optional'));
                 machines_checks.add('optional');
             }
-            if (!machines_checks.has('unpausable') && MakerMachine.maker_machines.some(m => m.unpausable && m.is_visible)) {
+            if (!machines_checks.has('unpausable') && Maker_Machine.maker_machines.some(m => m.unpausable && m.is_visible)) {
                 machines_text.push(gettext('games_cidle_help_machine_unpausable'));
                 machines_checks.add('unpausable');
             }
-            if (!machines_checks.has('time') && StorageMachine.any_storage_for('time')) {
+            if (!machines_checks.has('time') && Storage_Machine.any_storage_for('time')) {
                 machines_text.push(gettext('games_cidle_help_machine_time'));
                 machines_checks.add('time');
             }
-            if (!machines_checks.has('space') && StorageMachine.any_storage_for('space')) {
+            if (!machines_checks.has('space') && Storage_Machine.any_storage_for('space')) {
                 machines_text.push(gettext('games_cidle_help_machine_space'));
                 machines_checks.add('space');
             }
+            */
 
             /** @type {string[]} */
             const inventory_text = (data.inventory_text_lines ??= [
@@ -523,29 +295,21 @@ function draw_grid() {
     context.beginPath();
     const x_offset = -grid_spacing - globals.position[0] % grid_spacing + canvas.width / 2 % grid_spacing;
     const y_offset = -grid_spacing - globals.position[1] % grid_spacing + canvas.height / 2 % grid_spacing;
-    const max_x = canvas.width / grid_spacing + 1;
-    const max_y = canvas.height / grid_spacing + 1;
-    for (let x = 0; x < max_x; x++) {
+    const x_max = canvas.width / grid_spacing + 1;
+    const y_max = canvas.height / grid_spacing + 1;
+    for (let x = 0; x < x_max; x++) {
         const px = x * grid_spacing + x_offset;
         if (px <= 0) continue;
 
         context.moveTo(px, 0);
         context.lineTo(px, canvas.height);
-        if (!(x % 5)) {
-            context.moveTo(px+1, 0);
-            context.lineTo(px+1, canvas.height);
-        }
     }
-    for (let y = 0; y < max_y; y++) {
+    for (let y = 0; y < y_max; y++) {
         const py = y * grid_spacing + y_offset;
         if (py <= 0) continue;
 
         context.moveTo(0, py);
         context.lineTo(canvas.width, py);
-        if (!(y % 5)) {
-            context.moveTo(0, py+1);
-            context.lineTo(canvas.width, py+1);
-        }
     }
     context.stroke();
     context.closePath();

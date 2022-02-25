@@ -1,6 +1,5 @@
-import { is_fill_mode } from './storage.js';
 /**
- * @typedef {import('./storage.js').FillMode} FillMode
+ * @typedef {import('./_storage.js').FillMode} FillMode
  */
 
 //todo? resource description
@@ -177,6 +176,12 @@ export function make_resources() {
             border_color: '#F2F2F2',
             background_color: '#CCC',
         },
+        {
+            id: 'bronze',
+            name: gettext('games_cidle_resource_bronze'),
+            color: '#CD7F32',
+            border_color: '#B9722D',
+        },
         // Time resources
         {
             id: 'time',
@@ -195,4 +200,14 @@ export function make_resources() {
     ];
 
     resources.forEach(r => new Resource(r));
+}
+
+/**
+ * Checks if a string is a fillmode
+ *
+ * @param {string} mode
+ * @returns {mode is FillMode}
+ */
+function is_fill_mode(mode) {
+    return ['circle', 'clockwise', 'counterclockwise', 'transparency', 'image', 'rhombus', 'linear'].includes(mode);
 }

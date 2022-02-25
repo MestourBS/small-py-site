@@ -2,7 +2,6 @@ import { canvas, display_size, tabs_heights, click as tabs_click } from './canva
 import globals from './globals.js';
 import Machine from './machine.js';
 import { Pane } from './pane.js';
-import { click as click_inventory, is_clickable as is_clickable_inventory } from './inventory.js';
 
 //todo add zooming
 
@@ -43,12 +42,6 @@ const game_tabs = {
         can_click: is_clickable_world,
         drag: drag_world,
         contextmenu: contextmenu_world,
-    },
-    inventory: {
-        click: click_inventory,
-        can_click: is_clickable_inventory,
-        drag: drag_inventory,
-        contextmenu: () => {},
     },
     resources: {
         click: () => {},
