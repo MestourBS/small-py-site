@@ -43,12 +43,6 @@ const game_tabs = {
         drag: drag_world,
         contextmenu: contextmenu_world,
     },
-    resources: {
-        click: () => {},
-        can_click: () => false,
-        drag: () => {},
-        contextmenu: () => {},
-    },
     help: {
         click: () => {},
         can_click: () => false,
