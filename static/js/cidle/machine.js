@@ -1008,12 +1008,12 @@ function make_machines() {
             recipes: [
                 new Recipe({
                     name: gettext('games_cidle_recipe_fire_pit_0_0'),
-                    max_level: 1,
+                    max_level: 2,
                     consumes(level) {
                         switch (level) {
                             default:
                                 return [];
-                            case 1:
+                            case 1: case 2:
                                 return [['wood', .1, .5]];
                         }
                     },
@@ -1023,6 +1023,8 @@ function make_machines() {
                                 return [];
                             case 1:
                                 return [['fire', .1, 10]];
+                            case 2:
+                                return [['fire', .2, 15]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1031,6 +1033,8 @@ function make_machines() {
                                 return [];
                             case 0:
                                 return [['wood', 10], ['stone', 5]];
+                            case 1:
+                                return [['wood', 20], ['stone', 15]];
                         }
                     },
                     type: 'fixed',
@@ -1049,13 +1053,15 @@ function make_machines() {
             recipes: [
                 new Recipe({
                     name: gettext('games_cidle_recipe_water_well_0_0'),
-                    max_level: 1,
+                    max_level: 2,
                     produces(level) {
                         switch (level) {
                             default:
                                 return [];
                             case 1:
                                 return [['water', .1, 10]];
+                            case 2:
+                                return [['water', .2, 15]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1064,6 +1070,8 @@ function make_machines() {
                                 return [];
                             case 0:
                                 return [['stone', 10], ['fire', 5]];
+                            case 1:
+                                return [['stone', 20], ['wood', 15]];
                         }
                     },
                     type: 'fixed',
