@@ -370,22 +370,22 @@ export class Recipe {
                 return `${scon}/s`;
             };
             let require;
-            if (this.type == 'fixed') require = beautify(req);
+            if (this.type == 'fixed') require = () => `${beautify(data.amount).padEnd(8)} / ${beautify(req)}`;
             else if (this.type == 'scaling') require = () => {
                 const mult = prod_mult() ?? 1;
                 let sreq = beautify(req * mult);
                 if (Math.abs(mult - 1) >= 1e-3) sreq = `${sreq.padEnd(8)} x(${beautify(mult).padEnd(8)})`;
 
-                return ` / ${sreq}`;
+                return `${beautify(data.amount).padEnd(8)} / ${sreq}`;
             };
 
             return [
                 {
-                    content: [() => beautify(data.amount).padEnd(8), name],
+                    content: [name, require],
                     background_color, text_color: color,
                 },
                 {
-                    content: [consume, require],
+                    content: ['', consume],
                     background_color, text_color: color,
                 },
             ];
