@@ -1,12 +1,12 @@
 /**
- * Inspired by [the first alkahistorian](https://nagshell.github.io)
+ * Inspired by [the first alkahistorian](https://nagshell.github.io/elemental-inception-incremental/)
  */
 
 import './actions.js';
 import { canvas_refresh } from './canvas.js';
 import { make_resources } from './resource.js';
 import { save_data as save_globals, load_data as load_globals } from './globals.js';
-import { save_data as save_machines, load_data as load_machines, Machine } from './machine.js';
+import { save_data as save_machines, load_data as load_machines, Machine, time_speed } from './machine.js';
 
 //todo spells & curses / singularities
 //todo? achievements
@@ -41,26 +41,19 @@ function init() {
         const time_machines = [];
         /** @type {Machine[]} */
         const present_machines = [];
-        /*
-        Maker_Machine.maker_machines.forEach(m => {
-            const time_machine = m.requires.some(([r]) => r == 'time') ||
-                m.consumes.some(([r]) => r == 'time') || m.produces.some(([r]) => r == 'time');
-            const target = time_machine ? time_machines : present_machines;
-            target.push(m);
-        });
+        Machine.machines.forEach(m => (m.is_time_machine ? time_machines : present_machines).push(m));
 
         try {
-            time_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
+            time_machines.filter(m => m.can_produce()).forEach(m => m.produce({multiplier}));
 
-            multiplier *= _time_speed();
+            multiplier *= time_speed();
 
-            present_machines.filter(m => m.can_produce({multiplier})).forEach(m => m.produce({multiplier}));
+            present_machines.filter(m => m.can_produce()).forEach(m => m.produce({multiplier}));
         } catch (e) {
             save_game = false;
             clearInterval(save_interval);
             throw e;
         }
-        */
     }, 1e3 / 30);
 }
 

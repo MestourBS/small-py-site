@@ -127,60 +127,10 @@ export function make_resources() {
             border_color: '#E66B00',
         },
         {
-            id: 'brick',
-            name: gettext('games_cidle_resource_brick'),
-            color: '#555',
-            border_color: '#484848',
-        },
-        {
-            id: 'gravel',
-            name: gettext('games_cidle_resource_gravel'),
-            color: '#999',
-            border_color: '#8C8C8C',
-        },
-        {
             id: 'water',
             name: gettext('games_cidle_resource_water'),
             color: '#00F',
             border_color: '#0000E6',
-        },
-        {
-            id: 'ore',
-            name: gettext('games_cidle_resource_ore'),
-            color: '#9ABCDE',
-            border_color: '#87AFD8',
-            fill_image: '/static/images/games/cidle/ore.png',
-        },
-        {
-            id: 'sand',
-            name: gettext('games_cidle_resource_sand'),
-            color: '#EDC9AF',
-            border_color: '#E8BB9A',
-        },
-        {
-            id: 'copper',
-            name: gettext('games_cidle_resource_copper'),
-            color: '#B87333',
-            border_color: '#A4672D',
-        },
-        {
-            id: 'tin',
-            name: gettext('games_cidle_resource_tin'),
-            color: '#99D',
-            border_color: '#8686D7',
-        },
-        {
-            id: 'glass',
-            name: gettext('games_cidle_resource_glass'),
-            color: '#FFF',
-            border_color: '#F2F2F2',
-            background_color: '#CCC',
-        },
-        {
-            id: 'bronze',
-            name: gettext('games_cidle_resource_bronze'),
-            color: '#CD7F32',
-            border_color: '#B9722D',
         },
         // Time resources
         {

@@ -2,7 +2,7 @@ import { context as canvas_context, display_size, grid_spacing, tabs_heights } f
 import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
 import { Pane } from './pane.js';
-import { angle_to_rhombus_point, coords_distance as distance, rect_contains_point } from './position.js';
+import { angle_to_rhombus_point, coords_distance as distance, line_crosses_rectangle, parallel_perpendicular, rect_contains_point } from './position.js';
 import { beautify, number_between } from './primitives.js';
 import Recipe from './recipe.js';
 import Resource from './resource.js';
@@ -12,6 +12,7 @@ import Resource from './resource.js';
  * @typedef {import('./pane.js').PaneCell} PaneCell
  */
 
+//todo refresh pane on color changes
 //todo move group of machines
 //todo change draw to draw different parts of the machine as required
 //todo change draw_connections to draw different connections as required
@@ -30,6 +31,7 @@ export const pause_text = {
     'true': gettext('games_cidle_maker_paused'),
     'false': gettext('games_cidle_maker_unpaused'),
 };
+const time_constant = 1.76;
 
 export class Machine {
     /** @type {{[id: string]: Machine}} */
@@ -152,7 +154,7 @@ export class Machine {
         this.#recipes = recipes;
 
         this.#resources = Object.fromEntries(
-            Object.entries(resources).map(([res, {amount=0, best=0}]) => {
+            Object.entries(resources).map(([res, {amount=0, best=1}]) => {
                 Machine.#storages[res] = this;
 
                 /** @type {{amount: number, best: number}} */
@@ -174,6 +176,9 @@ export class Machine {
         this.cache_refresh();
         Machine.#machines.push(this);
         Machine.#registry[id] = this;
+        if (Machine.#static_cache.visible_machines && this.is_visible) {
+            Machine.#static_cache.visible_machines.push(this);
+        }
     }
 
     #id;
@@ -194,17 +199,23 @@ export class Machine {
     #cache = {
         max_level: false,
         can_upgrade: false,
+        is_time_machine: false,
         /**
          * @type {{[res: string]: {
-         *  readonly best: number,
+         *  best: number,
          *  amount: number,
          * }}}
          */
         resources: {},
+        /** @type {{[machine: string]: [string, 1|0|-1][]}} {machine: [color, dir]} */
+        connections: {},
     };
 
     get is_visible() {
         if (this.hidden) return false;
+        try {
+            display_size;
+        } catch { return false; }
 
         let {x, y, radius} = this;
         const {position} = globals;
@@ -234,6 +245,8 @@ export class Machine {
     get can_upgrade() { return this.#cache.can_upgrade; }
     get moving() { return this.#moving; }
     set moving(moving) { this.#moving = !!moving; }
+    get is_time_machine() { return this.#cache.is_time_machine; }
+    get recipes() { return this.#recipes; }
 
     get resources() { return this.#cache.resources; }
 
@@ -284,10 +297,12 @@ export class Machine {
      * @param {boolean} [params.max_level]
      * @param {boolean} [params.resources]
      * @param {boolean} [params.can_upgrade]
+     * @param {boolean} [params.connections]
+     * @param {boolean} [params.is_time_machine]
      */
     cache_refresh(
-        {hidden, max_level, resources, can_upgrade}=
-        {hidden:true, max_level:true, resources: true, can_upgrade:true}
+        {hidden, max_level, resources, can_upgrade, connections, is_time_machine}=
+        {hidden:true, max_level:true, resources:true, can_upgrade:true, connections:true, is_time_machine:true}
     ) {
         const cache = this.#cache;
 
@@ -298,7 +313,10 @@ export class Machine {
             if (typeof hidden == 'function') chid = hidden.call(this);
             else chid = hidden;
 
-            if (!chid) this.#hidden = false;
+            if (!chid) {
+                this.#hidden = false;
+                if (this.is_visible) Machine.#static_cache.visible_machines.push?.(this);
+            }
         }
 
         if (max_level) {
@@ -309,6 +327,7 @@ export class Machine {
             cache.resources = Object.fromEntries(Object.entries(this.#resources).map(([res, data]) => {
                 return [res, {
                     get best() { return data.best; },
+                    set best(best) { if (!isNaN(best)) data.best = Math.max(data.best, best); },
                     get amount() { return data.amount; },
                     set amount(amount) { if (!isNaN(amount)) data.amount = amount; },
                 }];
@@ -320,6 +339,48 @@ export class Machine {
                 r.cache_refresh({can_upgrade: true});
                 return r.can_upgrade;
             });
+        }
+
+        if (connections) {
+            /** @type {{[res_id: string]: number}} */
+            const res_changes = {};
+            /** @type {{[res_id: string]: Machine}} */
+            const recipes = this.#recipes.reduce((targets, recipe) => {
+                recipe.produces.forEach(([res, pro]) => {
+                    //todo max support
+
+                    res_changes[res] ??= 0;
+                    res_changes[res] += pro;
+                });
+                recipe.consumes.forEach(([res, con]) => {
+                    //todo min support
+
+                    res_changes[res] ??= 0;
+                    res_changes[res] -= con;
+                });
+
+                recipe.cache_refresh({targets: true});
+                Object.entries(recipe.targets).forEach(([res, mac]) => targets[res] = mac);
+                return targets;
+            }, {});
+            const machines = new Set(Object.values(recipes));
+            machines.delete(this);
+            /** @type {{[machine: string]: [string, 1|0|-1][]}} */
+            const connections = cache.connections = {};
+
+            machines.forEach(machine => {
+                const resources = Object.keys(machine.resources);
+                if (!resources.length) return;
+
+                const {id} = machine;
+                const links = connections[id] = [];
+                links.push(...resources.map(res => [Resource.resource(res).color, Math.sign(res_changes[res] ?? 0)]));
+            });
+        }
+
+        if (is_time_machine) {
+            cache.is_time_machine = this.#recipes
+                .some(r => r.consumes.some(([res]) => res == 'time') || r.produces.some(([res]) => res == 'time'));
         }
     }
     /**
@@ -391,9 +452,9 @@ export class Machine {
                 case 'circle':
                 default:
                     funcs.push(
-                        ['moveTo', [x, y]],
+                        ['moveTo', [x, y - radius * fill]],
                         ['arc', [x, y, radius * fill, start_angle, end_angle]],
-                        ['lineTo', [x, y]],
+                        ['lineTo', [x, y - radius * fill]],
                     );
                     break;
                 case 'clockwise':
@@ -406,18 +467,18 @@ export class Machine {
                         clock_start = clock_end - clock_diff;
                     }
                     funcs.push(
-                        ['moveTo', [x, y]],
+                        ['moveTo', [x - radius * fill, y]],
                         ['arc', [x, y, radius, clock_start, clock_end]],
-                        ['lineTo', [x, y]],
+                        ['lineTo', [x - radius * fill, y]],
                     );
                     break;
                 case 'transparency':
                     const transparency_alpha = context.globalAlpha * fill;
                     funcs.push(
                         ['globalAlpha', [transparency_alpha]],
-                        ['moveTo', [x, y]],
+                        ['moveTo', [x - radius * fill, y]],
                         ['arc', [x, y, radius, start_angle, end_angle]],
-                        ['lineTo', [x, y]],
+                        ['lineTo', [x - radius * fill, y]],
                     );
                     break;
                 case 'linear':
@@ -449,9 +510,9 @@ export class Machine {
                         rhombus_angle_point(end_angle),
                     ];
                     funcs.push(
-                        ['moveTo', [x, y]],
+                        ['moveTo', [x - radius * fill, y]],
                         ...rhombus_points.map(([px, py]) => ['lineTo', [px, py]]),
-                        ['lineTo', [x, y]],
+                        ['lineTo', [x - radius * fill, y]],
                     );
                     break;
             }
@@ -516,11 +577,103 @@ export class Machine {
      *
      * @param {Object} [params]
      * @param {CanvasRenderingContext2D} [params.context]
-     * @param {number} [params.multiplier]
      */
-    //todo
-    draw_connections({context=canvas_context, multiplier=this.#last_multiplier}={}) {
-        console.log('todo: Machine.draw_connections');
+    draw_connections({context=canvas_context}={}) {
+        if (!this.is_visible) return;
+        if (this.paused) context.setLineDash([10]);
+
+        const offset_x = display_size.width / 2 - globals.position[0];
+        const offset_y = display_size.height / 2 - globals.position[1];
+
+        Object.entries(this.#cache.connections).forEach(([machine_id, resources]) => {
+            const machine = Machine.machine(machine_id);
+
+            if (!machine || !resources.length) return;
+
+            if (!machine.is_visible) {
+                const {width, height} = display_size;
+
+                const r_x = -offset_x;
+                const r_y = -offset_y;
+                const r_w = width;
+                const r_h = height;
+
+                if (!line_crosses_rectangle([this, machine], r_x, r_y, r_w, r_h)) return;
+            }
+
+            let dbr = 0;
+            let d = 0;
+            if (resources.length > 1) {
+                dbr = this.radius / (resources.length - 1);
+                if (resources.length < 3) d = -this.radius * 1.5;
+                else d = -this.radius;
+            }
+            const parallels = parallel_perpendicular([this, machine]);
+
+            resources.forEach(([color, dir]) => {
+                let [pa, pb] = parallels(d += dbr);
+
+                context.strokeStyle = color;
+                context.beginPath();
+                context.moveTo(pa.x + offset_x, pa.y + offset_y);
+                context.lineTo(pb.x + offset_x, pb.y + offset_y);
+                context.stroke();
+                context.closePath();
+
+                // Draw arrows if needed and they are within frame
+                if (!dir) return;
+
+                if (dir == -1) [pa, pb] = [pb, pa];
+
+                const dist_x = pb.x - pa.x;
+                const dist_y = pb.y - pa.y;
+                /** @type {number} */
+                let off_x;
+                /** @type {number} */
+                let off_y;
+
+                if (!dist_x || !dist_y) {
+                    off_x = 2.5 * Math.sign(dist_x);
+                    off_y = 2.5 * Math.sign(dist_y);
+                } else {
+                    off_x = 2.5 * dist_x / (Math.abs(dist_x) + Math.abs(dist_y));
+                    off_y = 2.5 * dist_y / (Math.abs(dist_x) + Math.abs(dist_y));
+                }
+
+                /** @type {[number, number]} */
+                const tip = [
+                    (pa.x + pb.x) / 2 + off_x + offset_x,
+                    (pa.y + pb.y) / 2 + off_y + offset_y,
+                ];
+                /** @type {[number, number]} */
+                const left = parallels(d + 5).reduce((a, p) => [a[0] + p.x / 2 - off_x, a[1] + p.y / 2 - off_y], [offset_x, offset_y]);
+                /** @type {[number, number]} */
+                const right = parallels(d - 5).reduce((a, p) => [a[0] + p.x / 2 - off_x, a[1] + p.y / 2 - off_y], [offset_x, offset_y]);
+
+                if (!this.paused) {
+                    // Move the arrow on the line
+                    const d = distance(pa, pb) ** .75;
+                    const r = (Date.now() % d) / d - .5;
+                    [tip, left, right].forEach(p => {
+                        p[0] += r * dist_x;
+                        p[1] += r * dist_y;
+                    });
+                }
+
+                if (![tip, left, right].some(p => rect_contains_point(p, 0, display_size.width, 0, display_size.height))) return;
+
+                context.fillStyle = color;
+                context.beginPath();
+                context.moveTo(...tip);
+                context.lineTo(...right);
+                context.lineTo(...left);
+                context.lineTo(...tip);
+                context.fill();
+                context.closePath();
+            });
+        });
+
+        context.setLineDash([]);
     }
     /**
      * Computes the machine's pane's arguments
@@ -716,12 +869,10 @@ export class Machine {
     /**
      * Checks whether the machine can produce things
      *
-     * @param {Object} [params]
-     * @param {number} [params.multiplier] Speed multiplier
      * @returns {boolean}
      */
-    can_produce({multiplier=this.#last_multiplier}={}) {
-        return this.#recipes.some(r => r.can_produce({multiplier}));
+    can_produce() {
+        return this.#recipes.some(r => r.can_produce());
     }
     /**
      * Consumes and produces things
@@ -738,6 +889,9 @@ export class Machine {
 }
 export default Machine;
 
+/**
+ * Creates and places the machines
+ */
 function make_machines() {
     /**
      * @type {{
@@ -746,7 +900,7 @@ function make_machines() {
      *  x: number,
      *  y: number,
      *  paused?: false,
-     *  hidden?: false,
+     *  hidden?: false|(this: Recipe) => boolean,
      *  recipes?: Recipe[],
      *  resources?: {[res: string]: {
      *      amount?: number,
@@ -756,24 +910,38 @@ function make_machines() {
      * }[]}
      */
     const machines = [
+        // T0
         {
             id: 'forest',
             name: gettext('games_cidle_machine_forest'),
-            x: 0,
-            y: 0,
+            x: 100,
+            y: 100,
             recipes: [
                 new Recipe({
                     name: gettext('games_cidle_recipe_forest_0_0'),
-                    max_level: 1,
+                    max_level: 3,
                     produces(level) {
-                        /** @type {[string, number, number, boolean?][]} */
-                        const production = [];
-                        if (level >= 1) {
-                            production.push(['wood', 1, 10]);
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['wood', .1, 10]];
+                            case 2:
+                                return [['wood', .2, 10]];
+                            case 3:
+                                return [['wood', .4, 20]];
                         }
-                        return production;
                     },
-                    upgrade_costs(level) { return []; },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['stone', 1]];
+                            case 2:
+                                return [['water', 5]];
+                        }
+                    },
                     type: 'fixed',
                 }),
             ],
@@ -781,18 +949,161 @@ function make_machines() {
                 wood: {},
             },
         },
+        {
+            id: 'big_rock',
+            name: gettext('games_cidle_machine_big_rock'),
+            x: -100,
+            y: 100,
+            recipes: [
+                new Recipe({
+                    name: gettext('games_cidle_recipe_big_rock_0_0'),
+                    max_level: 3,
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1: case 2:
+                                return [['wood', .1, .25]];
+                            case 3:
+                                return [['wood', .05, .125]];
+                        }
+                    },
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['stone', .1, 10]];
+                            case 2:
+                                return [['stone', .2, 10]];
+                            case 3:
+                                return [['stone', .4, 20]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['wood', 10]];
+                            case 1:
+                                return [['fire', 1]];
+                            case 2:
+                                return [['fire', 5], ['water', 5]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                stone: {},
+            },
+            hidden: () => Machine.machine('forest').recipes[0].level < 1,
+        },
+        {
+            id: 'fire_pit',
+            name: gettext('games_cidle_machine_fire_pit'),
+            x: -100,
+            y: -100,
+            recipes: [
+                new Recipe({
+                    name: gettext('games_cidle_recipe_fire_pit_0_0'),
+                    max_level: 1,
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['wood', .1, .5]];
+                        }
+                    },
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['fire', .1, 10]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['wood', 10], ['stone', 5]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                fire: {},
+            },
+            hidden: () => Machine.machine('big_rock').recipes[0].level < 1,
+        },
+        {
+            id: 'water_well',
+            name: gettext('games_cidle_machine_water_well'),
+            x: 100,
+            y: -100,
+            recipes: [
+                new Recipe({
+                    name: gettext('games_cidle_recipe_water_well_0_0'),
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['water', .1, 10]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['stone', 10], ['fire', 5]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                water: {},
+            },
+            hidden: () => Machine.machine('fire_pit').recipes[0].level < 1,
+        },
+        // T1
+        // time machines
+        // space machines
     ];
 
     machines.forEach(m => new Machine(m));
 }
+/**
+ * Current time speed
+ *
+ * Each active time consumer multiplies time by `<total consumption>^1.76 + 1`
+ *
+ * @returns {number}
+ */
+export function time_speed() {
+    let multiplier = 1;
 
+    Machine.machines.filter(m => m.is_time_machine && m.can_produce())
+        .forEach(m => m.recipes.forEach(r => {
+            multiplier = r.consumes.reduce((m, [,con]) => m * con ** time_constant, multiplier);
+        }));
+
+    return multiplier;
+}
 /**
  * Returns an object of the data to be saved
  */
 export function save_data() {
     return Machine.machines.map(m => m.toJSON());
 }
-
 /**
  * Loads the saved data
  *
@@ -807,8 +1118,6 @@ export function save_data() {
  * }[]} data
  */
 export function load_data(data) {
-    make_machines();
-
     if (!Array.isArray(data)) return;
 
     data.forEach(data => {
@@ -820,3 +1129,9 @@ export function load_data(data) {
         Machine.machine(id)?.load?.(data);
     });
 }
+
+make_machines();
+
+setInterval(() => {
+    Machine.machines.forEach(m => m.cache_refresh());
+}, 1e3);

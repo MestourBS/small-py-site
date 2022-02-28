@@ -54,7 +54,7 @@ const game_tabs = {
         },
         draw: () => {
             draw_grid();
-            //Maker_Machine.maker_machines.filter(m => m.can_produce()).forEach(m => m.draw_connections({context}));
+            Machine.machines.filter(m => m.can_produce()).forEach(m => m.draw_connections({context}));
             Machine.visible_machines.forEach(m => m.draw({context}));
             Pane.get_visible_panes('world').forEach(p => p.draw({context}));
 
