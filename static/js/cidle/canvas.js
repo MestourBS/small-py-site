@@ -54,14 +54,42 @@ const game_tabs = {
         },
         draw: () => {
             draw_grid();
-            Machine.machines.filter(m => m.can_produce()).forEach(m => m.draw_connections({context}));
-            Machine.visible_machines.forEach(m => m.draw({context}));
-            Pane.get_visible_panes('world').forEach(p => p.draw({context}));
+            Machine.visible_machines.filter(m => m.can_produce()).forEach(m => m.draw_connections({ context }));
+            Machine.visible_machines.forEach(m => m.draw({ context }));
+            Pane.get_visible_panes('world').forEach(p => p.draw({ context }));
 
-            let {x, y, event} = mouse_position;
+            let { x, y, event } = mouse_position;
             globals.adding[globals.game_tab]?.draw?.(x, y, event);
         },
     },
+    /*
+    world_2: {
+        reset: false,
+        name: 'World 2',
+        /** @returns {string[]} * /
+        cut_name() {
+            return ['World 2'];
+        },
+        /**
+         * @type {{
+         *  drawn: boolean,
+         * }}
+         * /
+        data: {},
+        draw() {
+            const { data } = this;
+            if (!data.drawn) {
+                Machine.visible_machines.forEach(m => m.cache_refresh({ draw: true }));
+            }
+            data.drawn = true;
+            //Machine.visible_machines.forEach(m => m.nw_draw({ context }));
+        },
+        click() {
+            canvas_reset();
+            this.data.drawn = false;
+        },
+    },
+    */
     help: {
         reset: false,
         name: gettext('games_cidle_tab_help'),
@@ -81,8 +109,6 @@ const game_tabs = {
         /**
          * @type {{
          *  machines_text_lines?: string[],
-         *  inventory_text_lines?: string[],
-         *  resources_text_lines?: string[],
          *  machines_text_checks?: Set<string>,
          *  drawn: boolean,
          * }}
@@ -129,30 +155,11 @@ const game_tabs = {
             }
             */
 
-            /** @type {string[]} */
-            const inventory_text = (data.inventory_text_lines ??= [
-                '{bold}' + gettext('games_cidle_help_inventory_title'),
-                gettext('games_cidle_help_inventory_intro'),
-                gettext('games_cidle_help_inventory_craft'),
-                gettext('games_cidle_help_inventory_place'),
-                gettext('games_cidle_help_inventory_unlock'),
-            ]);
-
-            /** @type {string[]} */
-            const resources_text = (data.resources_text_lines ??= [
-                '{bold}' + gettext('games_cidle_help_resources_title'),
-                gettext('games_cidle_help_resources_intro'),
-            ]);
-
             const text = [
                 ...machines_text,
-                ' ',
-                ...inventory_text,
-                ' ',
-                ...resources_text,
             ];
 
-            text.map(l => cut_lines(l, {max_width: display_size.width - x * 2}))
+            text.map(l => cut_lines(l, { max_width: display_size.width - x * 2 }))
                 .flat()
                 .forEach(line => {
                     canvas_write(line, x, y);
@@ -210,32 +217,31 @@ export function canvas_reset() {
         canvas.width = width;
         canvas.style.height = `${height}px`;
         canvas.height = height;
-    } else {
-        const c = context.fillStyle;
-        context.fillStyle = 'white';
-        context.fillRect(0, 0, width, height);
-        context.fillStyle = c;
     }
+    const c = context.fillStyle;
+    context.fillStyle = 'white';
+    context.fillRect(0, 0, width, height);
+    context.fillStyle = c;
 }
 /**
  * Refreshes the canvas contents
  */
 export function canvas_refresh() {
-    const {game_tab} = globals;
+    const { game_tab } = globals;
 
-    let top = tabs_heights({context});
+    let top = tabs_heights({ context });
 
     if (game_tab in game_tabs) {
         const tab = game_tabs[game_tab];
 
         if (tab.reset) canvas_reset();
 
-        tab.draw({top});
+        tab.draw({ top });
     } else {
         console.error(`Unknown game tab ${game_tab}`);
     }
 
-    draw_tabs({context});
+    draw_tabs({ context });
 }
 /**
  * Draws the tabs
@@ -244,7 +250,7 @@ export function canvas_refresh() {
  * @param {CanvasRenderingContext2D} [params.context]
  * @returns {number}
  */
-function draw_tabs({context=canvas.getContext('2d')}={}) {
+function draw_tabs({ context = canvas.getContext('2d') } = {}) {
     /** @type {GameTab[]} */
     const tabs = Object.keys(game_tabs);
     if (tabs.length <= 1) return 0;
@@ -252,8 +258,8 @@ function draw_tabs({context=canvas.getContext('2d')}={}) {
     const padding = theme('tab_padding');
     const max_width = (display_size.width - padding * 2) / Math.min(max_tabs_per_line, tabs.length);
     /** @type {[GameTab, string[]][]} [tab, name (as lines)][] */
-    const cut = tabs.map(tab => [tab, game_tabs[tab].cut_name({context, max_width})]);
-    const y_diff = (Math.max(...cut.map(([_,name]) => name.length)) + .5) * theme('font_size') + padding * 2;
+    const cut = tabs.map(tab => [tab, game_tabs[tab].cut_name({ context, max_width })]);
+    const y_diff = (Math.max(...cut.map(([_, name]) => name.length)) + .5) * theme('font_size') + padding * 2;
 
     let x = 0;
     let y = 0;
@@ -277,7 +283,7 @@ function draw_tabs({context=canvas.getContext('2d')}={}) {
         context.closePath();
 
         // Draw tab text
-        canvas_write(name, x * max_width + padding, y * y_diff + padding, {base_text_color: text_color, context});
+        canvas_write(name, x * max_width + padding, y * y_diff + padding, { base_text_color: text_color, context });
 
         // Move tab position
         x = (x + 1) % max_tabs_per_line;
@@ -321,7 +327,7 @@ function draw_grid() {
  * @param {CanvasRenderingContext2D} [params.context]
  * @returns {number}
  */
-export function tabs_heights({context=canvas.getContext('2d')}={}) {
+export function tabs_heights({ context = canvas.getContext('2d') } = {}) {
     /** @type {GameTab[]} */
     const tabs = Object.keys(game_tabs);
     if (tabs.length <= 1) return 0;
@@ -330,8 +336,8 @@ export function tabs_heights({context=canvas.getContext('2d')}={}) {
     const padding = theme('tab_padding');
     const max_width = (display_size.width - padding * 2) / Math.min(max_tabs_per_line, tabs.length);
     /** @type {[GameTab, string[]][]} [tab, name (as lines)][] */
-    const cut = tabs.map(tab => [tab, game_tabs[tab].cut_name({context, max_width})]);
-    const y_diff = (Math.max(...cut.map(([_,name]) => name.length)) + .5) * theme('font_size') + padding * 2;
+    const cut = tabs.map(tab => [tab, game_tabs[tab].cut_name({ context, max_width })]);
+    const y_diff = (Math.max(...cut.map(([_, name]) => name.length)) + .5) * theme('font_size') + padding * 2;
     const tabs_lines = Math.ceil(tabs.length / max_tabs_per_line);
 
     return y_diff * tabs_lines;
@@ -350,8 +356,8 @@ export function click(x, y, event) {
     const padding = theme('tab_padding');
     const max_width = (display_size.width - padding * 2) / Math.min(max_tabs_per_line, tabs.length);
     /** @type {[GameTab, string[]][]} [tab, name (as lines)][] */
-    const cut = tabs.map(tab => [tab, game_tabs[tab].cut_name({context, max_width})]);
-    const y_diff = (Math.max(...cut.map(([_,name]) => name.length)) + .5) * theme('font_size') + padding * 2;
+    const cut = tabs.map(tab => [tab, game_tabs[tab].cut_name({ context, max_width })]);
+    const y_diff = (Math.max(...cut.map(([_, name]) => name.length)) + .5) * theme('font_size') + padding * 2;
 
     const tab_x = Math.ceil(x / max_width) - 1;
     const tab_y = Math.ceil(y / y_diff) - 1;
@@ -388,8 +394,8 @@ export function click(x, y, event) {
 export function canvas_write(lines, left, top, {
     min_left = -Infinity, min_right = 0, text_align = 'left', text_baseline = 'alphabetic', base_text_color = theme('text_color_fill'),
     font_size = theme('font_size'), context = canvas.getContext('2d'), font_family = theme('font_family'),
-}={}) {
-    lines = cut_lines(lines, left, {font_size, font_family, context, max_width: canvas.width - min_right - Math.max(min_left, left)});
+} = {}) {
+    lines = cut_lines(lines, left, { font_size, font_family, context, max_width: canvas.width - min_right - Math.max(min_left, left) });
     if (!lines.length) return;
 
     context.textAlign = text_align;
@@ -498,7 +504,7 @@ export function canvas_write(lines, left, top, {
 export function cut_lines(lines, {
     font_size = theme('font_size'), font_family = theme('font_family'),
     context = canvas.getContext('2d'), max_width = canvas.width,
-}={}) {
+} = {}) {
     if (lines && !Array.isArray(lines)) lines = [lines];
     if (!lines?.length) return [];
 
@@ -572,7 +578,7 @@ export function cut_lines(lines, {
 
                 modifiers.filter(c => number_between(c[0], index_start, index_end))
                     .map(c => [...c])
-                    .sort((a,b) => b[0]-a[0])
+                    .sort((a, b) => b[0] - a[0])
                     .forEach(/** @param {[number, string]} */([i, color]) => {
                         i -= index_start;
                         slice = slice.slice(0, i) + color + slice.slice(i);

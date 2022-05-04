@@ -107,10 +107,10 @@ export function save_data() {
  * @param {boolean?} [data.snap]
  * @param {boolean?} [data.stable]
  */
-export function load_data(data={}) {
+export function load_data(data = {}) {
     if (!data) return;
 
-    const {pos=null, theme=null, strict=null, tab=null, snap=null, stable=null} = data;
+    const { pos = null, theme = null, strict = null, tab = null, snap = null, stable = null } = data;
     if (Array.isArray(pos) && pos.length == 2 && !pos.some(n => isNaN(n))) {
         for (let i = 0; i < pos.length; i++) globals.position[i] = pos[i];
     }

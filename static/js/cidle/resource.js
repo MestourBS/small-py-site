@@ -2,6 +2,8 @@
  * @typedef {import('./_storage.js').FillMode} FillMode
  */
 
+import Machine from './machine.js';
+
 //todo? resource description
 
 export class Resource {
@@ -12,9 +14,13 @@ export class Resource {
      * Returns a resource
      *
      * @param {string} id
+     * @param {boolean} [unknown] If true and the resource's storage is hidden, the function will return a default resource
      * @returns {Resource|null}
      */
-    static resource(id) {
+    static resource(id, unknown = false) {
+        if (unknown && Machine.storage_for(id).hidden) {
+            return this.#resources['unknown'];
+        }
         return this.#resources[id] ?? null;
     }
     /**
@@ -40,9 +46,9 @@ export class Resource {
      * @param {FillMode?} [params.fillmode]
      */
     constructor({
-        id, name=null, color='#000', border_color='#000',
-        background_color=null, fill_image=null, picture=null,
-        fillmode=null,
+        id, name = null, color = '#000', border_color = '#000',
+        background_color = null, fill_image = null, picture = null,
+        fillmode = null,
     }) {
         if (fillmode != null && !is_fill_mode(fillmode)) throw new RangeError(`Resource fill mode is not a valid fill mode (${fillmode})`);
 
@@ -109,6 +115,13 @@ export function make_resources() {
      */
     const resources = [
         {
+            id: 'unknown',
+            name: gettext('games_cidle_resource_unknown'),
+            color: '#000000',
+            border_color: '#000000',
+        },
+        // T0 resources
+        {
             id: 'wood',
             name: gettext('games_cidle_resource_wood'),
             color: '#730',
@@ -131,6 +144,43 @@ export function make_resources() {
             name: gettext('games_cidle_resource_water'),
             color: '#00F',
             border_color: '#0000E6',
+        },
+        // T1 resources
+        {
+            id: 'gem',
+            name: gettext('games_cidle_resource_gem'),
+            color: '#DA70D6',
+            border_color: '#D55CD0',
+        },
+        {
+            id: 'charcoal',
+            name: gettext('games_cidle_resource_charcoal'),
+            color: '#444444',
+            border_color: '#373737',
+        },
+        {
+            id: 'algae',
+            name: gettext('games_cidle_resource_algae'),
+            color: '#4FA866',
+            border_color: '#47975B',
+        },
+        {
+            id: 'lava',
+            name: gettext('games_cidle_resource_lava'),
+            color: '#FF5D00',
+            border_color: '#E65400',
+        },
+        {
+            id: 'smoothness',
+            name: gettext('games_cidle_resource_smoothness'),
+            color: '#F2F2F2',
+            border_color: '#E5E5E5',
+        },
+        {
+            id: 'steam',
+            name: gettext('games_cidle_resource_steam'),
+            color: '#BCBCBC',
+            border_color: '#AFAFAF',
         },
         // Time resources
         {

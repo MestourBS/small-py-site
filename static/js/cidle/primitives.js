@@ -71,15 +71,15 @@ export function number_between(number, min, max) {
  */
 export function beautify(
     number, {
-        cutoffs=[3, 6],
-        options=[
-            {notation: 'standard', maximumFractionDigits: 3,},
-            {notation: 'standard', maximumFractionDigits: 0,},
-            {notation: 'engineering', maximumSignificantDigits: 4,},
+        cutoffs = [3, 6],
+        options = [
+            { notation: 'standard', maximumFractionDigits: 3, },
+            { notation: 'standard', maximumFractionDigits: 0, },
+            { notation: 'engineering', maximumSignificantDigits: 4, },
         ],
-    }={}
+    } = {}
 ) {
-    if (!options.length) options = [{notation: 'standard'}];
+    if (!options.length) options = [{ notation: 'standard' }];
     const pow = Math.log10(Math.abs(number));
     const options_index = cutoffs.filter(n => n <= pow).length % options.length;
     const option = options[options_index];

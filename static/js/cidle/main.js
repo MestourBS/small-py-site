@@ -8,7 +8,7 @@ import { make_resources } from './resource.js';
 import { save_data as save_globals, load_data as load_globals } from './globals.js';
 import { save_data as save_machines, load_data as load_machines, Machine, time_speed } from './machine.js';
 
-//todo spells & curses / singularities
+//todo? spells & curses / singularities
 //todo? achievements
 
 /** @type {number} */
@@ -20,7 +20,7 @@ function init() {
     try {
         localStorage;
         window.addEventListener('beforeunload', save);
-        save_interval = setInterval(() => {save();}, 1e3 * 60);
+        save_interval = setInterval(() => { save(); }, 1e3 * 60);
     } catch { }
 
     const footer = document.getElementById('footer');
@@ -44,11 +44,11 @@ function init() {
         Machine.machines.forEach(m => (m.is_time_machine ? time_machines : present_machines).push(m));
 
         try {
-            time_machines.filter(m => m.can_produce()).forEach(m => m.produce({multiplier}));
+            time_machines.filter(m => m.can_produce()).forEach(m => m.produce({ multiplier }));
 
             multiplier *= time_speed();
 
-            present_machines.filter(m => m.can_produce()).forEach(m => m.produce({multiplier}));
+            present_machines.filter(m => m.can_produce()).forEach(m => m.produce({ multiplier }));
         } catch (e) {
             save_game = false;
             clearInterval(save_interval);
@@ -150,7 +150,7 @@ function load() {
     }
     if ('date' in data) {
         const now = new Date;
-        const {date} = data;
+        const { date } = data;
         const save = new Date;
         if ('year' in date) save.setUTCFullYear(date.year);
         if ('month' in date) save.setUTCMonth(date.month);

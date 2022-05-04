@@ -1,7 +1,7 @@
 import { display_size, context as canvas_context, cut_lines, canvas_write, regex_modifier } from './canvas.js';
 import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
-import { rect_contains_point, to_point } from './position.js';
+import { Point, rect_contains_point } from './position.js';
 import { number_between } from './primitives.js';
 /**
  * @typedef {import('./canvas.js').GameTab} GameTab
@@ -47,7 +47,7 @@ export class Pane {
      * @param {GameTab} tab
      * @returns {Pane[]}
      */
-    static get_visible_panes(tab=globals.game_tab) {
+    static get_visible_panes(tab = globals.game_tab) {
         const pos = globals.position;
         if (pos.some((n, i) => this.#vis_pos[i] != n)) {
             this.#visible_panes[tab] = false;
@@ -81,7 +81,7 @@ export class Pane {
      * @param {boolean} [params.pinnable] Whether the tab can be (un)pinned afterwards
      * @param {string} [params.border_color]
      */
-    constructor({x, y, pinned=false, id, content=[], title=false, tab=globals.game_tab, pinnable=true, border_color=theme('pane_color_border')}) {
+    constructor({ x, y, pinned = false, id, content = [], title = false, tab = globals.game_tab, pinnable = true, border_color = theme('pane_color_border') }) {
         if (isNaN(x)) throw new TypeError(`Pane x must be a number (${x})`);
         if (isNaN(y)) throw new TypeError(`Pane y must be a number (${y})`);
         let has_dyn = false;
@@ -203,7 +203,7 @@ export class Pane {
     set y(y) { if (!isNaN(y)) this.#y = y; }
     get pinned() { return this.#pinned; }
     get is_visible() {
-        let {x, y} = this;
+        let { x, y } = this;
 
         if (!this.#pinned) {
             x += display_size.width / 2 - globals.position[0];
@@ -221,7 +221,7 @@ export class Pane {
     /**
      * Cuts the content's cell text
      */
-    #cut_content_lines({context=canvas_context}={}) {
+    #cut_content_lines({ context = canvas_context } = {}) {
         const longest_row = this.#content.map(row => {
             return row.map(c => c.width ?? 1).reduce((l, w) => l + w, 0);
         }).sort((a, b) => a - b)[0];
@@ -233,16 +233,16 @@ export class Pane {
         this.#cut_content = this.#content.map(row => {
             return row.map(cell => {
                 let {
-                    content, click=false, width=false,
-                    background_color=default_background_color, border_color=default_border_color, text_color=default_text_color,
-                    image=null,
+                    content, click = false, width = false,
+                    background_color = default_background_color, border_color = default_border_color, text_color = default_text_color,
+                    image = null,
                 } = cell;
 
                 content = content.map(c => typeof c == 'function' ? c() : c);
                 let max_width = max_cell_width;
 
                 /** @type {PaneCell} */
-                let copy = {content, border_color, background_color, text_color};
+                let copy = { content, border_color, background_color, text_color };
                 if (click !== false) copy.click = click;
                 if (width !== false) copy.width = width;
                 if (typeof image == 'string') {
@@ -256,7 +256,7 @@ export class Pane {
                 }
 
                 if (copy.content.some(t => context.measureText(t).width > max_width)) {
-                    copy.content = copy.content.map(text => cut_lines(text, 0, {max_width, context})).flat();
+                    copy.content = copy.content.map(text => cut_lines(text, 0, { max_width, context })).flat();
                 }
                 return copy;
             });
@@ -266,7 +266,7 @@ export class Pane {
     /**
      * Measures the cells' heights and widths, separated between dynamic and static
      */
-    #measure_content({context=canvas_context, cache_data=false}={}) {
+    #measure_content({ context = canvas_context, cache_data = false } = {}) {
         const cache = this.#cache;
         /**
          * @type {{
@@ -277,8 +277,8 @@ export class Pane {
          * }}
          */
         const measures = {
-            heights: cache.heights.static.map((sta, i) => {return {static: sta, dynamic: cache.heights.dynamic[i]}}),
-            widths: cache.widths.static.map((sta, i) => {return {static: sta, dynamic: cache.widths.dynamic[i]}}),
+            heights: cache.heights.static.map((sta, i) => { return { static: sta, dynamic: cache.heights.dynamic[i] } }),
+            widths: cache.widths.static.map((sta, i) => { return { static: sta, dynamic: cache.widths.dynamic[i] } }),
             content: [],
         };
         const widest_row = measures.widest_row = this.#content.map(row => {
@@ -291,14 +291,14 @@ export class Pane {
 
         this.#content.forEach((row, ri) => {
             const row_refresh = !(ri in cache.heights.static) || (ri in cache.heights.dynamic && cache.heights.dynamic[ri] > 0);
-            const height = measures.heights[ri] ??= {static: cache.heights.static[ri] ?? 0, dynamic: 0};
+            const height = measures.heights[ri] ??= { static: cache.heights.static[ri] ?? 0, dynamic: 0 };
             const mapped_row = measures.content[ri] ??= [];
 
             if (row_refresh) {
                 let column = 0;
                 row.forEach((cell, ci) => {
-                    let {content} = cell;
-                    const {width=1} = cell;
+                    let { content } = cell;
+                    const { width = 1 } = cell;
                     const dynamic = content.some(c => typeof c == 'function');
                     /** @type {'dynamic'|'static'} */
                     const type = dynamic ? 'dynamic' : 'static';
@@ -319,7 +319,7 @@ export class Pane {
                         text_color: cell.text_color ?? default_text_color,
                     };
                     if ('image' in cell) {
-                        let {image} = cell;
+                        let { image } = cell;
                         if (image && !(image instanceof Image)) {
                             const i = new Image;
                             i.src = image;
@@ -331,9 +331,9 @@ export class Pane {
                     if (cell_refresh) {
                         const mapped = caching_cell.content;
 
-                        const saved_widths = cols.map(c => measures.widths[c] ??= {static: 0, dynamic: 0});
-                        const text_width = Math.min(max_cell_width, Math.max(...mapped.map(c => context.measureText(c.replaceAll(regex_modifier, '')).width )) / width + 10);
-                        const text_height = mapped.map(c => cut_lines(c, {context, max_width: max_cell_width}).length)
+                        const saved_widths = cols.map(c => measures.widths[c] ??= { static: 0, dynamic: 0 });
+                        const text_width = Math.min(max_cell_width, Math.max(...mapped.map(c => context.measureText(c.replaceAll(regex_modifier, '')).width)) / width + 10);
+                        const text_height = mapped.map(c => cut_lines(c, { context, max_width: max_cell_width }).length)
                             .reduce((h, c) => h + c, 0);
 
                         height[type] = Math.max(height[type], text_height);
@@ -344,7 +344,7 @@ export class Pane {
             }
         });
 
-        measures.widths = measures.widths.map(({static: s, dynamic: d}, i) => {
+        measures.widths = measures.widths.map(({ static: s, dynamic: d }, i) => {
             const sta = Math.max(s, cache.widths.static[i] ?? 0);
             const dynamic = Math.max(d, cache.widths.dynamic[i] ?? 0);
 
@@ -353,9 +353,9 @@ export class Pane {
                 cache.widths.dynamic[i] = dynamic;
             }
 
-            return {static: sta, dynamic};
+            return { static: sta, dynamic };
         });
-        measures.heights = measures.heights.map(({static: s, dynamic: d}, i) => {
+        measures.heights = measures.heights.map(({ static: s, dynamic: d }, i) => {
             const sta = Math.max(s, cache.heights.static[i] ?? 0);
             const dynamic = Math.max(d, cache.heights.dynamic[i] ?? 0);
 
@@ -364,7 +364,7 @@ export class Pane {
                 cache.heights.dynamic[i] = dynamic;
             }
 
-            return {static: sta, dynamic};
+            return { static: sta, dynamic };
         });
 
         return measures;
@@ -373,15 +373,15 @@ export class Pane {
     /**
      * Calculates the widths of the content table columns
      */
-    table_widths({context=canvas_context, cache_data=false}={}) {
-        return this.#measure_content({context, cache_data}).widths.map(w => Math.max(w.static, w.dynamic));
+    table_widths({ context = canvas_context, cache_data = false } = {}) {
+        return this.#measure_content({ context, cache_data }).widths.map(w => Math.max(w.static, w.dynamic));
     }
 
     /**
      * Calculates the heights of the content table rows
      */
-    table_heights({cache_data=false}={}) {
-        return this.#measure_content({cache_data}).heights.map(h => (Math.max(h.static, h.dynamic) + .5) * theme('font_size'));
+    table_heights({ cache_data = false } = {}) {
+        return this.#measure_content({ cache_data }).heights.map(h => (Math.max(h.static, h.dynamic) + .5) * theme('font_size'));
     }
 
     /**
@@ -390,7 +390,7 @@ export class Pane {
      * @param {PointLike} point
      */
     contains_point(point) {
-        point = to_point(point);
+        point = new Point(point);
         if (this.#pinned) {
             point.x += display_size.width / 2 - globals.position[0];
             point.y += display_size.height / 2 - globals.position[1];
@@ -456,7 +456,7 @@ export class Pane {
      * @returns {boolean}
      */
     is_clickable(point) {
-        let {x, y} = to_point(point);
+        let { x, y } = new Point(point);
         if (this.#pinned) {
             x += display_size.width / 2 - globals.position[0];
             y += display_size.height / 2 - globals.position[1];
@@ -528,7 +528,7 @@ export class Pane {
      * @param {Object} [params]
      * @param {boolean|'auto'} [params.set]
      */
-    pin_toggle({set='auto'}={}) {
+    pin_toggle({ set = 'auto' } = {}) {
         if (set == 'auto') set = !this.#pinned;
         if (set != this.#pinned) {
             const x_change = display_size.width / 2 - globals.position[0];
@@ -550,14 +550,14 @@ export class Pane {
      * @param {Object} [params]
      * @param {CanvasRenderingContext2D} [params.context]
      */
-    draw({context=canvas_context}={}) {
-        let {x, y} = this;
+    draw({ context = canvas_context } = {}) {
+        let { x, y } = this;
         if (!this.#pinned) {
             x += display_size.width / 2 - globals.position[0];
             y += display_size.height / 2 - globals.position[1];
         }
-        const widths = this.table_widths({context, cache_data: true});
-        const heights = this.table_heights({cache_data: true});
+        const widths = this.table_widths({ context, cache_data: true });
+        const heights = this.table_heights({ cache_data: true });
         const width = widths.reduce((s, w) => s + w, 0);
         const height = heights.reduce((s, h) => s + h, 0);
 
@@ -574,7 +574,7 @@ export class Pane {
         context.closePath();
 
         // Draw cells
-        if (!this.#cut_content || this.#has_dynamic_cell) this.#cut_content_lines({context});
+        if (!this.#cut_content || this.#has_dynamic_cell) this.#cut_content_lines({ context });
         if (!this.#cut_content) return;
         this.#cut_content.forEach((row, ry) => {
             const py = heights.filter((_, i) => i < ry).reduce((s, h) => s + h, 0) + y;
@@ -583,7 +583,7 @@ export class Pane {
             row.forEach(cell => {
                 const px = widths.filter((_, i) => i < col).reduce((s, w) => s + w, 0) + x;
                 const width = widths.filter((_, i) => i >= col && i < col + (cell.width ?? 1)).reduce((s, w) => s + w, 0);
-                const {background_color, border_color, text_color} = cell;
+                const { background_color, border_color, text_color } = cell;
                 col += cell.width ?? 1;
 
                 // Draw cell borders
@@ -608,7 +608,7 @@ export class Pane {
                 tx += 5;
 
                 cell.content.forEach(t => {
-                    canvas_write(t, tx, ty, {context, base_text_color: text_color});
+                    canvas_write(t, tx, ty, { context, base_text_color: text_color });
                     ty += theme('font_size');
                 });
             });
@@ -621,10 +621,10 @@ export class Pane {
      * @param {Object} [params]
      * @param {CanvasRenderingContext2D} [params.context]
      */
-    nw_draw({context=canvas_context}={}) {
-        let {x, y} = this;
+    nw_draw({ context = canvas_context } = {}) {
+        let { x, y } = this;
         const cache = this.#cache;
-        const {widths, heights, widest_row, content} = this.#measure_content({context});
+        const { widths, heights, widest_row, content } = this.#measure_content({ context });
         const width = widths.reduce((w, width) => w + Math.max(width.dynamic, width.static), 0);
         const height = heights.reduce((h, height) => h + Math.max(height.dynamic, height.static) + .5, 0) * theme('font_size');
         if (!this.#pinned) {
@@ -648,10 +648,10 @@ export class Pane {
             !cache.rectangles.length ||
             above.length != cache.above_panes.length ||
             above.some(p => {
-                const ap = cache.above_panes.find(({id}) => id == p.id);
+                const ap = cache.above_panes.find(({ id }) => id == p.id);
                 if (!ap || ap.x != p.x || ap.y != p.y) return true;
 
-                const width = p.table_widths({context}).reduce((s, w) => s + w, 0);
+                const width = p.table_widths({ context }).reduce((s, w) => s + w, 0);
                 if (width != ap.width) return true;
 
                 const height = p.table_heights().reduce((s, h) => s + h, 0);
@@ -667,7 +667,7 @@ export class Pane {
             () => rows_redrawn.length > 0,
             /** @param {number} i */
             i => {
-                const {dynamic: measured_height_dyn, static: measured_height_sta} = heights[i];
+                const { dynamic: measured_height_dyn, static: measured_height_sta } = heights[i];
                 const cached_height_dyn = cache.heights.dynamic[i];
                 const cached_height_sta = cache.heights.static[i];
                 const redraw = Math.max(measured_height_dyn, measured_height_sta) != Math.max(cached_height_dyn, cached_height_sta);
@@ -686,7 +686,7 @@ export class Pane {
             () => cols_redrawn.length > 0,
             /** @param {number} i */
             i => {
-                const {dynamic: measured_width_dyn, static: measured_width_sta} = widths[i];
+                const { dynamic: measured_width_dyn, static: measured_width_sta } = widths[i];
                 const cached_width_dyn = cache.widths.dynamic[i];
                 const cached_width_sta = cache.widths.static[i];
                 const redraw = Math.max(measured_width_dyn, measured_width_sta) != Math.max(cached_width_dyn, cached_width_sta);
@@ -729,20 +729,20 @@ export class Pane {
                 hidden: false,
             }];
             cache.above_panes = above.map(p => {
-                const {id, x, y} = p;
-                const width = p.table_widths({context}).reduce((s, w) => s + w, 0);
+                const { id, x, y } = p;
+                const width = p.table_widths({ context }).reduce((s, w) => s + w, 0);
                 const height = p.table_heights().reduce((s, h) => s + h, 0);
 
-                return {id, x, y, width, height};
+                return { id, x, y, width, height };
             });
 
             cache.above_panes.forEach(above => {
                 if (!current_rects.length) return;
 
-                const {x: ax, y: ay, width: aw, height: ah} = above;
+                const { x: ax, y: ay, width: aw, height: ah } = above;
 
                 current_rects.forEach(rect => {
-                    const {corners, hidden, min_x, max_x, min_y, max_y} = rect;
+                    const { corners, hidden, min_x, max_x, min_y, max_y } = rect;
                     if (hidden) return;
 
                     // Overlaps a corner on this's <direction(s)>
@@ -793,8 +793,8 @@ export class Pane {
                             corners: c,
                             min_x: Math.min(...c.map(([x]) => x)),
                             max_x: Math.max(...c.map(([x]) => x)),
-                            max_y: Math.max(...c.map(([,y]) => y)),
-                            min_y: Math.min(...c.map(([,y]) => y)),
+                            max_y: Math.max(...c.map(([, y]) => y)),
+                            min_y: Math.min(...c.map(([, y]) => y)),
                         };
                         current_rects.push(rect_down);
                     }
@@ -806,8 +806,8 @@ export class Pane {
                             corners: c,
                             min_x: Math.min(...c.map(([x]) => x)),
                             max_x: Math.max(...c.map(([x]) => x)),
-                            max_y: Math.max(...c.map(([,y]) => y)),
-                            min_y: Math.min(...c.map(([,y]) => y)),
+                            max_y: Math.max(...c.map(([, y]) => y)),
+                            min_y: Math.min(...c.map(([, y]) => y)),
                         };
                         current_rects.push(rect_up);
                     }
@@ -818,7 +818,7 @@ export class Pane {
             });
 
             if (current_rects.length) {
-                current_rects.forEach(({corners: points}) => {
+                current_rects.forEach(({ corners: points }) => {
                     points.push(points[0]);
                     rectangles.push(points);
                 });
@@ -862,7 +862,7 @@ export class Pane {
             const cache_row = (cache.cells[ri] ??= []);
 
             row.forEach((cell, ci) => {
-                const cache_cell = (cache_row[ci] ??= {content: null});
+                const cache_cell = (cache_row[ci] ??= { content: null });
                 const redraw_cell = redraw_row || cols_redrawn.includes(ci) ||
                     !cache_cell.content ||
                     JSON.stringify(cell.content) != JSON.stringify(cache_cell.content);
@@ -873,7 +873,7 @@ export class Pane {
                 const px = x + widths.filter((_, i) => i < ci).reduce((s, w) => s + Math.max(w.dynamic, w.static), 0);
                 const width = cell.cols.map(c => Math.max(widths[c].dynamic, widths[c].static))
                     .reduce((s, w) => s + w, 0);
-                const {background_color, border_color, text_color} = cell;
+                const { background_color, border_color, text_color } = cell;
 
                 context.strokeStyle = border_color;
                 context.fillStyle = background_color;
@@ -896,7 +896,7 @@ export class Pane {
                 tx += 5;
 
                 cell.content.forEach(t => {
-                    canvas_write(t, tx, ty, {context, base_text_color: text_color});
+                    canvas_write(t, tx, ty, { context, base_text_color: text_color });
                     ty += theme('font_size');
                 });
 
@@ -914,9 +914,9 @@ export class Pane {
         cache.y = this.y;
         cache.cells = [];
         cache.height = 0;
-        cache.heights = {static: [], dynamic: []};
+        cache.heights = { static: [], dynamic: [] };
         cache.widest_row = 0;
         cache.width = 0;
-        cache.widths = {static: [], dynamic: []};
+        cache.widths = { static: [], dynamic: [] };
     }
 }

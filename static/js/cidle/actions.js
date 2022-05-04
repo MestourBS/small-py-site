@@ -29,7 +29,7 @@ const keybinds = {};
  * Existing actions
  */
 const actions = new Proxy(Object.freeze({
-}), {get: (obj, prop) => obj[prop] ?? ({func:()=>{},name:''})});
+}), { get: (obj, prop) => obj[prop] ?? ({ func: () => { }, name: '' }) });
 /**
  * Currently active actions
  *
@@ -43,11 +43,19 @@ const game_tabs = {
         drag: drag_world,
         contextmenu: contextmenu_world,
     },
-    help: {
-        click: () => {},
+    /*
+    world_2: {
+        click: () => { },
         can_click: () => false,
-        drag: () => {},
-        contextmenu: () => {},
+        drag: () => { },
+        contextmenu: () => { },
+    },
+    */
+    help: {
+        click: () => { },
+        can_click: () => false,
+        drag: () => { },
+        contextmenu: () => { },
     },
 };
 
@@ -190,7 +198,7 @@ function click_world(x, y, event) {
         return;
     }
 
-    const machine = Machine.visible_machines.find(m => m.contains_point([x, y]));
+    const machine = [...Machine.visible_machines].reverse().find(m => m.contains_point([x, y]));
 
     if (!machine) return;
 
@@ -286,31 +294,6 @@ function drag_world(x, y, x_diff, y_diff, event) {
             globals.position[1] -= y_diff;
         },
     };
-}
-/**
- * Drags a target in the inventory
- *
- * @param {number} x Absolute x position where the click was on the canvas
- * @param {number} y Absolute y position where the click was on the canvas
- * @param {number} x_diff Difference in x positions since last call
- * @param {number} y_diff Difference in y positions since last call
- * @param {MouseEvent} event
- */
-function drag_inventory(x, y, x_diff, y_diff, event) {
-    x -= display_size.width / 2 - globals.position[0];
-    y -= display_size.height / 2 - globals.position[1];
-
-    if (currently_dragging) {
-        currently_dragging.drag(x, y, x_diff, y_diff, event);
-        return;
-    }
-
-    const p = [...Pane.get_visible_panes(globals.game_tab)].reverse().find(p => p.contains_point([x, y]));
-
-    if (p) {
-        currently_dragging = p;
-        return;
-    }
 }
 /**
  * Performs a right-click on a target

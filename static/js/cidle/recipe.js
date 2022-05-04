@@ -32,9 +32,9 @@ export class Recipe {
      */
     constructor({
         name, max_level,
-        level=0,
-        paused=false, can_pause=true,
-        type=['fixed'], consumes=[], produces=[], upgrade_costs=[],
+        level = 0,
+        paused = false, can_pause = true,
+        type = ['fixed'], consumes = [], produces = [], upgrade_costs = [],
     }) {
         if (isNaN(level) || !isFinite(level)) throw new TypeError(`Recipe level must be a number (${level})`);
         if (isNaN(max_level) || !isFinite(max_level)) throw new TypeError(`Recipe max level must be a number (${max_level})`);
@@ -138,7 +138,7 @@ export class Recipe {
      * @param {number} [data.level]
      * @param {boolean} [data.paused]
      */
-    load(data={}) {
+    load(data = {}) {
         if (!(data instanceof Object)) return;
 
         if ('level' in data) this.level = data.level;
@@ -159,8 +159,8 @@ export class Recipe {
      * @param {boolean} [params.can_upgrade]
      */
     cache_refresh(
-        {name, type, consumes, produces, upgrade_costs, targets, can_upgrade}=
-        {name:true, type:true, consumes:true, produces:true, upgrade_costs:true, targets:true, can_upgrade:true}
+        { name, type, consumes, produces, upgrade_costs, targets, can_upgrade } =
+            { name: true, type: true, consumes: true, produces: true, upgrade_costs: true, targets: true, can_upgrade: true }
     ) {
         const cache = this.#cache;
         const level = this.#level;
@@ -195,7 +195,7 @@ export class Recipe {
 
             if (typeof consumes == 'function') ccon = consumes.call(this, level) ?? [];
             else ccon = consumes[level] ?? [];
-            ccon = ccon.map(([res, con, req=con]) => [res, con, req]);
+            ccon = ccon.map(([res, con, req = con]) => [res, con, req]);
 
             cache.consumes = ccon;
         }
@@ -207,7 +207,7 @@ export class Recipe {
 
             if (typeof produces == 'function') cpro = produces.call(this, level) ?? [];
             else cpro = produces[level] ?? [];
-            cpro = cpro.map(([res, pro, max, opt=false]) => [res, pro, max, opt]);
+            cpro = cpro.map(([res, pro, max, opt = false]) => [res, pro, max, opt]);
             cache.produces = cpro;
         }
 
@@ -248,7 +248,7 @@ export class Recipe {
      * @returns {PaneCell[]}
      */
     pane_preview(params) {
-        const {can_upgrade} = this.#cache;
+        const { can_upgrade } = this.#cache;
         const max_level = this.#level >= this.#max_level;
 
         let border_color;
@@ -271,7 +271,7 @@ export class Recipe {
                 content: [() => this.name],
                 click: [() => {
                     const pane = this.pane_contents(params);
-                    const {id} = pane;
+                    const { id } = pane;
                     let p = Pane.pane(id);
                     if (p) {
                         p.remove();
@@ -289,7 +289,7 @@ export class Recipe {
                 content: ['⇑'],
                 click: [() => {
                     const up_pane = this.upgrade_pane_contents(params);
-                    const {id} = up_pane;
+                    const { id } = up_pane;
                     let p = Pane.pane(id);
                     if (p) {
                         p.remove();
@@ -319,8 +319,8 @@ export class Recipe {
      *  border_color: string,
      * }}
      */
-    pane_contents({x, y}) {
-        const {can_upgrade} = this.#cache;
+    pane_contents({ x, y }) {
+        const { can_upgrade } = this.#cache;
         const max_level = this.#level >= this.#max_level;
         const id = this.name.replace(/[^\w]+/g, '_');
         const title = this.name;
@@ -359,7 +359,7 @@ export class Recipe {
         ];
 
         if (this.consumes.length) content.push(...this.consumes.map(/** @returns {PaneCell[]} */([res, con, req]) => {
-            const {name, color, background_color} = Resource.resource(res);
+            const { name, color, background_color } = Resource.resource(res);
             const data = Machine.storage_for(res).resources[res];
             let consume;
             if (this.type == 'fixed') consume = `${beautify(-con)}/s`;
@@ -391,7 +391,7 @@ export class Recipe {
             ];
         }));
         if (this.produces.length) content.push(...this.produces.map(/** @returns {PaneCell[]} */([res, pro, max, opt]) => {
-            const {name, color, background_color} = Resource.resource(res);
+            const { name, color, background_color } = Resource.resource(res);
             const data = Machine.storage_for(res).resources[res];
             const amount = () => {
                 const mult = prod_mult() ?? 1;
@@ -414,7 +414,7 @@ export class Recipe {
             ];
         }));
 
-        return {x, y, id, title, tab, content, border_color};
+        return { x, y, id, title, tab, content, border_color };
     }
     /**
      * Computes the recipe's upgrade pane's arguments
@@ -432,13 +432,13 @@ export class Recipe {
      *  border_color: string,
      * }}
      */
-    upgrade_pane_contents({x, y}) {
-        const {can_upgrade} = this.#cache;
+    upgrade_pane_contents({ x, y }) {
+        const { can_upgrade } = this.#cache;
         let border_color;
         if (can_upgrade) border_color = theme('machine_can_upgrade_color_border');
         else border_color = theme('machine_color_border');
         const id = `${this.name.replace(/[^\w]+/g, '_')}_upgrade`;
-        const title = gettext('games_cidle_machine_upgrading', {obj: this.name});
+        const title = gettext('games_cidle_machine_upgrading', { obj: this.name });
         const tab = globals.game_tab;
 
         /** @type {PaneCell[][]} */
@@ -458,7 +458,7 @@ export class Recipe {
                 content: [gettext('games_cidle_machine_upgrade_costs')],
             }],
             ...this.upgrade_costs.map(/** @returns {PaneCell[]} */([res, cost]) => {
-                const {name, color, background_color} = Resource.resource(res);
+                const { name, color, background_color } = Resource.resource(res, true);
                 const data = Machine.storage_for(res).resources[res];
                 const amount = () => {
                     return `${beautify(data.amount).padEnd(8)}/${beautify(cost)}`;
@@ -476,7 +476,7 @@ export class Recipe {
             }),
         );
 
-        return {id, x, y, content, title, tab, border_color};
+        return { id, x, y, content, title, tab, border_color };
     }
     /**
      * Upgrades the pane
@@ -486,17 +486,21 @@ export class Recipe {
     upgrade() {
         if (this.#level >= this.#max_level) return;
 
-        this.cache_refresh({upgrade_costs: true, can_upgrade: true});
-        const {can_upgrade, upgrade_costs} = this.#cache;
+        this.cache_refresh({ upgrade_costs: true, can_upgrade: true });
+        const { can_upgrade, upgrade_costs } = this.#cache;
 
         if (!can_upgrade) return;
+
+        // Remove upgrade pane
+        const prev_up_pane = Pane.pane(this.upgrade_pane_contents({}).id);
+        if (prev_up_pane) prev_up_pane.remove();
 
         upgrade_costs.forEach(([res, cost]) => {
             Machine.storage_for(res).resources[res].amount -= cost;
         });
         this.level++;
         this.cache_refresh();
-        this.owner.cache_refresh({can_upgrade: true, connections: true, max_level: true, is_time_machine: true});
+        this.owner.cache_refresh({ can_upgrade: true, connections: true, max_level: true, is_time_machine: true });
 
         // Refresh owner pane
         const o_pane = this.owner.pane_contents();
@@ -518,15 +522,6 @@ export class Recipe {
             p.remove();
             new Pane(pane);
         }
-        // Remove upgrade pane
-        const up_pane = this.upgrade_pane_contents({});
-        const up_id = up_pane.id;
-        const up_p = Pane.pane(up_id);
-        if (up_p) {
-            up_pane.x = up_p.x;
-            up_pane.y = up_p.y;
-            up_p.remove();
-        }
     }
     /**
      * Checks whether the recipe can produce things
@@ -541,9 +536,9 @@ export class Recipe {
         const res_datas = {};
         /** @param {string} res */
         const get_res_data = res => res_datas[res] ??= Machine.storage_for(res).resources[res];
-        return this.consumes.every(([res,,min]) => {
+        return this.consumes.every(([res, , min]) => {
             return get_res_data(res).amount >= min;
-        }) && this.produces.every(([res,,max,opt]) => {
+        }) && this.produces.every(([res, , max, opt]) => {
             return opt || get_res_data(res).amount < max;
         });
     }
@@ -553,7 +548,7 @@ export class Recipe {
      * @param {Object} params
      * @param {number} params.multiplier Speed multiplier
      */
-    produce({multiplier}) {
+    produce({ multiplier }) {
         multiplier *= this.max_production_multiplier();
         /**
          * @type {{[res: string]: {
@@ -579,14 +574,14 @@ export class Recipe {
         if (this.type == 'fixed') return 1;
 
         const multipliers = [
-            ...this.consumes.map(([res,,req]) => {
-                const {amount} = Machine.storage_for(res).resources[res];
+            ...this.consumes.map(([res, , req]) => {
+                const { amount } = Machine.storage_for(res).resources[res];
                 if (req > amount) return 0;
 
                 return amount / req;
             }),
-            ...this.produces.filter(([,,,opt]) => !opt).map(([res, pro, max]) => {
-                const {amount} = Machine.storage_for(res).resources[res];
+            ...this.produces.filter(([, , , opt]) => !opt).map(([res, pro, max]) => {
+                const { amount } = Machine.storage_for(res).resources[res];
                 if (amount > max) return 0;
 
                 return (max - amount) / pro;
@@ -600,7 +595,7 @@ export class Recipe {
      * @param {Object} params
      * @param {boolean|'auto'} [params.set]
      */
-    toggle_pause({set='auto'}={}) {
+    toggle_pause({ set = 'auto' } = {}) {
         if (!this.#can_pause) return;
 
         if (set == 'auto') set = !this.#paused;
