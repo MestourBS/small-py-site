@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-05-31 09:04+0200\n"
+"POT-Creation-Date: 2022-05-31 11:10+0200\n"
 "PO-Revision-Date: 2021-10-05 14:54+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: en\n"
@@ -563,315 +563,320 @@ msgstr "Paused"
 msgid "games_cidle_maker_unpaused"
 msgstr "Not Paused"
 
-#: static/js/cidle/machine.js:839 static/js/cidle/recipe.js:346
+#: static/js/cidle/machine.js:841 static/js/cidle/machine.js:1246
+#: static/js/cidle/recipe.js:346
 msgid "games_cidle_maker_unpausable"
 msgstr "Unpausable"
 
-#: static/js/cidle/machine.js:857
+#: static/js/cidle/machine.js:859 static/js/cidle/machine.js:1264
 msgid "games_cidle_machine_move"
 msgstr "Move"
 
-#: static/js/cidle/machine.js:873
+#: static/js/cidle/machine.js:875 static/js/cidle/machine.js:1280
 msgid "cidle_machine_contents"
 msgstr "Stored Contents"
 
-#: static/js/cidle/machine.js:891
+#: static/js/cidle/machine.js:893 static/js/cidle/machine.js:1298
 msgid "cidle_machine_recipes"
 msgstr "Recipes"
 
-#: static/js/cidle/machine.js:1232
+#: static/js/cidle/machine.js:1381
 msgid "games_cidle_machine_forest"
 msgstr "Forest"
 
-#: static/js/cidle/machine.js:1239
+#: static/js/cidle/machine.js:1388
 msgid "games_cidle_recipe_forest_0_0"
 msgstr "Punch wood"
 
-#: static/js/cidle/machine.js:1285
+#: static/js/cidle/machine.js:1434
 msgid "games_cidle_machine_big_rock"
 msgstr "Big rock"
 
-#: static/js/cidle/machine.js:1292
+#: static/js/cidle/machine.js:1441
 msgid "games_cidle_recipe_big_rock_0_0"
 msgstr "Wooden pickaxe"
 
-#: static/js/cidle/machine.js:1346
+#: static/js/cidle/machine.js:1495
 msgid "games_cidle_recipe_big_rock_1_0"
 msgstr "Water cooled lava"
 
-#: static/js/cidle/machine.js:1378
+#: static/js/cidle/machine.js:1527
 msgid "games_cidle_recipe_big_rock_2_0"
 msgstr "Asteroid Mining"
 
-#: static/js/cidle/machine.js:1415
+#: static/js/cidle/machine.js:1564
 msgid "games_cidle_machine_fire_pit"
 msgstr "Fire pit"
 
-#: static/js/cidle/machine.js:1422
+#: static/js/cidle/machine.js:1571
 msgid "games_cidle_recipe_fire_pit_0_0"
 msgstr "Tiny fire"
 
-#: static/js/cidle/machine.js:1462
+#: static/js/cidle/machine.js:1611
 msgid "games_cidle_recipe_fire_pit_1_0"
 msgstr "Charcoal burn"
 
-#: static/js/cidle/machine.js:1503
+#: static/js/cidle/machine.js:1652
 msgid "games_cidle_machine_water_well"
 msgstr "Water well"
 
-#: static/js/cidle/machine.js:1510
+#: static/js/cidle/machine.js:1659
 msgid "games_cidle_recipe_water_well_0_0"
 msgstr "Passive condensation"
 
-#: static/js/cidle/machine.js:1550
+#: static/js/cidle/machine.js:1699
 msgid "games_cidle_recipe_water_well_1_0"
 msgstr "Vapor condensation"
 
-#: static/js/cidle/machine.js:1593
+#: static/js/cidle/machine.js:1742
 msgid "games_cidle_machine_gem_tree"
 msgstr "Gem tree"
 
-#: static/js/cidle/machine.js:1600
+#: static/js/cidle/machine.js:1749
 msgid "games_cidle_recipe_gem_tree_0_0"
 msgstr "Gem acorns"
 
-#: static/js/cidle/machine.js:1636
+#: static/js/cidle/machine.js:1785
 msgid "games_cidle_recipe_gem_tree_1_0"
 msgstr "Rotational gem convertion"
 
-#: static/js/cidle/machine.js:1673
+#: static/js/cidle/machine.js:1822
 msgid "games_cidle_machine_charcoal_pit"
 msgstr "Charcoal pit"
 
-#: static/js/cidle/machine.js:1680
+#: static/js/cidle/machine.js:1829
 msgid "games_cidle_recipe_charcoal_pit_0_0"
 msgstr "Controlled burn"
 
-#: static/js/cidle/machine.js:1712
+#: static/js/cidle/machine.js:1861
 msgid "games_cidle_recipe_charcoal_pit_1_0"
 msgstr "Rotational charcoal convertion"
 
-#: static/js/cidle/machine.js:1749
+#: static/js/cidle/machine.js:1898
 msgid "games_cidle_machine_algae_farm"
 msgstr "Algae farm"
 
-#: static/js/cidle/machine.js:1756
+#: static/js/cidle/machine.js:1905
 msgid "games_cidle_recipe_algae_farm_0_0"
 msgstr "Flooded growth"
 
-#: static/js/cidle/machine.js:1792
+#: static/js/cidle/machine.js:1941
 msgid "games_cidle_recipe_algae_farm_1_0"
 msgstr "Rotational algae convertion"
 
-#: static/js/cidle/machine.js:1829
+#: static/js/cidle/machine.js:1978
 msgid "games_cidle_machine_volcano"
 msgstr "Volcano"
 
-#: static/js/cidle/machine.js:1836
+#: static/js/cidle/machine.js:1985
 msgid "games_cidle_recipe_volcano_0_0"
 msgstr "Stone melting"
 
-#: static/js/cidle/machine.js:1872
+#: static/js/cidle/machine.js:2021
 msgid "games_cidle_recipe_volcano_1_0"
 msgstr "Rotational lava convertion"
 
-#: static/js/cidle/machine.js:1904
+#: static/js/cidle/machine.js:2053
 msgid "games_cidle_recipe_volcano_2_0"
 msgstr "Planetary formation"
 
-#: static/js/cidle/machine.js:1941
+#: static/js/cidle/machine.js:2090
 msgid "games_cidle_machine_washer"
 msgstr "Washer"
 
-#: static/js/cidle/machine.js:1948
+#: static/js/cidle/machine.js:2097
 msgid "games_cidle_recipe_washer_0_0"
 msgstr "Stone smoothing"
 
-#: static/js/cidle/machine.js:1984
+#: static/js/cidle/machine.js:2133
 msgid "games_cidle_recipe_washer_1_0"
 msgstr "Rotational smoothness convertion"
 
-#: static/js/cidle/machine.js:2021
+#: static/js/cidle/machine.js:2170
 msgid "games_cidle_machine_steam_boiler"
 msgstr "Steam boiler"
 
-#: static/js/cidle/machine.js:2028
+#: static/js/cidle/machine.js:2177
 msgid "games_cidle_recipe_steam_boiler_0_0"
 msgstr "Steam boiling"
 
-#: static/js/cidle/machine.js:2072
+#: static/js/cidle/machine.js:2221
 msgid "games_cidle_recipe_steam_boiler_1_0"
 msgstr "Rotational steam convertion"
 
-#: static/js/cidle/machine.js:2111
+#: static/js/cidle/machine.js:2260
 msgid "games_cidle_machine_magic_crystal_maker"
 msgstr "Crystal maker"
 
-#: static/js/cidle/machine.js:2118
+#: static/js/cidle/machine.js:2267
 msgid "games_cidle_recipe_magic_crystal_maker_0_0"
 msgstr "Gem smoothing"
 
-#: static/js/cidle/machine.js:2155
+#: static/js/cidle/machine.js:2304
 msgid "games_cidle_machine_magic_crystal"
 msgstr "Magic crystal"
 
-#: static/js/cidle/machine.js:2162
+#: static/js/cidle/machine.js:2311
 msgid "games_cidle_recipe_magic_crystal_0_0"
 msgstr "Magic drops"
 
-#: static/js/cidle/machine.js:2199
+#: static/js/cidle/machine.js:2348
 msgid "games_cidle_machine_ice_magic"
-msgstr "Magie de glace"
+msgstr "Ice magic"
 
-#: static/js/cidle/machine.js:2206
+#: static/js/cidle/machine.js:2355
 msgid "games_cidle_recipe_ice_magic_0_0"
 msgstr "Magical convertion"
 
-#: static/js/cidle/machine.js:2243
+#: static/js/cidle/machine.js:2392
 msgid "games_cidle_machine_purifier"
 msgstr "Purifier"
 
-#: static/js/cidle/machine.js:2250
+#: static/js/cidle/machine.js:2399
 msgid "games_cidle_recipe_purifier_0_0"
 msgstr "Element purification"
 
-#: static/js/cidle/machine.js:2287
+#: static/js/cidle/machine.js:2436
 msgid "games_cidle_machine_broken_magic_crystal"
 msgstr "Broken magic crystal"
 
-#: static/js/cidle/machine.js:2294
+#: static/js/cidle/machine.js:2443
 msgid "games_cidle_recipe_broken_magic_crystal_0_0"
 msgstr "Magic undrops"
 
-#: static/js/cidle/machine.js:2333
+#: static/js/cidle/machine.js:2482
 msgid "games_cidle_machine_asteroid_condenser"
 msgstr "Asteroid condenser"
 
-#: static/js/cidle/machine.js:2340
+#: static/js/cidle/machine.js:2489
 msgid "games_cidle_recipe_asteroid_condenser_0_0"
 msgstr "Bigger rock"
 
-#: static/js/cidle/machine.js:2381
+#: static/js/cidle/machine.js:2530
 msgid "games_cidle_machine_planet_shaper"
 msgstr "Planet shaper"
 
-#: static/js/cidle/machine.js:2388
+#: static/js/cidle/machine.js:2537
 msgid "games_cidle_recipe_planet_shaper_0_0"
 msgstr "Big asteroid"
 
-#: static/js/cidle/machine.js:2429
+#: static/js/cidle/machine.js:2578
 msgid "games_cidle_machine_moon_maker"
 msgstr "Moon maker"
 
-#: static/js/cidle/machine.js:2436
+#: static/js/cidle/machine.js:2585
 msgid "games_cidle_recipe_moon_maker_0_0"
 msgstr "Asteroid reforming"
 
-#: static/js/cidle/machine.js:2473
+#: static/js/cidle/machine.js:2622
 msgid "games_cidle_machine_gas_densifier"
 msgstr "Gas densifier"
 
-#: static/js/cidle/machine.js:2480
+#: static/js/cidle/machine.js:2629
 msgid "games_cidle_recipe_gas_densifier_0_0"
 msgstr "Densify gas"
 
-#: static/js/cidle/machine.js:2517
+#: static/js/cidle/machine.js:2666
 msgid "games_cidle_machine_star_factory"
 msgstr "Star factory"
 
-#: static/js/cidle/machine.js:2524
+#: static/js/cidle/machine.js:2673
 msgid "games_cidle_recipe_star_factory_0_0"
 msgstr "Insane heat"
 
-#: static/js/cidle/machine.js:2563
+#: static/js/cidle/machine.js:2712
 msgid "games_cidle_machine_library"
 msgstr "Library"
 
-#: static/js/cidle/machine.js:2570
+#: static/js/cidle/machine.js:2719
 msgid "games_cidle_recipe_library_0_0"
-msgstr "Books"
+msgstr "Printing"
 
-#: static/js/cidle/machine.js:2619
+#: static/js/cidle/machine.js:2769
+msgid "games_cidle_recipe_library_1_0"
+msgstr "Reading"
+
+#: static/js/cidle/machine.js:2807
 msgid "games_cidle_machine_research_center"
 msgstr "Research center"
 
-#: static/js/cidle/machine.js:2626
+#: static/js/cidle/machine.js:2814
 msgid "games_cidle_recipe_research_center_0_0"
 msgstr "Study"
 
-#: static/js/cidle/machine.js:2667
+#: static/js/cidle/machine.js:2855
 msgid "games_cidle_machine_centrifuge"
 msgstr "Centrifuge"
 
-#: static/js/cidle/machine.js:2674
+#: static/js/cidle/machine.js:2862
 msgid "games_cidle_recipe_centrifuge_0_0"
 msgstr "Rotation"
 
-#: static/js/cidle/machine.js:2720
+#: static/js/cidle/machine.js:2908
 msgid "games_cidle_machine_anti_clock"
 msgstr "Anti clock"
 
-#: static/js/cidle/machine.js:2727
+#: static/js/cidle/machine.js:2915
 msgid "games_cidle_recipe_anti_clock_0_0"
 msgstr "Time return"
 
-#: static/js/cidle/machine.js:2757
+#: static/js/cidle/machine.js:2945
 msgid "games_cidle_machine_abstractor"
 msgstr "Abstractor"
 
-#: static/js/cidle/machine.js:2764
+#: static/js/cidle/machine.js:2952
 msgid "games_cidle_recipe_abstractor_0_0"
 msgstr "Patternize"
 
-#: static/js/cidle/machine.js:2803
+#: static/js/cidle/machine.js:2991
 msgid "games_cidle_machine_heat_extractor"
 msgstr "Heat extractor"
 
-#: static/js/cidle/machine.js:2810
+#: static/js/cidle/machine.js:2998
 msgid "games_cidle_recipe_heat_extractor_0_0"
 msgstr "Lava cooling"
 
-#: static/js/cidle/machine.js:2851
+#: static/js/cidle/machine.js:3039
 msgid "games_cidle_machine_thermal_generator"
 msgstr "Thermal generator"
 
-#: static/js/cidle/machine.js:2858
+#: static/js/cidle/machine.js:3046
 msgid "games_cidle_recipe_thermal_generator_0_0"
 msgstr "Electric heat"
 
-#: static/js/cidle/machine.js:2901
+#: static/js/cidle/machine.js:3089
 msgid "games_cidle_machine_electrolizer"
 msgstr "Electrolizer"
 
-#: static/js/cidle/machine.js:2908
+#: static/js/cidle/machine.js:3096
 msgid "games_cidle_recipe_electrolizer_0_0"
 msgstr "Water separation"
 
-#: static/js/cidle/machine.js:2946
+#: static/js/cidle/machine.js:3134
 msgid "games_cidle_recipe_electrolizer_1_0"
 msgstr "Air impurification"
 
-#: static/js/cidle/machine.js:2975
+#: static/js/cidle/machine.js:3163
 msgid "games_cidle_machine_light_bulb"
 msgstr "Light bulb"
 
-#: static/js/cidle/machine.js:2982
+#: static/js/cidle/machine.js:3170
 msgid "games_cidle_recipe_light_bulb_0_0"
 msgstr "Shine"
 
-#: static/js/cidle/machine.js:3025
+#: static/js/cidle/machine.js:3213
 msgid "games_cidle_machine_black_curtain"
 msgstr "Black curtain"
 
-#: static/js/cidle/machine.js:3032
+#: static/js/cidle/machine.js:3220
 msgid "games_cidle_recipe_black_curtain_0_0"
 msgstr "Unlit room"
 
-#: static/js/cidle/machine.js:3073
+#: static/js/cidle/machine.js:3261
 msgid "games_cidle_machine_black_hole"
 msgstr "Black hole"
 
-#: static/js/cidle/machine.js:3080
+#: static/js/cidle/machine.js:3268
 msgid "games_cidle_recipe_black_hole_0_0"
 msgstr "Singularize"
 
@@ -988,46 +993,50 @@ msgid "games_cidle_resource_star"
 msgstr "Star"
 
 #: static/js/cidle/resource.js:256
+msgid "games_cidle_resource_book"
+msgstr "Book"
+
+#: static/js/cidle/resource.js:262
 msgid "games_cidle_resource_knowledge"
 msgstr "Knowledge"
 
-#: static/js/cidle/resource.js:262
+#: static/js/cidle/resource.js:268
 msgid "games_cidle_resource_research"
 msgstr "Research"
 
-#: static/js/cidle/resource.js:268
+#: static/js/cidle/resource.js:274
 msgid "games_cidle_resource_rotational_force"
 msgstr "Rotational force"
 
-#: static/js/cidle/resource.js:274
+#: static/js/cidle/resource.js:280
 msgid "games_cidle_resource_time"
 msgstr "Time"
 
-#: static/js/cidle/resource.js:280
+#: static/js/cidle/resource.js:286
 msgid "games_cidle_resource_abstract"
 msgstr "Abstract"
 
-#: static/js/cidle/resource.js:288
+#: static/js/cidle/resource.js:294
 msgid "games_cidle_resource_heat"
 msgstr "Heat"
 
-#: static/js/cidle/resource.js:294
+#: static/js/cidle/resource.js:300
 msgid "games_cidle_resource_electricity"
 msgstr "Electricity"
 
-#: static/js/cidle/resource.js:300
+#: static/js/cidle/resource.js:306
 msgid "games_cidle_resource_air"
 msgstr "Air"
 
-#: static/js/cidle/resource.js:306
+#: static/js/cidle/resource.js:312
 msgid "games_cidle_resource_light"
 msgstr "Light"
 
-#: static/js/cidle/resource.js:312
+#: static/js/cidle/resource.js:318
 msgid "games_cidle_resource_darkness"
 msgstr "Darkness"
 
-#: static/js/cidle/resource.js:320
+#: static/js/cidle/resource.js:326
 msgid "games_cidle_resource_nothingness"
 msgstr "Nothingness"
 

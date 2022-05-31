@@ -2,7 +2,7 @@ import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
 import Machine, { pause_text, time_speed } from './machine.js';
 import { Pane } from './pane.js';
-import { beautify, number_between } from './primitives.js';
+import { beautify, force_number_between, number_between } from './primitives.js';
 import Resource from './resource.js';
 /**
  * @typedef {import('./pane.js').PaneCell} PaneCell
@@ -364,23 +364,39 @@ export class Recipe {
         if (this.consumes.length) content.push(...this.consumes.map(/** @returns {PaneCell[]} */([res, con, req]) => {
             const { name, color, background_color } = Resource.resource(res);
             const data = Machine.storage_for(res).resources[res];
+
+            /** @type {() => string} */
+            let amount;
+            if (res == 'nothingness') amount = () => `${beautify(force_number_between(data.amount * 100, 0, 100))}%`.padEnd(9);
+            else amount = () => beautify(data.amount).padEnd(8);
+
             let consume;
             if (Math.abs(con) <= 1e-6) consume = gettext('games_cidle_recipe_catalyst');
-            else if (this.type == 'fixed') consume = `${beautify(-con)}/s`;
-            else if (this.type == 'scaling') consume = () => {
+            else if (this.type == 'fixed') {
+                if (res == 'nothingness') consume = `${beautify(force_number_between(-con * 100, -100, 0))}%/s`;
+                else consume = `${beautify(-con)}/s`;
+            } else if (this.type == 'scaling') consume = () => {
                 const mult = prod_mult() ?? 1;
-                let scon = beautify(-con * mult);
+
+                let scon;
+                if (res == 'nothingness') scon = `${beautify(mult * force_number_between(-con * 100, -100, 0))}%`;
+                else scon = beautify(-con * mult);
                 if (Math.abs(mult - 1) >= 1e-3) scon = `${scon.padEnd(8)} x(${beautify(mult).padEnd(8)})`;
+
                 return `${scon}/s`;
             }
+
             let require;
-            if (this.type == 'fixed') require = () => `${beautify(data.amount).padEnd(8)} / ${beautify(req)}`;
+            if (this.type == 'fixed') require = () => `${amount()} / ${beautify(req)}`;
             else if (this.type == 'scaling') require = () => {
                 const mult = prod_mult() ?? 1;
-                let sreq = beautify(req);
+
+                let sreq;
+                if (res == 'nothingness') sreq = `${beautify(mult * force_number_between(req * 100, 0, 100))}%`;
+                else sreq = beautify(req);
                 if (Math.abs(mult - 1) >= 1e-3) sreq = `${sreq.padEnd(8)} x(${beautify(mult).padEnd(8)})`;
 
-                return `${beautify(data.amount).padEnd(8)} / ${sreq}`;
+                return `${amount()} / ${sreq}`;
             }
 
             return [
@@ -397,22 +413,42 @@ export class Recipe {
         if (this.produces.length) content.push(...this.produces.map(/** @returns {PaneCell[]} */([res, pro, max, opt]) => {
             const { name, color, background_color } = Resource.resource(res);
             const data = Machine.storage_for(res).resources[res];
-            const amount = () => {
+            const produce = () => {
                 const mult = prod_mult() ?? 1;
-                let spro = beautify(pro * mult);
-                if (this.type == 'scaling' && Math.abs(mult - 1) >= 1e-3) spro = `${spro.padEnd(8)} x(${beautify(mult).padEnd(8)})`;
+                let spro;
+
+                if (res == 'nothingness') {
+                    spro = `${beautify(mult * force_number_between(pro * 100, 0, 100))}%`;
+                } else {
+                    spro = beautify(pro * mult);
+                }
+                if (this.type == 'scaling' && Math.abs(mult - 1) >= 1e-3) {
+                    spro = `${spro.padEnd(8)} x(${beautify(mult).padEnd(8)})`;
+                }
                 if (opt) spro = `0-${spro}`;
 
                 return `${spro}/s`;
             };
+            const amount = () => {
+                let amount, m;
+                if (res == 'nothingness') {
+                    amount = `${beautify(force_number_between(data.amount * 100, 0, 100))}%`.padEnd(9);
+                    m = `${beautify(force_number_between(max * 100, 0, 100))}%`;
+                } else {
+                    amount = beautify(data.amount).padEnd(8);
+                    m = beautify(max);
+                }
+
+                return `${amount}/${m}`;
+            };
 
             return [
                 {
-                    content: [name, () => `${beautify(data.amount).padEnd(8)}/${beautify(max)}`],
+                    content: [name, amount],
                     background_color, text_color: color,
                 },
                 {
-                    content: ['', amount],
+                    content: ['', produce],
                     background_color, text_color: color,
                 },
             ];
@@ -464,16 +500,30 @@ export class Recipe {
             ...this.upgrade_costs.map(/** @returns {PaneCell[]} */([res, cost]) => {
                 const { name, color, background_color } = Resource.resource(res, true);
                 const data = Machine.storage_for(res).resources[res];
-                const amount = () => {
-                    return `${beautify(data.amount).padEnd(8)}/${beautify(cost)}`;
+
+                const price = () => {
+                    let amount, c;
+                    if (res == 'nothingness') {
+                        amount = `${beautify(force_number_between(data.amount * 100, 0, 100))}%`.padEnd(9);
+                        c = `${beautify(force_number_between(cost * 100, 0, 100))}%`;
+                    } else {
+                        amount = beautify(data.amount).padEnd(8);
+                        c = beautify(cost);
+                    }
+                    return `${amount}/${c}`;
                 };
+                /** @type {() => string} */
+                let amount;
+                if (res == 'nothingness') amount = () => `${beautify(force_number_between(data.amount * 100, 0, 100))}%`.padEnd(9);
+                else amount = () => beautify(data.amount).padEnd(8);
+
                 return [
                     {
-                        content: [name, () => beautify(data.amount).padEnd(8)],
+                        content: [name, amount],
                         background_color, text_color: color,
                     },
                     {
-                        content: [amount],
+                        content: [price],
                         background_color, text_color: color,
                     },
                 ];

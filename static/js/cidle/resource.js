@@ -246,6 +246,12 @@ export function make_resources() {
         },
         // T2-Knowledge
         {
+            id: 'book',
+            name: gettext('games_cidle_resource_book'),
+            color: '#000000',
+            border_color: '#FFFFFF',
+        },
+        {
             id: 'knowledge',
             name: gettext('games_cidle_resource_knowledge'),
             color: '#000000',
@@ -272,8 +278,8 @@ export function make_resources() {
         {
             id: 'abstract',
             name: gettext('games_cidle_resource_abstract'),
-            color: '#000000',
-            border_color: '#FFFFFF',
+            color: { toString() { return `hsl(0, 0%, ${Math.abs(100 - Date.now() / 100 % 200)}%)`; } },
+            border_color: { toString() { return `hsl(0, 0%, ${100 - Math.abs(100 - Date.now() / 100 % 200)}%)`; } },
         },
         // T2-Energy
         {
@@ -310,8 +316,8 @@ export function make_resources() {
         {
             id: 'nothingness',
             name: gettext('games_cidle_resource_nothingness'),
-            color: '#0000007F',
-            border_color: '#00000000',
+            color: '#000000',
+            border_color: { toString() { return `hsl(${Math.abs(30 - Date.now() / 100 % 60) + 5}, 100%, 50%)`; } },
         },
     ];
 

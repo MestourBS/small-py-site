@@ -62,6 +62,21 @@ export function number_between(number, min, max) {
 }
 
 /**
+ * Forces a number to be between min and max
+ *
+ * @param {number} number
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
+export function force_number_between(number, min, max) {
+    if (number_between(number, min, max)) return number;
+
+    if (min > max) [min, max] = [max, min];
+    return Math.min(max, Math.max(min, number));
+}
+
+/**
  * Makes a number look good
  *
  * @param {number} number
