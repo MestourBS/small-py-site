@@ -1,6 +1,6 @@
 import { get_theme_value as theme } from './display.js';
 import globals from './globals.js';
-import Machine, { pause_text } from './machine.js';
+import Machine, { pause_text, time_speed } from './machine.js';
 import { Pane } from './pane.js';
 import { beautify, number_between } from './primitives.js';
 import Resource from './resource.js';
@@ -232,11 +232,14 @@ export class Recipe {
         if (targets) {
             cache.targets = {};
 
-            const resources = new Set([...cache.consumes.map(([res]) => res), ...cache.produces.map(([res]) => res)]);
+            if (this.can_produce()) {
 
-            resources.forEach(res => {
-                cache.targets[res] = Machine.storage_for(res);
-            });
+                const resources = new Set([...cache.consumes.map(([res]) => res), ...cache.produces.map(([res]) => res)]);
+
+                resources.forEach(res => {
+                    cache.targets[res] = Machine.storage_for(res);
+                });
+            }
         }
     }
     /**
@@ -362,22 +365,23 @@ export class Recipe {
             const { name, color, background_color } = Resource.resource(res);
             const data = Machine.storage_for(res).resources[res];
             let consume;
-            if (this.type == 'fixed') consume = `${beautify(-con)}/s`;
+            if (Math.abs(con) <= 1e-6) consume = gettext('games_cidle_recipe_catalyst');
+            else if (this.type == 'fixed') consume = `${beautify(-con)}/s`;
             else if (this.type == 'scaling') consume = () => {
                 const mult = prod_mult() ?? 1;
                 let scon = beautify(-con * mult);
                 if (Math.abs(mult - 1) >= 1e-3) scon = `${scon.padEnd(8)} x(${beautify(mult).padEnd(8)})`;
                 return `${scon}/s`;
-            };
+            }
             let require;
             if (this.type == 'fixed') require = () => `${beautify(data.amount).padEnd(8)} / ${beautify(req)}`;
             else if (this.type == 'scaling') require = () => {
                 const mult = prod_mult() ?? 1;
-                let sreq = beautify(req * mult);
+                let sreq = beautify(req);
                 if (Math.abs(mult - 1) >= 1e-3) sreq = `${sreq.padEnd(8)} x(${beautify(mult).padEnd(8)})`;
 
                 return `${beautify(data.amount).padEnd(8)} / ${sreq}`;
-            };
+            }
 
             return [
                 {
@@ -550,6 +554,7 @@ export class Recipe {
      */
     produce({ multiplier }) {
         multiplier *= this.max_production_multiplier();
+        multiplier *= time_speed();
         /**
          * @type {{[res: string]: {
          *  best: number,
@@ -580,13 +585,17 @@ export class Recipe {
 
                 return amount / req;
             }),
-            ...this.produces.filter(([, , , opt]) => !opt).map(([res, pro, max]) => {
-                const { amount } = Machine.storage_for(res).resources[res];
-                if (amount > max) return 0;
-
-                return (max - amount) / pro;
-            }),
         ];
+        if (!multipliers.length) {
+            multipliers.push(
+                ...this.produces.filter(([, , , opt]) => !opt).map(([res, pro, max]) => {
+                    const { amount } = Machine.storage_for(res).resources[res];
+                    if (amount > max) return 0;
+
+                    return (max - amount) / pro;
+                }),
+            );
+        }
         return multipliers.length ? Math.min(...multipliers) : 0;
     }
     /**

@@ -120,7 +120,7 @@ export function make_resources() {
             color: '#000000',
             border_color: '#000000',
         },
-        // T0 resources
+        // T0
         {
             id: 'wood',
             name: gettext('games_cidle_resource_wood'),
@@ -145,7 +145,7 @@ export function make_resources() {
             color: '#00F',
             border_color: '#0000E6',
         },
-        // T1 resources
+        // T1
         {
             id: 'gem',
             name: gettext('games_cidle_resource_gem'),
@@ -173,8 +173,8 @@ export function make_resources() {
         {
             id: 'smoothness',
             name: gettext('games_cidle_resource_smoothness'),
-            color: '#F2F2F2',
-            border_color: '#E5E5E5',
+            color: '#D9D9D9',
+            border_color: '#CCCCCC',
         },
         {
             id: 'steam',
@@ -182,20 +182,136 @@ export function make_resources() {
             color: '#BCBCBC',
             border_color: '#AFAFAF',
         },
-        // Time resources
+        // T2-Magic
+        {
+            id: 'magic_crystal',
+            name: gettext('games_cidle_resource_magic_crystal'),
+            color: '#BF3FFF',
+            border_color: '#B726FF',
+        },
+        {
+            id: 'magic',
+            name: gettext('games_cidle_resource_magic'),
+            color: '#B200FF',
+            border_color: '#A000E6',
+        },
+        {
+            id: 'ice',
+            name: gettext('games_cidle_resource_ice'),
+            color: '#AAAAFF',
+            border_color: '#9191FF',
+        },
+        {
+            id: 'pure_elements',
+            name: gettext('games_cidle_resource_pure_elements'),
+            color: { toString() { return `hsl(${Date.now() / 100 % 360}, 100%, 50%)`; } },
+            border_color: { toString() { return `hsl(${Date.now() / 100 % 360}, 75%, 50%)`; } },
+        },
+        {
+            id: 'anti_magic',
+            name: gettext('games_cidle_resource_anti_magic'),
+            color: '#4DFF00',
+            border_color: '#5FFF19',
+        },
+        // T2-Space
+        {
+            id: 'asteroid',
+            name: gettext('games_cidle_resource_asteroid'),
+            color: '#808080',
+            border_color: '#737373',
+        },
+        {
+            id: 'planet',
+            name: gettext('games_cidle_resource_planet'),
+            color: '#A52A2A',
+            border_color: '#912525',
+        },
+        {
+            id: 'moon',
+            name: gettext('games_cidle_resource_moon'),
+            color: '#A0A0A0',
+            border_color: '#939393',
+        },
+        {
+            id: 'gas_giant',
+            name: gettext('games_cidle_resource_gas_giant'),
+            color: '#DBC2A9',
+            border_color: '#D3B597',
+        },
+        {
+            id: 'star',
+            name: gettext('games_cidle_resource_star'),
+            color: '#FFFF00',
+            border_color: '#FFFF00',
+        },
+        // T2-Knowledge
+        {
+            id: 'knowledge',
+            name: gettext('games_cidle_resource_knowledge'),
+            color: '#000000',
+            border_color: '#FFFFFF',
+        },
+        {
+            id: 'research',
+            name: gettext('games_cidle_resource_research'),
+            color: '#0077FF',
+            border_color: '#006BE6',
+        },
+        {
+            id: 'rotational_force',
+            name: gettext('games_cidle_resource_rotational_force'),
+            color: '#545454',
+            border_color: '#474747',
+        },
         {
             id: 'time',
             name: gettext('games_cidle_resource_time'),
-            color: '#F00',
+            color: '#FF0000',
             border_color: '#E60000',
         },
-        // Space resources
         {
-            id: 'space',
-            name: gettext('games_cidle_resource_space'),
-            color: '#000',
-            border_color: '#0C0C0C',
-            fill_image: '/static/images/games/cidle/space.png',
+            id: 'abstract',
+            name: gettext('games_cidle_resource_abstract'),
+            color: '#000000',
+            border_color: '#FFFFFF',
+        },
+        // T2-Energy
+        {
+            id: 'heat',
+            name: gettext('games_cidle_resource_heat'),
+            color: '#FFAA00',
+            border_color: '#E69900',
+        },
+        {
+            id: 'electricity',
+            name: gettext('games_cidle_resource_electricity'),
+            color: '#E5E500',
+            border_color: '#CCCC00',
+        },
+        {
+            id: 'air',
+            name: gettext('games_cidle_resource_air'),
+            color: '#E5E5B7',
+            border_color: '#DEDEA4',
+        },
+        {
+            id: 'light',
+            name: gettext('games_cidle_resource_light'),
+            color: '#D9D9D9',
+            border_color: '#CCCCCC'
+        },
+        {
+            id: 'darkness',
+            name: gettext('games_cidle_resource_darkness'),
+            color: '#262626',
+            border_color: '#333333',
+        },
+        // Black Hole
+        {
+            id: 'nothingness',
+            name: gettext('games_cidle_resource_nothingness'),
+            color: '#0000007F',
+            border_color: '#00000000',
         },
     ];
 

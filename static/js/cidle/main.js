@@ -31,7 +31,7 @@ function init() {
     last_production = Date.now();
 
     requestAnimationFrame(() => display());
-    setInterval(() => {
+    let produce_interval = setInterval(() => {
         let now = Date.now();
         let diff = (now - last_production) / 1e3;
         last_production = now;
@@ -52,6 +52,7 @@ function init() {
         } catch (e) {
             save_game = false;
             clearInterval(save_interval);
+            clearInterval(produce_interval);
             throw e;
         }
     }, 1e3 / 30);

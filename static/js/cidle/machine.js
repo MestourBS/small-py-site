@@ -36,8 +36,8 @@ import Resource from './resource.js';
 //! fix draw_connections (doesn't work for screen corner)
 //todo refresh pane on color changes
 //todo move group of machines
-// todo change draw to draw different parts of the machine as required
-// todo change draw_connections to draw different connections as required
+//todo change draw to draw different parts of the machine as required
+//todo change draw_connections to draw different connections as required
 //todo don't redraw same line multiple times
 //todo make arrows start/end at edges
 //todo move production to a single all consuming / producing function
@@ -274,6 +274,8 @@ export class Machine {
     set moving(moving) { this.#moving = !!moving; }
     get is_time_machine() { return this.#cache.is_time_machine; }
     get recipes() { return this.#recipes; }
+    /** @protected */
+    get last_multiplier() { return this.#last_multiplier; }
 
     get resources() { return this.#cache.resources; }
 
@@ -484,10 +486,12 @@ export class Machine {
             const end_angle = 2 * (i + 1) / length * PI - PI / 2;
             /** @type {[keyof context, any[]][]} */
             const funcs = [];
-            let fill;
+            let fill = 0;
             if (!isFinite(amount)) fill = 1;
             else if (!isFinite(best)) fill = Math.log10(amount) / 308.25;
             else fill = amount / limit;
+
+            fill = Math.min(1, Math.max(0, fill));
 
             switch (fillmode) {
                 case 'circle':
@@ -819,7 +823,7 @@ export class Machine {
                 if (!this.can_pause) return;
                 this.toggle_pause();
             }],
-            width: +has_recipes + +has_resources,
+            width: Math.max(+has_recipes + +has_resources, 1),
         };
         if (!this.can_pause) delete pause_cell.click;
 
@@ -834,7 +838,7 @@ export class Machine {
                         const p = Pane.pane(pane_id);
                         if (p) p.remove();
                     }],
-                    width: +has_recipes + +has_resources,
+                    width: Math.max(+has_recipes + +has_resources, 1),
                 }],
         ];
 
@@ -974,7 +978,7 @@ export class Machine {
      * @param {boolean|'auto'} [params.set]
      */
     toggle_pause({ set = 'auto' } = {}) {
-        if (!this.#can_pause) return;
+        if (!this.can_pause) return;
 
         if (set == 'auto') set = !this.#paused;
 
@@ -1002,6 +1006,317 @@ export class Machine {
     }
 }
 export default Machine;
+
+class BlackHoleMachine extends Machine {
+    get paused() { return false; }
+    get can_pause() { return false; }
+
+    /**
+     * Draws the black hole
+     *
+     * @param {Object} [params]
+     * @param {CanvasRenderingContext2D} [params.context]
+     * @param {number?} [params.x] Override for the x position
+     * @param {number?} [params.y] Override for the y position
+     * @param {boolean} [params.transparent]
+     */
+    draw({ context = canvas_context, x = null, y = null, transparent = false } = {}) {
+        if (x == null) {
+            ({ x } = this);
+            x += display_size.width / 2 - globals.position[0];
+        }
+        if (y == null) {
+            ({ y } = this);
+            y += display_size.height / 2 - globals.position[1];
+        }
+        const { radius } = this;
+        const { PI } = Math;
+
+        if (transparent) context.globalAlpha = .5;
+
+        if (this.moving && !transparent) context.setLineDash([5]);
+        context.lineWidth = 1.5;
+
+        // Partial fill for resources
+        const keys = Object.keys(this.resources).sort();
+        const { length } = keys;
+        for (let i = 0; i < length; i++) {
+            const res = keys[i];
+            const { amount, best } = this.resources[res];
+            const { fill_image = false, fillmode = 'circle', color, border_color } = Resource.resource(res);
+            const limit = 10 ** Math.ceil(Math.log10(best));
+            const start_angle = 2 * i / length * PI - PI / 2;
+            const end_angle = 2 * (i + 1) / length * PI - PI / 2;
+            /** @type {[keyof context, any[]][]} */
+            const funcs = [];
+            let fill = 0;
+            if (!isFinite(amount)) fill = 1;
+            else if (!isFinite(best)) fill = Math.log10(amount) / 308.25;
+            else fill = amount / limit;
+
+            fill = Math.min(1, Math.max(.05, fill));
+
+            switch (fillmode) {
+                case 'circle':
+                default:
+                    funcs.push(
+                        ['moveTo', [x, y - radius * fill]],
+                        ['arc', [x, y, radius * fill, start_angle, end_angle]],
+                        ['lineTo', [x, y - radius * fill]],
+                    );
+                    break;
+                case 'clockwise':
+                case 'counterclockwise':
+                    const clock_diff = 2 / length * Math.PI * fill;
+                    let clock_start = start_angle;
+                    let clock_end = clock_start + clock_diff;
+                    if (mode == 'counterclockwise') {
+                        clock_end = clock_start;
+                        clock_start = clock_end - clock_diff;
+                    }
+                    funcs.push(
+                        ['moveTo', [x - radius * fill, y]],
+                        ['arc', [x, y, radius, clock_start, clock_end]],
+                        ['lineTo', [x - radius * fill, y]],
+                    );
+                    break;
+                case 'transparency':
+                    const transparency_alpha = context.globalAlpha * fill;
+                    funcs.push(
+                        ['globalAlpha', [transparency_alpha]],
+                        ['moveTo', [x - radius * fill, y]],
+                        ['arc', [x, y, radius, start_angle, end_angle]],
+                        ['lineTo', [x - radius * fill, y]],
+                    );
+                    break;
+                case 'linear':
+                    let linear_y = radius * (1 - 2 * fill);
+                    const linear_angle_start = Math.asin(linear_y / radius);
+                    let linear_x = Math.cos(linear_angle_start) * radius;
+                    let linear_angle_end = Math.acos(-linear_x / radius) * Math.sign(linear_y);
+                    if (fill == 1) linear_angle_end = linear_angle_start + Math.PI * 2;
+                    linear_x += x;
+                    linear_y += y;
+                    funcs.push(
+                        ['moveTo', [linear_x, linear_y]],
+                        ['arc', [x, y, radius, linear_angle_start, linear_angle_end]],
+                        ['lineTo', [linear_x, linear_y]],
+                    );
+                    break;
+                case 'rhombus':
+                    const rhombus_corners = [0, 1, 2].map(n => n / 2 * Math.PI);
+                    /** @param {number} angle @returns {[number, number]} */
+                    const rhombus_angle_point = angle => {
+                        let [px, py] = angle_to_rhombus_point(angle);
+                        px = px * radius * fill + x;
+                        py = py * radius * fill + y;
+                        return [px, py];
+                    };
+                    const rhombus_points = [
+                        rhombus_angle_point(start_angle),
+                        ...rhombus_corners.filter(c => number_between(c, start_angle, end_angle)).map(c => rhombus_angle_point(c)),
+                        rhombus_angle_point(end_angle),
+                    ];
+                    funcs.push(
+                        ['moveTo', [x - radius * fill, y]],
+                        ...rhombus_points.map(([px, py]) => ['lineTo', [px, py]]),
+                        ['lineTo', [x - radius * fill, y]],
+                    );
+                    break;
+            }
+
+            context.save();
+            context.fillStyle = color;
+            context.strokeStyle = border_color;
+            context.beginPath();
+            funcs.forEach(([func, args]) => {
+                if (!(func in context)) return;
+                if (typeof context[func] == 'function') context[func](...args)
+                else context[func] = args[0];
+            });
+            if (fill_image) {
+                context.clip();
+                context.drawImage(fill_image, x - radius, y - radius, radius * 2, radius * 2);
+            } else {
+                context.fill();
+            }
+            context.stroke();
+            context.closePath();
+        }
+
+        if (this.can_upgrade) {
+            let color = theme('machine_can_upgrade_color_border');
+
+            context.save();
+            context.strokeStyle = color;
+            context.beginPath();
+            context.arc(x, y, radius, 0, 2 * PI);
+            context.stroke();
+            context.closePath();
+            context.restore();
+        }
+
+        context.globalAlpha = 1;
+        context.setLineDash([]);
+    }
+    /**
+     * Checks whether the machine can produce things
+     *
+     * @returns {boolean}
+     */
+    can_produce() {
+        return this.recipes.some(r => r.can_produce()) || this.resources['nothingness'].amount > 1e-6;
+    }
+    /**
+     * Consumes and produces things, and annihilates everything too
+     *
+     * @param {Object} [params]
+     * @param {number} [params.multiplier] Speed multiplier
+     */
+    produce({ multiplier = this.last_multiplier } = {}) {
+        super.produce({ multiplier });
+
+        /**
+         * Number between 0 and 1
+         */
+        const percent = Math.min(1, Math.max(0, this.resources['nothingness'].amount));
+        if (percent == 0) return;
+
+        Machine.machines.forEach(m => {
+            if (m == this) return;
+
+            Object.entries(m.resources).forEach(([, resource]) => {
+                const loss = resource.amount * percent * multiplier;
+                resource.amount -= loss;
+            });
+        });
+    }
+    /**
+     * Computes the machine's pane's arguments
+     *
+     * @returns {{
+     *  id: string,
+     *  x: number,
+     *  y: number,
+     *  content: PaneCell[][],
+     *  title: string,
+     *  tab: GameTab,
+     * }}
+     */
+    pane_contents() {
+        const { id } = this;
+        const pane_id = `${globals.game_tab}_machine_${id}_pane`;
+        const x = this.x + this.radius;
+        const y = this.y - this.radius;
+        const font_size = theme('font_size');
+        const resources = Object.entries(this.resources);
+        const has_resources = !!resources.length;
+        const has_recipes = !!this.recipes.length;
+
+        const pause_content = this.can_pause ? () => pause_text[this.paused] : gettext('games_cidle_maker_unpausable');
+        /** @type {PaneCell} */
+        const pause_cell = {
+            content: [pause_content],
+            click: [() => {
+                if (!this.can_pause) return;
+                this.toggle_pause();
+            }],
+            width: Math.max(+has_recipes + +has_resources, 1),
+        };
+        if (!this.can_pause) delete pause_cell.click;
+
+        /** @type {PaneCell[][]} */
+        const content = [
+            // Buttons
+            [pause_cell,
+                {
+                    content: [gettext('games_cidle_machine_move')],
+                    click: [() => {
+                        this.move();
+                        const p = Pane.pane(pane_id);
+                        if (p) p.remove();
+                    }],
+                    width: Math.max(+has_recipes + +has_resources, 1),
+                }],
+        ];
+
+        /** @type {PaneCell[][]} */
+        const storage_rows = [];
+        /** @type {PaneCell[][]} */
+        const recipe_rows = [];
+        if (has_resources) {
+            storage_rows.push([{
+                content: [gettext('cidle_machine_contents')],
+                width: 2,
+            }], ...resources.map(/** @returns {PaneCell[]} */([res, data]) => {
+                const { name, background_color, border_color, color } = Resource.resource(res);
+
+                const amount = res == 'nothingness' ? () => `${beautify(Math.max(0, Math.min(100, data.amount * 100)))}%` : () => beautify(data.amount);
+
+                return [{
+                    content: [`${name}`],
+                    background_color, border_color, text_color: color,
+                }, {
+                    content: [amount],
+                    background_color, border_color, text_color: color,
+                }];
+            }));
+        }
+        if (has_recipes) {
+            recipe_rows.push([{
+                content: [gettext('cidle_machine_recipes')],
+                width: 2,
+            }], ...this.recipes.map((recipe, i) => {
+                const params = {
+                    get x() {
+                        return x + (Pane.pane(pane_id)?.table_widths().reduce((s, w) => s + w, 0) ?? 0);
+                    },
+                    y: y + (4.5 + i) * font_size,
+                };
+
+                return recipe.pane_preview(params);
+            }));
+        }
+
+        if (has_recipes && has_resources) {
+            // Zip them
+            const max_i = Math.max(storage_rows.length, recipe_rows.length);
+
+            // Force all rows to be the same width
+            const storage_width = storage_rows.reduce((w, row) => {
+                return Math.max(w, row.reduce((w, cell) => w + (cell.width ?? 1), 0));
+            }, 0);
+            storage_rows.forEach(row => {
+                const row_width = row.reduce((w, cell) => w + (cell.width ?? 1), 0);
+                const diff = storage_width - row_width;
+                const last_cell = row[row.length - 1];
+                last_cell.width = (last_cell.width ?? 1) + diff;
+            });
+
+            // Force all rows to be the same width
+            const recipe_width = recipe_rows.reduce((w, row) => {
+                return Math.max(w, row.reduce((w, cell) => w + (cell.width ?? 1), 0));
+            }, 0)
+            recipe_rows.forEach(row => {
+                const row_width = row.reduce((w, cell) => w + (cell.width ?? 1), 0);
+                const diff = recipe_width - row_width;
+                const last_cell = row[row.length - 1];
+                last_cell.width = (last_cell.width ?? 1) + diff;
+            });
+
+            for (let i = 0; i < max_i; i++) {
+                // If the cells don't exist, use a blank cell
+                const storage = storage_rows[i] ?? [{ content: [''], width: storage_width }];
+                const recipe = recipe_rows[i] ?? [{ content: [''], width: recipe_width }];
+                content.push([...storage, ...recipe]);
+            }
+        } else {
+            content.push(...storage_rows, ...recipe_rows);
+        }
+
+        return { id: pane_id, x, y, content, title: this.name, tab: globals.game_tab };
+    }
+}
 
 /**
  * Creates and places the machines
@@ -1036,7 +1351,7 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_forest_0_0');
                     },
-                    max_level: 4,
+                    max_level: 7,
                     produces(level) {
                         switch (level) {
                             default:
@@ -1049,6 +1364,10 @@ function make_machines() {
                                 return [['wood', .4, 20]];
                             case 4:
                                 return [['wood', .6, 30]];
+                            case 5:
+                                return [['wood', 1, 50]];
+                            case 6:
+                                return [['wood', 1.5, 75]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1061,6 +1380,10 @@ function make_machines() {
                                 return [['water', 5]];
                             case 3:
                                 return [['algae', 5]];
+                            case 4:
+                                return [['electricity', 20]];
+                            case 5:
+                                return [['light', 10]];
                         }
                     },
                     type: 'fixed',
@@ -1081,10 +1404,10 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_big_rock_0_0');
                     },
-                    max_level: 4,
+                    max_level: 6,
                     consumes(level) {
                         switch (level) {
-                            default:
+                            default: case 5: case 6:
                                 return [];
                             case 1: case 2:
                                 return [['wood', .1, .25]];
@@ -1104,6 +1427,10 @@ function make_machines() {
                                 return [['stone', .4, 20]];
                             case 4:
                                 return [['stone', .6, 30]];
+                            case 5:
+                                return [['stone', 1, 50]];
+                            case 6:
+                                return [['stone', 2, 100]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1118,6 +1445,10 @@ function make_machines() {
                                 return [['fire', 5], ['water', 5]];
                             case 3:
                                 return [['smoothness', 5]];
+                            case 4:
+                                return [['electricity', 10]];
+                            case 5:
+                                return [['pure_elements', 1]];
                         }
                     },
                     type: 'fixed',
@@ -1154,6 +1485,38 @@ function make_machines() {
                     },
                     type: 'fixed',
                 }),
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_big_rock_2_0');
+                    },
+                    max_level: 1,
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['asteroid', 0, .1]];
+                        }
+                    },
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['stone', .5, 50]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['asteroid', .1]];
+                        }
+                    },
+                    type: 'scaling',
+                }),
             ],
             resources: {
                 stone: {},
@@ -1171,10 +1534,10 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_fire_pit_0_0');
                     },
-                    max_level: 2,
+                    max_level: 3,
                     consumes(level) {
                         switch (level) {
-                            default:
+                            default: case 3:
                                 return [];
                             case 1: case 2:
                                 return [['wood', .1, .5]];
@@ -1188,6 +1551,8 @@ function make_machines() {
                                 return [['fire', .1, 10]];
                             case 2:
                                 return [['fire', .2, 15]];
+                            case 3:
+                                return [['fire', .4, 60]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1198,6 +1563,8 @@ function make_machines() {
                                 return [['wood', 3], ['stone', 1.5]];
                             case 1:
                                 return [['wood', 15], ['stone', 7.5]];
+                            case 2:
+                                return [['pure_elements', 2]];
                         }
                     },
                     type: 'fixed',
@@ -1207,7 +1574,7 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_fire_pit_1_0');
                     },
-                    max_level: 1,
+                    max_level: 2,
                     consumes(level) {
                         switch (level) {
                             default:
@@ -1222,6 +1589,8 @@ function make_machines() {
                                 return [];
                             case 1:
                                 return [['fire', .5, 30]];
+                            case 2:
+                                return [['fire', 1, 60]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1230,6 +1599,8 @@ function make_machines() {
                                 return [];
                             case 0:
                                 return [['charcoal', 5], ['stone', 15]];
+                            case 1:
+                                return [['star', .01]];
                         }
                     },
                     type: 'fixed',
@@ -1251,7 +1622,7 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_water_well_0_0');
                     },
-                    max_level: 2,
+                    max_level: 5,
                     produces(level) {
                         switch (level) {
                             default:
@@ -1260,6 +1631,12 @@ function make_machines() {
                                 return [['water', .1, 10]];
                             case 2:
                                 return [['water', .2, 15]];
+                            case 3:
+                                return [['water', .3, 20]];
+                            case 4:
+                                return [['water', .4, 30]];
+                            case 5:
+                                return [['water', .8, 70]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1270,6 +1647,12 @@ function make_machines() {
                                 return [['stone', 5], ['fire', .5]];
                             case 1:
                                 return [['stone', 15], ['wood', 7.5]];
+                            case 2:
+                                return [['knowledge', .25]];
+                            case 3:
+                                return [['moon', .1]];
+                            case 4:
+                                return [['pure_elements', 4]];
                         }
                     },
                     type: 'fixed',
@@ -1279,12 +1662,12 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_water_well_1_0');
                     },
-                    max_level: 1,
+                    max_level: 2,
                     consumes(level) {
                         switch (level) {
                             default:
                                 return [];
-                            case 1:
+                            case 1: case 2:
                                 return [['steam', .1, 1]];
                         }
                     },
@@ -1294,6 +1677,8 @@ function make_machines() {
                                 return [];
                             case 1:
                                 return [['water', .5, 30]];
+                            case 2:
+                                return [['water', .75, 45]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1302,6 +1687,8 @@ function make_machines() {
                                 return [];
                             case 0:
                                 return [['steam', 5], ['water', 15]];
+                            case 1:
+                                return [['ice', 5]];
                         }
                     },
                     type: 'fixed',
@@ -1324,20 +1711,22 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_gem_tree_0_0');
                     },
-                    max_level: 1,
+                    max_level: 2,
                     produces(level) {
                         switch (level) {
                             default:
                                 return [];
                             case 1:
                                 return [['gem', .05, 10]];
+                            case 2:
+                                return [['gem', 1, 15]];
                         }
                     },
                     consumes(level) {
                         switch (level) {
                             default:
                                 return [];
-                            case 1:
+                            case 1: case 2:
                                 return [['stone', .1, 10]];
                         }
                     },
@@ -1347,6 +1736,40 @@ function make_machines() {
                                 return [];
                             case 0:
                                 return [['stone', 15], ['wood', 15]];
+                            case 1:
+                                return [['magic_crystal', 1], ['magic', 5]]
+                        }
+                    },
+                    type: 'fixed',
+                }),
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_gem_tree_1_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['gem', .25, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1: case 2:
+                                return [['steam', .2, 10], ['rotational_force', 0, 1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['rotational_force', .5]];
                         }
                     },
                     type: 'fixed',
@@ -1395,6 +1818,38 @@ function make_machines() {
                     },
                     type: 'fixed',
                 }),
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_charcoal_pit_1_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['charcoal', .25, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['gem', .2, 10], ['rotational_force', 0, 1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['rotational_force', .5]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
             ],
             resources: {
                 charcoal: {},
@@ -1412,20 +1867,22 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_algae_farm_0_0');
                     },
-                    max_level: 1,
+                    max_level: 2,
                     produces(level) {
                         switch (level) {
                             default:
                                 return [];
                             case 1:
                                 return [['algae', .05, 10]];
+                            case 2:
+                                return [['algae', .1, 20]];
                         }
                     },
                     consumes(level) {
                         switch (level) {
                             default:
                                 return [];
-                            case 1:
+                            case 1: case 2:
                                 return [['water', .25, 10]];
                         }
                     },
@@ -1435,6 +1892,40 @@ function make_machines() {
                                 return [];
                             case 0:
                                 return [['wood', 15], ['water', 10]];
+                            case 1:
+                                return [['light', 5]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_algae_farm_1_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['algae', .25, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['charcoal', .2, 10], ['rotational_force', 0, 1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['rotational_force', .5]];
                         }
                     },
                     type: 'fixed',
@@ -1456,12 +1947,12 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_volcano_0_0');
                     },
-                    max_level: 1,
+                    max_level: 2,
                     produces(level) {
                         switch (level) {
                             default:
                                 return [];
-                            case 1:
+                            case 1: case 2:
                                 return [['lava', .05, 10]];
                         }
                     },
@@ -1471,6 +1962,8 @@ function make_machines() {
                                 return [];
                             case 1:
                                 return [['stone', .25, 10], ['fire', .1, 12.5]];
+                            case 2:
+                                return [['stone', .2, 10], ['fire', .1, 12.5]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1479,9 +1972,75 @@ function make_machines() {
                                 return [];
                             case 0:
                                 return [['stone', 15], ['fire', 10]];
+                            case 1:
+                                return [['heat', 7.5]];
                         }
                     },
                     type: 'fixed',
+                }),
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_volcano_1_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['lava', .25, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['algae', .2, 10], ['rotational_force', 0, 1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['rotational_force', .5]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_volcano_2_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['lava', .1, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['planet', 0, .1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['planet', .1]];
+                        }
+                    },
+                    type: 'scaling',
                 }),
             ],
             resources: {
@@ -1500,12 +2059,12 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_washer_0_0');
                     },
-                    max_level: 1,
+                    max_level: 2,
                     produces(level) {
                         switch (level) {
                             default:
                                 return [];
-                            case 1:
+                            case 1: case 2:
                                 return [['smoothness', .05, 10]];
                         }
                     },
@@ -1515,6 +2074,8 @@ function make_machines() {
                                 return [];
                             case 1:
                                 return [['stone', .125, 10], ['water', .1, 10]];
+                            case 2:
+                                return [['stone', 1 / 16, 10], ['water', .1, 10]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1523,6 +2084,40 @@ function make_machines() {
                                 return [];
                             case 0:
                                 return [['stone', 15], ['water', 5]];
+                            case 1:
+                                return [['research', .75]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_washer_1_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['smoothness', .25, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['lava', .2, 10], ['rotational_force', 0, 1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['rotational_force', .5]];
                         }
                     },
                     type: 'fixed',
@@ -1544,13 +2139,17 @@ function make_machines() {
                         if (level == 0) return '???';
                         if (level > 0) return gettext('games_cidle_recipe_steam_boiler_0_0');
                     },
-                    max_level: 1,
+                    max_level: 3,
                     produces(level) {
                         switch (level) {
                             default:
                                 return [];
                             case 1:
                                 return [['steam', .05, 10]];
+                            case 2:
+                                return [['steam', .075, 15]];
+                            case 3:
+                                return [['steam', .1, 20]];
                         }
                     },
                     consumes(level) {
@@ -1559,6 +2158,10 @@ function make_machines() {
                                 return [];
                             case 1:
                                 return [['water', .25, 10], ['fire', 0, 10]];
+                            case 2:
+                                return [['water', .2, 10], ['fire', 0, 10]];
+                            case 3:
+                                return [['water', .3, 10], ['fire', 0, 15]];
                         }
                     },
                     upgrade_costs(level) {
@@ -1567,6 +2170,42 @@ function make_machines() {
                                 return [];
                             case 0:
                                 return [['stone', 15], ['wood', 10], ['water', 5], ['fire', 5]];
+                            case 1:
+                                return [['heat', 7.5]];
+                            case 2:
+                                return [['star', .05]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_steam_boiler_1_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['steam', .25, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['smoothness', .2, 10], ['rotational_force', 0, 1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['rotational_force', .5]];
                         }
                     },
                     type: 'fixed',
@@ -1577,11 +2216,1008 @@ function make_machines() {
             },
             hidden: () => Machine.machine('fire_pit').recipes[0].level < 2 || Machine.machine('water_well').recipes[0].level < 2,
         },
-        // time machines
-        // space machines
+        // T2-Magic
+        {
+            id: 'magic_crystal_maker',
+            name: gettext('games_cidle_machine_magic_crystal_maker'),
+            x: -100,
+            y: -500,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_magic_crystal_maker_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['magic_crystal', .1, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['gem', .25, 7.5], ['smoothness', .25, 7.5]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['gem', 10]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                magic_crystal: {},
+            },
+            hidden: () => Machine.machine('gem_tree').recipes[0].level < 1 || Machine.machine('washer').recipes[0].level < 1,
+        },
+        {
+            id: 'magic_crystal',
+            name: gettext('games_cidle_machine_magic_crystal'),
+            x: 0,
+            y: -600,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_magic_crystal_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['magic', .1, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['magic_crystal', 0, 1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['magic_crystal', 5]];
+                        }
+                    },
+                    type: 'scaling',
+                }),
+            ],
+            resources: {
+                magic: {},
+            },
+            hidden: () => Machine.machine('magic_crystal_maker').recipes[0].level < 1,
+        },
+        {
+            id: 'ice_magic',
+            name: gettext('games_cidle_machine_ice_magic'),
+            x: 100,
+            y: -700,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_ice_magic_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['ice', .5, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['magic', 1, 1], ['water', 1, 10]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['magic', 5], ['water', 10]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                ice: {},
+            },
+            hidden: () => Machine.machine('magic_crystal').recipes[0].level < 1,
+        },
+        {
+            id: 'purifier',
+            name: gettext('games_cidle_machine_purifier'),
+            x: -100,
+            y: -700,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_purifier_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['pure_elements', .5, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['water', 1, 10], ['fire', 1, 10], ['stone', 1, 10], ['air', 1, 10], ['magic', 1, 1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['magic', 5], ['water', 10], ['fire', 10], ['stone', 10], ['air', 10]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                pure_elements: {},
+            },
+            hidden: () => Machine.machine('electrolizer').recipes[0].level < 1,
+        },
+        {
+            id: 'broken_magic_crystal',
+            name: gettext('games_cidle_machine_broken_magic_crystal'),
+            x: 100,
+            y: -500,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_broken_magic_crystal_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['anti_magic', .1, 9.99]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['magic', 1, 10]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['magic', 10], ['pure_elements', 10]];
+                        }
+                    },
+                    type: 'scaling',
+                }),
+            ],
+            resources: {
+                anti_magic: {},
+            },
+            hidden: () => Machine.machine('purifier').recipes[0].level < 1,
+        },
+        // T2-Space
+        {
+            id: 'asteroid_condenser',
+            name: gettext('games_cidle_machine_asteroid_condenser'),
+            x: -700,
+            y: 100,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_asteroid_condenser_0_0');
+                    },
+                    max_level: 2,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['asteroid', .025, 1]];
+                            case 2:
+                                return [['asteroid', .040, 3]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1: case 2:
+                                return [['lava', .25, 5], ['stone', 1, 20]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['stone', 30], ['lava', 10]];
+                            case 1:
+                                return [['gas_giant', .1]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                asteroid: {},
+            },
+            hidden: () => Machine.machine('volcano').recipes[0].level < 1,
+        },
+        {
+            id: 'planet_shaper',
+            name: gettext('games_cidle_machine_planet_shaper'),
+            x: -500,
+            y: 100,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_planet_shaper_0_0');
+                    },
+                    max_level: 2,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['planet', .01, 1]];
+                            case 2:
+                                return [['planet', .01, 3]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1: case 2:
+                                return [['asteroid', .01, .5], ['stone', 2, 20]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['stone', 40], ['asteroid', .5]];
+                            case 1:
+                                return [['gas_giant', .3]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                planet: {},
+            },
+            hidden: () => Machine.machine('asteroid_condenser').recipes[0].level < 1,
+        },
+        {
+            id: 'moon_maker',
+            name: gettext('games_cidle_machine_moon_maker'),
+            x: -450,
+            y: 150,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_moon_maker_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['moon', .01, 1]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['asteroid', .01, .5], ['stone', 4, 20], ['planet', 0, .1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['stone', 40], ['planet', .5]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                moon: {},
+            },
+            hidden: () => Machine.machine('planet_shaper').recipes[0].level < 1,
+        },
+        {
+            id: 'gas_densifier',
+            name: gettext('games_cidle_machine_gas_densifier'),
+            x: -500,
+            y: -100,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_gas_densifier_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['gas_giant', .01, 1]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['air', 1, 5], ['steam', 1, 5], ['planet', .01, .1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['air', 10], ['planet', .5]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                gas_giant: {},
+            },
+            hidden: () => Machine.machine('planet_shaper').recipes[0].level < 1 || Machine.machine('electrolizer').recipes[0].level < 1,
+        },
+        {
+            id: 'star_factory',
+            name: gettext('games_cidle_machine_star_factory'),
+            x: -700,
+            y: -100,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_star_factory_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['star', .01, 1]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['fire', 5, 15], ['heat', 1, 5], ['gas_giant', .01, .1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['fire', 30], ['gas_giant', .5]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                star: {},
+            },
+            hidden: () => Machine.machine('gas_densifier').recipes[0].level < 1,
+        },
+        // T2-Knowledge
+        {
+            id: 'library',
+            name: gettext('games_cidle_machine_library'),
+            x: 0,
+            y: 600,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_library_0_0');
+                    },
+                    max_level: 3,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['knowledge', .01, 1]];
+                            case 2:
+                                return [['knowledge', .02, 1]];
+                            case 3:
+                                return [['knowledge', .04, 1]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['steam', .25, 5], ['wood', 1, 20]];
+                            case 2:
+                                return [['steam', .2, 5], ['wood', 1, 20]];
+                            case 3:
+                                return [['steam', .15, 5], ['wood', .9, 20]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['wood', 25], ['steam', 10]];
+                            case 1:
+                                return [['anti_magic', .1]];
+                            case 2:
+                                return [['abstract', 1 / 3]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                knowledge: {},
+            },
+            hidden: () => Machine.machine('steam_boiler').recipes[0].level < 1,
+        },
+        {
+            id: 'research_center',
+            name: gettext('games_cidle_machine_research_center'),
+            x: -100,
+            y: 500,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_research_center_0_0');
+                    },
+                    max_level: 2,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['research', .1, 10]];
+                            case 2:
+                                return [['research', .15, 10]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1: case 2:
+                                return [['knowledge', .25, .5]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['knowledge', .1]];
+                            case 1:
+                                return [['abstract', 2 / 3]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                research: {},
+            },
+            hidden: () => Machine.machine('library').recipes[0].level < 1,
+        },
+        {
+            id: 'centrifuge',
+            name: gettext('games_cidle_machine_centrifuge'),
+            x: -100,
+            y: 700,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_centrifuge_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['rotational_force', .1, 1]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [
+                                    ['knowledge', .1, .1],
+                                    ['research', .1, .1],
+                                    ['gem', 1, 1],
+                                    ['charcoal', 1, 1],
+                                    ['algae', 1, 1],
+                                    ['lava', 1, 1],
+                                    ['smoothness', 1, 1],
+                                    ['steam', 1, 1],
+                                ];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['research', 1]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                rotational_force: {},
+            },
+            hidden: () => Machine.machine('research_center').recipes[0].level < 1,
+        },
+        {
+            id: 'anti_clock',
+            name: gettext('games_cidle_machine_anti_clock'),
+            x: 100,
+            y: 700,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_anti_clock_0_0');
+                    },
+                    max_level: 1,
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['time', 1, .1]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['knowledge', .1], ['time', 10]];
+                        }
+                    },
+                    type: 'fixed',
+                    paused: true,
+                }),
+            ],
+            resources: {
+                time: {},
+            },
+            hidden: () => Machine.machine('library').recipes[0].level < 1 || Machine.storage_for('time').resources.time.amount < 10,
+        },
+        {
+            id: 'abstractor',
+            name: gettext('games_cidle_machine_abstractor'),
+            x: 100,
+            y: 500,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_abstractor_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['abstract', .1, 3]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['knowledge', 1, 1], ['research', 1, 10]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['research', 10]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                abstract: {},
+            },
+            hidden: () => Machine.machine('centrifuge').recipes[0].level < 1,
+        },
+        // T2-Energy
+        {
+            id: 'heat_extractor',
+            name: gettext('games_cidle_machine_heat_extractor'),
+            x: 500,
+            y: -100,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_heat_extractor_0_0');
+                    },
+                    max_level: 2,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['heat', .1, 10], ['stone', .5, 30, true]];
+                            case 2:
+                                return [['heat', .2, 20], ['stone', .4, 30, true]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1: case 2:
+                                return [['lava', 1, 7.5]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['lava', 5]];
+                            case 1:
+                                return [['star', .1]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                heat: {},
+            },
+            hidden: () => Machine.machine('volcano').recipes[0].level < 1,
+        },
+        {
+            id: 'thermal_generator',
+            name: gettext('games_cidle_machine_thermal_generator'),
+            x: 700,
+            y: -100,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_thermal_generator_0_0');
+                    },
+                    max_level: 2,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['electricity', 1, 100]];
+                            case 2:
+                                return [['electricity', 2, 100]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['heat', 1, 5]];
+                            case 2:
+                                return [['heat', .75, 5]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['heat', 5]];
+                            case 1:
+                                return [['darkness', .09]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                electricity: {},
+            },
+            hidden: () => Machine.machine('heat_extractor').recipes[0].level < 1,
+        },
+        {
+            id: 'electrolizer',
+            name: gettext('games_cidle_machine_electrolizer'),
+            x: 700,
+            y: 100,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_electrolizer_0_0');
+                    },
+                    max_level: 2,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['air', .5, 10]];
+                            case 2:
+                                return [['air', .75, 20]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['electricity', 1, 25], ['water', 1, 12.5]];
+                            case 2:
+                                return [['electricity', .8, 20], ['water', .8, 10]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['electricity', 25]];
+                            case 1:
+                                return [['gas_giant', .01]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_electrolizer_1_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['air', .25, 20]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['pure_elements', 8]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                air: {},
+            },
+            hidden: () => Machine.machine('thermal_generator').recipes[0].level < 1,
+        },
+        {
+            id: 'light_bulb',
+            name: gettext('games_cidle_machine_light_bulb'),
+            x: 500,
+            y: 100,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_light_bulb_0_0');
+                    },
+                    max_level: 2,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['light', .5, 10], ['heat', .1, 10, true]];
+                            case 2:
+                                return [['light', .75, 10], ['heat', .15, 10, true]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['electricity', 1, 50]];
+                            case 2:
+                                return [['electricity', 1, 25]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['electricity', 50]];
+                            case 1:
+                                return [['darkness', .9]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                light: {},
+            },
+            hidden: () => Machine.machine('thermal_generator').recipes[0].level < 1,
+        },
+        {
+            id: 'black_curtain',
+            name: gettext('games_cidle_machine_black_curtain'),
+            x: 600,
+            y: 0,
+            recipes: [
+                new Recipe({
+                    name(level) {
+                        if (level == 0) return '???';
+                        if (level > 0) return gettext('games_cidle_recipe_black_curtain_0_0');
+                    },
+                    max_level: 1,
+                    produces(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['darkness', .1, 9], ['air', .1, 20, true]];
+                        }
+                    },
+                    consumes(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 1:
+                                return [['light', 1, 5], ['charcoal', .75, 7.5]];
+                        }
+                    },
+                    upgrade_costs(level) {
+                        switch (level) {
+                            default:
+                                return [];
+                            case 0:
+                                return [['light', 5], ['charcoal', 1]];
+                        }
+                    },
+                    type: 'fixed',
+                }),
+            ],
+            resources: {
+                darkness: {},
+            },
+            hidden: () => Machine.machine('light_bulb').recipes[0].level < 1,
+        },
     ];
 
     machines.forEach(m => new Machine(m));
+
+    new BlackHoleMachine({
+        id: 'black_hole',
+        name: gettext('games_cidle_machine_black_hole'),
+        x: 0,
+        y: 0,
+        recipes: [
+            new Recipe({
+                name(level) {
+                    if (level == 0) return '???';
+                    if (level > 0) return gettext('games_cidle_recipe_black_hole_0_0');
+                },
+                max_level: 1,
+                produces(level) {
+                    switch (level) {
+                        default:
+                            return [];
+                        case 1:
+                            return [['nothingness', .001, 1]];
+                    }
+                },
+                consumes(level) {
+                    switch (level) {
+                        default:
+                            return [];
+                        case 1:
+                            return [['anti_magic', .0999, 9.99], ['star', .01, 1], ['abstract', .03, 3], ['darkness', .09, 9]];
+                    }
+                },
+                upgrade_costs(level) {
+                    switch (level) {
+                        default: case 0:
+                            return [];
+                    }
+                },
+                type: 'fixed',
+            }),
+        ],
+        resources: {
+            nothingness: {},
+        },
+        hidden: () => ['broken_magic_crystal', 'star_factory', 'abstractor', 'black_curtain'].some(id => Machine.machine(id).recipes[0].level > 0),
+    });
 }
 /**
  * Current time speed
@@ -1593,9 +3229,9 @@ function make_machines() {
 export function time_speed() {
     let multiplier = 1;
 
-    Machine.machines.filter(m => m.is_time_machine && m.can_produce())
+    Machine.machines.filter(m => m.is_time_machine && m.can_produce() && !m.paused)
         .forEach(m => m.recipes.forEach(r => {
-            multiplier = r.consumes.reduce((m, [, con]) => m * con ** time_constant, multiplier);
+            if (!r.paused) multiplier = r.consumes.reduce((m, [, con]) => m * (con + 1) ** time_constant, multiplier);
         }));
 
     return multiplier;
