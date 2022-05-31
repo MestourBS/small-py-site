@@ -3216,7 +3216,7 @@ function make_machines() {
         resources: {
             nothingness: {},
         },
-        hidden: () => ['broken_magic_crystal', 'star_factory', 'abstractor', 'black_curtain'].some(id => Machine.machine(id).recipes[0].level > 0),
+        hidden: () => ['broken_magic_crystal', 'star_factory', 'abstractor', 'black_curtain'].some(id => Machine.machine(id).recipes[0].level < 1),
     });
 }
 /**
